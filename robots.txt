@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://riselanding.mx/sitemap.xml
+Sitemap: https://riselanding.com/sitemap.xml
