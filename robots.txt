@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://riselanding.mx/sitemap.xml
