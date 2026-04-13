@@ -1867,11 +1867,32 @@ footer { background: var(--c-dark); padding: 5rem 0 2rem; }
       <!-- Form body -->
       <div class="form-body" id="form-body">
 
-        <form id="lead-form" novalidate>
+        <form id="lead-form"
+              action="https://forms.zohopublic.com/contactorisel1/form/Riselandingpage/formperma/LFQlqGVSIMQfwyTCQjD_EklIQ_8rzkb8wov6J1_YXUY/htmlRecords/submit"
+              method="POST"
+              accept-charset="UTF-8"
+              enctype="multipart/form-data"
+              novalidate>
+
+          <!-- Zoho required hidden fields -->
+          <input type="hidden" name="zf_referrer_name" value="">
+          <input type="hidden" name="zf_redirect_url" value="https://riselanding.com/?enviado=1">
+          <input type="hidden" name="zc_gad" value="">
+
           <!-- Hidden UTM fields -->
           <input type="hidden" id="utm_source"   name="utm_source">
           <input type="hidden" id="utm_medium"   name="utm_medium">
           <input type="hidden" id="utm_campaign" name="utm_campaign">
+
+          <!-- Hidden multiselect que Zoho espera para los servicios -->
+          <select name="Checkbox" multiple style="display:none" id="zoho-servicios" aria-hidden="true">
+            <option value="Publicidad Digital">Publicidad Digital</option>
+            <option value="SEO y Posicionamiento">SEO y Posicionamiento</option>
+            <option value="Reediseño / Desarrollo página web">Reediseño / Desarrollo página web</option>
+            <option value="Implementación de CRM">Implementación de CRM</option>
+            <option value="Automatización de procesos">Automatización de procesos</option>
+            <option value="Dashboards y reportes">Dashboards y reportes</option>
+          </select>
 
           <!-- Datos de contacto y empresa -->
           <p class="form-sep">Datos de contacto</p>
@@ -1881,21 +1902,21 @@ footer { background: var(--c-dark); padding: 5rem 0 2rem; }
               <label for="nombre">Nombre <span class="req">*</span></label>
               <div class="field-icon">
                 <svg class="field-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                <input type="text" id="nombre" name="nombre" class="ctrl" placeholder="Carlos" required autocomplete="given-name">
+                <input type="text" id="nombre" name="Name_First" class="ctrl" placeholder="Carlos" required autocomplete="given-name">
               </div>
             </div>
             <div class="field">
               <label for="apellido">Apellido <span class="req">*</span></label>
               <div class="field-icon">
                 <svg class="field-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
-                <input type="text" id="apellido" name="apellido" class="ctrl" placeholder="Rodríguez" required autocomplete="family-name">
+                <input type="text" id="apellido" name="Name_Last" class="ctrl" placeholder="Rodríguez" required autocomplete="family-name">
               </div>
             </div>
             <div class="field">
               <label for="empresa">Empresa</label>
               <div class="field-icon">
                 <svg class="field-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="7" width="20" height="15" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
-                <input type="text" id="empresa" name="empresa" class="ctrl" placeholder="Logística del Norte SA" autocomplete="organization">
+                <input type="text" id="empresa" name="SingleLine" class="ctrl" placeholder="Logística del Norte SA" autocomplete="organization">
               </div>
             </div>
           </div>
@@ -1905,7 +1926,7 @@ footer { background: var(--c-dark); padding: 5rem 0 2rem; }
               <label for="correo_trabajo">Correo de trabajo <span class="req">*</span></label>
               <div class="field-icon">
                 <svg class="field-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m2 7 8.5 6a2 2 0 0 0 3 0L22 7"/></svg>
-                <input type="email" id="correo_trabajo" name="correo_trabajo" class="ctrl" placeholder="carlos@tuempresa.com" required autocomplete="email">
+                <input type="email" id="correo_trabajo" name="Email" class="ctrl" placeholder="carlos@tuempresa.com" required autocomplete="email">
               </div>
               <p class="email-warn" id="email-warn">
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
@@ -1919,7 +1940,7 @@ footer { background: var(--c-dark); padding: 5rem 0 2rem; }
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.4 2 2 0 0 1 3.6 1.22h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.8a16 16 0 0 0 6.29 6.29l.96-.96a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
                   +52
                 </span>
-                <input type="tel" id="telefono" name="telefono" placeholder="55 1234 5678" required autocomplete="tel" inputmode="numeric">
+                <input type="tel" id="telefono" name="PhoneNumber_countrycode" placeholder="55 1234 5678" required autocomplete="tel" inputmode="numeric">
               </div>
             </div>
           </div>
@@ -1933,18 +1954,6 @@ footer { background: var(--c-dark); padding: 5rem 0 2rem; }
             <label class="cbox"><input type="checkbox" name="servicios_interes" value="crm"> Implementación de CRM</label>
             <label class="cbox"><input type="checkbox" name="servicios_interes" value="auto"> Automatización de procesos</label>
             <label class="cbox"><input type="checkbox" name="servicios_interes" value="dash"> Dashboards y reportes</label>
-          </div>
-
-          <!-- Reto actual -->
-          <p class="form-sep">Tu situación actual</p>
-          <div class="form-row">
-            <div class="field">
-              <label for="mayor_reto">¿Cuál es tu mayor reto digital actualmente?</label>
-              <div class="field-icon field-icon--ta">
-                <svg class="field-ico" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                <textarea id="mayor_reto" name="mayor_reto" class="ctrl" rows="2" placeholder="Ej. Necesitamos más leads calificados y nuestro proceso de cotización es manual..."></textarea>
-              </div>
-            </div>
           </div>
 
           <button type="submit" class="btn-primary btn-submit" id="submit-btn">
@@ -2278,8 +2287,6 @@ footer { background: var(--c-dark); padding: 5rem 0 2rem; }
 
   if (form) {
     form.addEventListener('submit', function (e) {
-      e.preventDefault();
-
       // Basic required field validation
       var required = form.querySelectorAll('[required]');
       var valid = true;
@@ -2294,19 +2301,31 @@ footer { background: var(--c-dark); padding: 5rem 0 2rem; }
         }
       });
 
-      if (!valid) return;
+      if (!valid) { e.preventDefault(); return; }
 
-      // Simulate async submission
+      // Sync checkboxes → Zoho hidden multiselect
+      var zohoSelect = document.getElementById('zoho-servicios');
+      var checkMap = {
+        'sem':  'Publicidad Digital',
+        'seo':  'SEO y Posicionamiento',
+        'web':  'Reediseño / Desarrollo página web',
+        'crm':  'Implementación de CRM',
+        'auto': 'Automatización de procesos',
+        'dash': 'Dashboards y reportes'
+      };
+      // Reset all options first
+      Array.from(zohoSelect.options).forEach(function(opt){ opt.selected = false; });
+      // Select matching values
+      form.querySelectorAll('input[name="servicios_interes"]:checked').forEach(function(cb) {
+        var zohoVal = checkMap[cb.value];
+        Array.from(zohoSelect.options).forEach(function(opt) {
+          if (opt.value === zohoVal) opt.selected = true;
+        });
+      });
+
+      // Show sending state and let form submit natively to Zoho
       submitBtn.textContent = 'Enviando...';
       submitBtn.disabled = true;
-
-      setTimeout(function () {
-        formBody.style.display = 'none';
-        formSuccess.classList.add('show');
-        window.scrollTo({ top: document.getElementById('contacto').offsetTop - 80, behavior: 'smooth' });
-      }, 900);
-      // TODO: Replace with real fetch() to your webhook or API endpoint
-      // fetch('/api/leads', { method: 'POST', body: new FormData(form) })
     });
 
     // Remove error state on input
