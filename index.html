@@ -137,6 +137,7 @@
   ]
 }
 </script>
+  <script>document.documentElement.classList.add("js")</script>
 
   <!-- Fuentes del rediseno (Google Fonts) -->
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -572,6 +573,11 @@ footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-
   .nav-links .cta{margin-top:14px;justify-content:center}
 }
 .testi-note{margin-top:22px;font-size:12.5px;line-height:1.6;color:var(--ink-mute);font-style:italic;max-width:52ch}
+/* El atributo hidden debe ganar al display del .svc-card (tabs de servicios) */
+.svc-card[hidden]{display:none !important}
+/* Fallback sin JS: el contenido revelable se muestra igualmente (accesibilidad + indexabilidad) */
+html:not(.js) .reveal{opacity:1 !important;transform:none !important}
+html:not(.js) .hero h1 .word span{transform:none !important}
 
   </style>
 </head>
@@ -597,19 +603,637 @@ footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-
   </div>
 </nav>
 <main>
-<!-- HERO (Task 5) -->
-<!-- MARQUEE (Task 6) -->
-<!-- PROBLEMAS (Task 6) -->
-<!-- TESTIMONIO (Task 7) -->
-<!-- SERVICIOS (Task 7) -->
-<!-- PROCESO (Task 8) -->
-<!-- RESULTADOS (Task 8) -->
-<!-- COMPARATIVA (Task 9) -->
-<!-- INDUSTRIAS (Task 9) -->
-<!-- FAQ (Task 10) -->
-<!-- CONTACTO (Task 11) -->
+<section class="hero" id="top">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow">ESPECIALISTAS EN CRECIMIENTO DIGITAL · MX</div>
+        <h1 class="display">
+          <span class="word"><span>Generamos</span></span>
+          <span class="word"><span>clientes</span></span>
+          <span class="word"><span>y</span></span>
+          <span class="word"><span>automatizamos</span></span>
+          <span class="word"><span>tu</span></span>
+          <span class="word underline-word"><span>operación</span></span>
+          <span class="word"><span>comercial.</span></span>
+        </h1>
+        <p class="hero-sub">Performance marketing + CRM + automatización: el ecosistema digital que tu empresa necesita. Resultados medibles desde la semana 1.</p>
+        <div class="hero-ctas">
+          <a class="btn btn-primary" href="#contacto">Agenda tu diagnóstico gratuito <span>→</span></a>
+          <a class="btn btn-ghost" href="#servicios">Ver cómo funciona</a>
+        </div>
+        <div class="hero-meta">
+          <span class="dot"></span>
+          <!-- VERIFICAR: dato de marketing -->
+          <span>3 cupos disponibles este mes</span>
+          <span style="opacity:.4">·</span>
+          <!-- VERIFICAR: dato de marketing -->
+          <span>Inversión &lt; 3% de tu revenue</span>
+          <span style="opacity:.4">·</span>
+          <span>Implementación en 3 semanas</span>
+        </div>
+      </div>
+      <div class="hero-illu"><style>
+        .hi-stage{position:absolute;inset:0;perspective:1400px}
+        .hi-card{position:absolute;border-radius:18px;background:linear-gradient(180deg,#1A2236,#10172680);border:1px solid var(--line);box-shadow:0 30px 60px -20px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.02) inset;transform-style:preserve-3d;transition:transform .6s var(--ease)}
+        .hi-card.floating{animation:float 6s var(--ease) infinite}
+        @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+
+        .hi-dash{width:420px;height:260px;left:20px;top:90px;padding:18px;transform:translate(var(--tx,0),var(--ty,0)) rotateX(var(--rx,0)) rotateY(var(--ry,0))}
+        .hi-dash .dh-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+        .hi-dash .dh-title{font-family:"Bricolage Grotesque";font-weight:600;font-size:13px;color:var(--ink)}
+        .hi-dash .dh-pill{font-family:"JetBrains Mono",monospace;font-size:9px;padding:4px 8px;border-radius:99px;background:rgba(31,209,123,.10);color:var(--green);letter-spacing:.06em}
+        .hi-dash .dh-pill .lvdot{display:inline-block;width:5px;height:5px;border-radius:99px;background:var(--green);margin-right:5px;animation:pulse 2s var(--ease) infinite}
+
+        .hi-stat{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
+        .hi-stat .s{background:rgba(255,255,255,.02);border:1px solid var(--line);border-radius:10px;padding:9px 10px}
+        .hi-stat .s .lbl{font-family:"JetBrains Mono",monospace;font-size:8.5px;color:var(--ink-mute);letter-spacing:.08em;text-transform:uppercase}
+        .hi-stat .s .val{font-family:"Bricolage Grotesque";font-weight:600;font-size:18px;letter-spacing:-.02em;margin-top:3px}
+        .hi-stat .s .val .acc{color:var(--accent)}
+        .hi-stat .s .val .grn{color:var(--green)}
+
+        .hi-chart{position:relative;height:130px;border:1px solid var(--line);border-radius:10px;padding:10px;background:rgba(255,255,255,.01);overflow:hidden}
+        .hi-chart .grid-line{position:absolute;left:10px;right:10px;height:1px;background:var(--line)}
+        .hi-chart .gl1{top:30px}.hi-chart .gl2{top:60px}.hi-chart .gl3{top:90px}
+
+        .hi-bars{position:absolute;left:14px;right:14px;bottom:10px;height:90px;display:flex;align-items:flex-end;gap:6px}
+        .hi-bars .bar{flex:1;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#FF8C5A,#FF5A1F);transform-origin:bottom;animation:grow 1.2s var(--ease-out) both}
+        @keyframes grow{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+        .hi-bars .bar:nth-child(1){animation-delay:.20s;height:35%}
+        .hi-bars .bar:nth-child(2){animation-delay:.28s;height:48%}
+        .hi-bars .bar:nth-child(3){animation-delay:.36s;height:42%}
+        .hi-bars .bar:nth-child(4){animation-delay:.44s;height:62%}
+        .hi-bars .bar:nth-child(5){animation-delay:.52s;height:55%}
+        .hi-bars .bar:nth-child(6){animation-delay:.60s;height:78%}
+        .hi-bars .bar:nth-child(7){animation-delay:.68s;height:70%}
+        .hi-bars .bar:nth-child(8){animation-delay:.76s;height:92%}
+        .hi-bars .bar:nth-child(9){animation-delay:.84s;height:86%}
+        .hi-bars .bar:nth-child(10){animation-delay:.92s;height:100%;background:linear-gradient(180deg,#FFD23F,#FF8C5A)}
+
+        .hi-trend{position:absolute;left:14px;right:14px;top:14px;bottom:14px;pointer-events:none}
+        .hi-trend svg{width:100%;height:100%}
+        .hi-trend path{stroke:var(--green);stroke-width:2;fill:none;stroke-linecap:round;stroke-dasharray:400;stroke-dashoffset:400;animation:draw 1.6s var(--ease-out) .8s forwards}
+        @keyframes draw{to{stroke-dashoffset:0}}
+        .hi-trend circle{fill:var(--green);opacity:0;animation:fadein .4s var(--ease) 2.4s forwards}
+        @keyframes fadein{to{opacity:1}}
+
+        /* phone */
+        .hi-phone{width:180px;height:340px;right:0;top:30px;border-radius:34px;background:linear-gradient(180deg,#1F273B,#13192570);padding:8px;animation-delay:-2s}
+        .hi-phone-screen{width:100%;height:100%;border-radius:26px;background:#0B1018;border:1px solid var(--line);padding:14px;display:flex;flex-direction:column;gap:10px;overflow:hidden;position:relative}
+        .hi-phone-notch{position:absolute;left:50%;top:6px;transform:translateX(-50%);width:36px;height:5px;border-radius:99px;background:#000}
+        .hi-phone .ph-head{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+        .hi-phone .ph-title{font-family:"Bricolage Grotesque";font-weight:600;font-size:12px}
+        .hi-phone .ph-sub{font-family:"JetBrains Mono",monospace;font-size:8px;color:var(--ink-mute)}
+        .hi-phone .ph-lead{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:10px;padding:9px 10px;display:flex;align-items:center;gap:8px;transition:transform .4s var(--ease)}
+        .hi-phone .ph-lead .av{width:24px;height:24px;border-radius:99px;background:linear-gradient(135deg,#FF8C5A,#FF5A1F);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;font-family:"Bricolage Grotesque"}
+        .hi-phone .ph-lead .lh{display:flex;flex-direction:column;gap:3px;flex:1;min-width:0}
+        .hi-phone .ph-lead .lh .nm{font-size:10px;font-weight:600}
+        .hi-phone .ph-lead .lh .em{font-size:8.5px;color:var(--ink-mute);font-family:"JetBrains Mono",monospace}
+        .hi-phone .ph-lead .dot-g{width:6px;height:6px;border-radius:99px;background:var(--green);box-shadow:0 0 0 3px rgba(31,209,123,.18);flex-shrink:0}
+        .hi-phone .ph-lead.l2 .av{background:linear-gradient(135deg,#9D7BFF,#5AC8FF)}
+        .hi-phone .ph-lead.l3 .av{background:linear-gradient(135deg,#FFD23F,#FF8C5A)}
+        .hi-phone .ph-lead.l3 .dot-g{background:var(--yellow);box-shadow:0 0 0 3px rgba(255,210,63,.18)}
+
+        /* badge sun */
+        .hi-sun{width:120px;height:120px;right:170px;bottom:-10px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#FFD23F,#FF5A1F 70%);box-shadow:0 0 60px rgba(255,90,31,.45),inset -10px -10px 30px rgba(0,0,0,.18);animation-delay:-3s;border:0}
+        .hi-sun::before{content:"";position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle at 30% 25%,rgba(255,255,255,.4),transparent 40%)}
+        .hi-sun-rays{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:170px;height:170px;pointer-events:none}
+        .hi-sun-rays span{position:absolute;left:50%;top:50%;width:2px;height:18px;background:linear-gradient(180deg,var(--yellow),transparent);transform-origin:50% 85px}
+        .hi-sun-rays span:nth-child(1){transform:translate(-50%,-50%) rotate(0deg)}
+        .hi-sun-rays span:nth-child(2){transform:translate(-50%,-50%) rotate(45deg)}
+        .hi-sun-rays span:nth-child(3){transform:translate(-50%,-50%) rotate(90deg)}
+        .hi-sun-rays span:nth-child(4){transform:translate(-50%,-50%) rotate(135deg)}
+        .hi-sun-rays span:nth-child(5){transform:translate(-50%,-50%) rotate(180deg)}
+        .hi-sun-rays span:nth-child(6){transform:translate(-50%,-50%) rotate(225deg)}
+        .hi-sun-rays span:nth-child(7){transform:translate(-50%,-50%) rotate(270deg)}
+        .hi-sun-rays span:nth-child(8){transform:translate(-50%,-50%) rotate(315deg)}
+
+        /* notification tag */
+        .hi-note{position:absolute;left:-10px;top:50px;display:flex;align-items:center;gap:8px;background:#0B1018;border:1px solid var(--line);border-radius:99px;padding:8px 14px 8px 10px;font-size:11.5px;box-shadow:0 12px 30px rgba(0,0,0,.4);animation-delay:-1s}
+        .hi-note .nb{width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,#1FD17B,#7BE7B7);display:flex;align-items:center;justify-content:center;color:#0B1018;font-weight:800;font-size:11px;font-family:"Bricolage Grotesque"}
+
+        /* badge -30 */
+        .hi-badge{position:absolute;right:10px;bottom:50px;background:#0B1018;border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;box-shadow:0 14px 32px rgba(0,0,0,.4);animation-delay:-1.5s}
+        .hi-badge .num{font-family:"Bricolage Grotesque";font-weight:700;font-size:24px;letter-spacing:-.02em;color:var(--green)}
+        .hi-badge .meta{display:flex;flex-direction:column}
+        .hi-badge .meta .lbl{font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-mute)}
+        .hi-badge .meta .sub{font-size:10.5px;color:var(--ink-dim);margin-top:1px}
+      </style><div class="hi-stage"><div class="hi-card hi-dash"><div class="dh-row"><div class="dh-title">Panel de crecimiento</div><div class="dh-pill"><span class="lvdot"></span>EN VIVO</div></div><div class="hi-stat"><div class="s"><div class="lbl">Leads</div><div class="val">247<span class="grn"> ↑</span></div></div><div class="s"><div class="lbl">CPL</div><div class="val"><span class="acc">$184</span></div></div><div class="s"><div class="lbl">ROAS</div><div class="val">4.8<span class="grn">x</span></div></div></div><div class="hi-chart"><div class="grid-line gl1"></div><div class="grid-line gl2"></div><div class="grid-line gl3"></div><div class="hi-bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div><div class="hi-trend"><svg viewBox="0 0 380 110" preserveAspectRatio="none"><path d="M 6 90 L 50 78 L 95 82 L 140 60 L 185 64 L 230 42 L 275 48 L 320 22 L 360 14"></path><circle cx="360" cy="14" r="4"></circle></svg></div></div></div><div class="hi-card hi-phone floating"><div class="hi-phone-notch"></div><div class="hi-phone-screen"><div class="ph-head"><div class="ph-title">Pipeline</div><div class="ph-sub">HOY</div></div><div class="ph-lead"><div class="av">M</div><div class="lh"><div class="nm">María L.</div><div class="em">Solicitud · CRM</div></div><div class="dot-g"></div></div><div class="ph-lead l2"><div class="av">JR</div><div class="lh"><div class="nm">José R.</div><div class="em">Cotización · Auto</div></div><div class="dot-g"></div></div><div class="ph-lead l3"><div class="av">AC</div><div class="lh"><div class="nm">Ana C.</div><div class="em">Follow-up · IA</div></div><div class="dot-g"></div></div></div></div><div class="hi-card hi-note floating"><span class="nb">✓</span><span>Cotización enviada · 14s</span></div><div class="hi-card hi-badge floating"><div class="num">-30%</div><div class="meta"><div class="lbl">CPL</div><div class="sub">vs mes anterior</div></div></div></div></div>
+    </div>
+    <div class="phase-strip">
+      <div class="phase"><span class="num">01</span><span class="name">Atracción</span><span class="arrow">→</span></div>
+      <div class="phase"><span class="num">02</span><span class="name">Conversión</span><span class="arrow">→</span></div>
+      <div class="phase"><span class="num">03</span><span class="name">Automatización</span><span class="arrow">→</span></div>
+      <div class="phase"><span class="num">04</span><span class="name">Crecimiento</span><span class="arrow">↗</span></div>
+    </div>
+  </div>
+</section>
+<div class="marquee"><div class="marquee-track">
+<div class="logo-mock"><span class="sq"></span>Servicios Profesionales</div>
+<div class="logo-mock"><span class="sq"></span>Retail y E-commerce</div>
+<div class="logo-mock"><span class="sq"></span>Manufactura Industrial</div>
+<div class="logo-mock"><span class="sq"></span>Salud y Bienestar</div>
+<div class="logo-mock"><span class="sq"></span>Inmobiliaria y Construcción</div>
+<div class="logo-mock"><span class="sq"></span>Tecnología y SaaS</div>
+<div class="logo-mock"><span class="sq"></span>Servicios Profesionales</div>
+<div class="logo-mock"><span class="sq"></span>Retail y E-commerce</div>
+<div class="logo-mock"><span class="sq"></span>Manufactura Industrial</div>
+<div class="logo-mock"><span class="sq"></span>Salud y Bienestar</div>
+<div class="logo-mock"><span class="sq"></span>Inmobiliaria y Construcción</div>
+<div class="logo-mock"><span class="sq"></span>Tecnología y SaaS</div>
+</div></div>
+<section class="sec" id="diagnostico">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="reveal"><span class="eyebrow">DIAGNÓSTICO DEL SECTOR</span><h2 class="display">¿Tu operación digital está frenando tu crecimiento?</h2></div>
+      <p class="lead reveal d-1">Estas son las barreras más comunes que enfrentan las empresas en México que quieren crecer digitalmente — y cómo las resolvemos.</p>
+    </div>
+    <div class="problems-grid">
+      <div class="prob reveal d-1">
+  <div><span class="prob-tag">Problema crítico</span><h3>Leads que no se convierten en clientes</h3><p>Recibes solicitudes pero el seguimiento es manual, lento e inconsistente. Los prospectos calificados se enfrían antes de cerrar.</p></div>
+  <div class="illu"><svg width="170" height="130" viewBox="0 0 170 130" fill="none"><rect x="22" y="14" width="92" height="108" rx="8" fill="#1E2638" stroke="#2D3850"></rect><rect x="48" y="6" width="40" height="16" rx="4" fill="#2D3850"></rect><rect x="30" y="34" width="76" height="8" rx="2" fill="#2D3850"></rect><rect x="30" y="50" width="60" height="6" rx="2" fill="#222B3E"></rect><rect x="30" y="64" width="68" height="6" rx="2" fill="#222B3E"></rect><rect x="30" y="78" width="50" height="6" rx="2" fill="#222B3E"></rect><rect x="30" y="92" width="64" height="6" rx="2" fill="#222B3E"></rect><g transform="rotate(-12 130 60)"><rect x="118" y="44" width="46" height="22" rx="6" fill="#0B1018" stroke="#FF5A1F"></rect><circle cx="128" cy="55" r="5" fill="#FF5A1F"></circle><rect x="138" y="50" width="20" height="3" rx="1.5" fill="#FF8C5A"></rect><rect x="138" y="56" width="14" height="3" rx="1.5" fill="#4A3528"></rect></g><g transform="rotate(18 140 96)"><rect x="124" y="84" width="42" height="20" rx="6" fill="#0B1018" stroke="#444"></rect><circle cx="134" cy="94" r="4" fill="#8B95A8"></circle><rect x="142" y="89" width="18" height="3" rx="1.5" fill="#8B95A8"></rect><rect x="142" y="95" width="12" height="3" rx="1.5" fill="#3A4258"></rect></g><path d="M120 22 L130 30 L122 32" stroke="#FF5A1F" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"></path></svg></div>
+</div>
+<div class="prob reveal d-2">
+  <div><span class="prob-tag">Alta ineficiencia</span><h3>Cotizaciones manuales que toman horas</h3><p>Consultar tarifas, calcular costos, redactar el correo. Lo que debería tomar minutos toma medio día.</p></div>
+  <div class="illu"><svg width="170" height="130" viewBox="0 0 170 130" fill="none"><circle cx="85" cy="65" r="48" fill="#1E2638" stroke="#2D3850"></circle><circle cx="85" cy="65" r="40" fill="none" stroke="#222B3E"></circle><line x1="85" y1="28" x2="85" y2="34" stroke="#8B95A8" stroke-width="2"></line><line x1="85" y1="96" x2="85" y2="102" stroke="#8B95A8" stroke-width="2"></line><line x1="48" y1="65" x2="54" y2="65" stroke="#8B95A8" stroke-width="2"></line><line x1="116" y1="65" x2="122" y2="65" stroke="#8B95A8" stroke-width="2"></line><line x1="85" y1="65" x2="85" y2="42" stroke="#F4EFE6" stroke-width="3" stroke-linecap="round"></line><g style="transform-origin: 85px 65px; animation: 4s linear 0s infinite normal none running spin;"><line x1="85" y1="65" x2="115" y2="65" stroke="#FF5A1F" stroke-width="2.5" stroke-linecap="round"></line></g><circle cx="85" cy="65" r="4" fill="#FF5A1F"></circle><rect x="12" y="92" width="36" height="6" rx="2" fill="#2D3850"></rect><rect x="18" y="100" width="36" height="6" rx="2" fill="#222B3E"></rect><rect x="14" y="108" width="36" height="6" rx="2" fill="#1E2638"></rect><style>@keyframes spin{to{transform:rotate(360deg)}}</style></svg></div>
+</div>
+<div class="prob reveal d-3">
+  <div><span class="prob-tag">Pérdida de clientes</span><h3>Sin visibilidad del estado de tus proyectos</h3><p>Tus clientes llaman a preguntar. No tienes un sistema que notifique automáticamente los hitos clave.</p></div>
+  <div class="illu"><svg width="170" height="130" viewBox="0 0 170 130" fill="none"><path d="M20 65 Q85 18 150 65 Q85 112 20 65 Z" fill="#1E2638" stroke="#2D3850" stroke-width="1.5"></path><circle cx="85" cy="65" r="22" fill="#0B1018"></circle><circle cx="85" cy="65" r="14" fill="#FF5A1F"></circle><circle cx="79" cy="60" r="4" fill="#FFD23F"></circle><line x1="20" y1="20" x2="150" y2="110" stroke="#FF5A1F" stroke-width="3.5" stroke-linecap="round"></line><line x1="20" y1="20" x2="150" y2="110" stroke="#0B1018" stroke-width="1.5" stroke-linecap="round"></line></svg></div>
+</div>
+<div class="prob reveal d-4">
+  <div><span class="prob-tag">Oportunidades perdidas</span><h3>Presencia web que no refleja tu operación</h3><p>Tu empresa mueve millones pero tu sitio parece de hace 10 años. Los prospectos no te encuentran ni confían.</p></div>
+  <div class="illu"><svg width="170" height="130" viewBox="0 0 170 130" fill="none"><rect x="22" y="14" width="126" height="84" rx="6" fill="#1E2638" stroke="#2D3850"></rect><rect x="30" y="22" width="110" height="68" rx="2" fill="#0B1018"></rect><rect x="60" y="98" width="50" height="12" rx="2" fill="#1E2638" stroke="#2D3850"></rect><rect x="48" y="110" width="74" height="6" rx="2" fill="#1E2638" stroke="#2D3850"></rect><text x="38" y="42" font-family="JetBrains Mono" font-size="9" fill="#FF5A1F">&lt;HTML 1999&gt;</text><rect x="38" y="48" width="40" height="4" rx="1" fill="#FFD23F"></rect><rect x="38" y="56" width="60" height="3" rx="1" fill="#3A4258"></rect><rect x="38" y="62" width="50" height="3" rx="1" fill="#3A4258"></rect><rect x="38" y="68" width="56" height="3" rx="1" fill="#3A4258"></rect><rect x="104" y="48" width="26" height="34" rx="2" fill="#1FD17B" opacity=".3"></rect><text x="108" y="68" font-family="JetBrains Mono" font-size="7" fill="#1FD17B">GIF</text></svg></div>
+</div>
+
+    </div>
+  </div>
+</section>
+<section class="sec testi-section">
+  <div class="wrap">
+    <span class="eyebrow reveal">EJEMPLO ILUSTRATIVO · SECTOR MANUFACTURA</span>
+    <div class="testi-grid">
+      <div class="reveal d-1">
+        <p class="testi-quote">El objetivo con cada cliente: pasar de cotizar a mano durante 6 horas a entregar propuestas en menos de 10 minutos. <span class="testi-em">Un pipeline que puede crecer hasta 3×</span> y un equipo comercial con visibilidad real de lo que cierra y lo que se enfría.</p>
+        <p class="testi-note">Ejemplo ilustrativo del tipo de resultado que buscamos. Publicaremos casos con nombre de cliente y cifras verificadas conforme obtengamos su autorización.</p>
+      </div>
+      <div class="testi-metrics">
+        <!-- VERIFICAR: dato de marketing -->
+        <div class="testi-metric reveal d-1"><div class="testi-num">×3</div><div class="testi-lbl">Crecimiento potencial del pipeline comercial en 90 días</div></div>
+        <!-- VERIFICAR: dato de marketing -->
+        <div class="testi-metric alt reveal d-2"><div class="testi-num">6h<em> → </em>10min</div><div class="testi-lbl">Tiempo por cotización (automatizada vía PDF + CRM)</div></div>
+        <!-- VERIFICAR: dato de marketing -->
+        <div class="testi-metric reveal d-3"><div class="testi-num">-42%</div><div class="testi-lbl">Costo por lead objetivo en Google Ads sector industrial</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+<section class="sec" id="servicios">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="reveal"><span class="eyebrow">NUESTRA SOLUCIÓN</span><h2 class="display">Un ecosistema digital completo para tu operación.</h2></div>
+      <p class="lead reveal d-1">Performance marketing, tecnología operativa y automatización combinados en un solo paquete integrado — no seis proveedores distintos.</p>
+    </div>
+    <div class="svc-tabs reveal">
+      <button class="svc-tab active" data-svc="0">01 · Publicidad SEM</button>
+<button class="svc-tab" data-svc="1">02 · SEO Técnico</button>
+<button class="svc-tab" data-svc="2">03 · Desarrollo Web</button>
+<button class="svc-tab" data-svc="3">04 · CRM & Tech</button>
+<button class="svc-tab" data-svc="4">05 · Automatización</button>
+<button class="svc-tab" data-svc="5">06 · Dashboards</button>
+
+    </div>
+    <div class="svc-card" data-panel="0">
+  <div>
+    <div class="svc-meta"><span class="svc-num">SERVICIO 01 / 06</span></div>
+    <h3>Publicidad Digital (SEM)</h3>
+    <p>Campañas de performance en Google Ads optimizadas semanalmente con keywords especializadas para tu sector. Landing pages de alta conversión con reportes de CPL completamente transparentes.</p>
+    <ul class="svc-bullets"><li>Google Ads + Meta optimización semanal</li><li>Landing pages dedicadas por campaña</li><li>Tracking de conversiones server-side</li></ul>
+            <!-- VERIFICAR: dato de marketing -->
+    <span class="svc-pill">● -30% Costo por Lead</span>
+  </div>
+  <div class="svc-illu"><svg width="100%" height="320" viewBox="0 0 380 320" fill="none"><defs><linearGradient id="barG" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#FFD23F"></stop><stop offset="1" stop-color="#FF5A1F"></stop></linearGradient><style>
+          @keyframes svcSemFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+          @keyframes svcSemPop{0%{opacity:0;transform:scale(.92)}60%{transform:scale(1.02)}100%{opacity:1;transform:scale(1)}}
+          @keyframes svcSemBar{from{transform:scaleY(0)}to{transform:scaleY(1)}}
+          @keyframes svcSemType{from{width:0}to{width:120px}}
+          .ss-frame{opacity:0;animation:svcSemFade .55s var(--ease-out) both}
+          .ss-query{transform-origin:center;opacity:0;animation:svcSemPop .5s var(--ease-out) .15s both}
+          .ss-typed{stroke-dasharray:160;stroke-dashoffset:160;animation:ss-draw .8s var(--ease-out) .35s forwards}
+          @keyframes ss-draw{to{stroke-dashoffset:0}}
+          .ss-ad{opacity:0;transform-origin:center;animation:svcSemPop .55s var(--ease-out) .55s both}
+          .ss-bar{transform-origin:bottom;animation:svcSemBar .7s cubic-bezier(.2,.9,.3,1.05) both}
+          .ss-bar:nth-of-type(1){animation-delay:.85s}
+          .ss-bar:nth-of-type(2){animation-delay:.95s}
+          .ss-bar:nth-of-type(3){animation-delay:1.05s}
+          .ss-bar:nth-of-type(4){animation-delay:1.15s}
+          .ss-bar:nth-of-type(5){animation-delay:1.25s}
+          .ss-bar:nth-of-type(6){animation-delay:1.35s}
+          .ss-label{opacity:0;animation:svcSemFade .5s var(--ease-out) 1.55s both}
+        </style></defs><g class="ss-frame"><rect x="20" y="40" width="340" height="240" rx="14" fill="#1E2638" stroke="#2D3850"></rect><rect x="20" y="40" width="340" height="34" rx="14" fill="#161D2B"></rect><circle cx="38" cy="57" r="5" fill="#FF5A1F"></circle><circle cx="54" cy="57" r="5" fill="#FFD23F"></circle><circle cx="70" cy="57" r="5" fill="#1FD17B"></circle><rect x="100" y="50" width="160" height="14" rx="7" fill="#0B1018"></rect><text x="112" y="60" font-family="JetBrains Mono" font-size="9" fill="#8B95A8">google.com.mx/ads</text></g><g class="ss-query"><rect x="40" y="90" width="160" height="22" rx="11" fill="#0B1018" stroke="#2D3850"></rect><circle cx="52" cy="101" r="5" stroke="#8B95A8" stroke-width="1.5" fill="none"></circle><line x1="56" y1="105" x2="59" y2="108" stroke="#8B95A8" stroke-width="1.5"></line><line class="ss-typed" x1="64" y1="105" x2="184" y2="105" stroke="transparent" stroke-width="0"></line><text x="64" y="105" font-family="JetBrains Mono" font-size="9" fill="#F4EFE6">consultoría legal cdmx</text></g><g class="ss-ad"><rect x="40" y="124" width="300" height="50" rx="8" fill="#0B1018" stroke="#FF5A1F"></rect><rect x="50" y="132" width="22" height="11" rx="3" fill="#FF5A1F"></rect><text x="53" y="140" font-family="JetBrains Mono" font-size="7" fill="#fff" font-weight="700">AD</text><text x="78" y="140" font-family="Bricolage Grotesque" font-size="11" fill="#F4EFE6" font-weight="600">Tu empresa · #1 en CDMX</text><rect x="50" y="148" width="220" height="4" rx="2" fill="#3A4258"></rect><rect x="50" y="156" width="180" height="4" rx="2" fill="#3A4258"></rect></g><g transform="translate(40 198)"><line x1="0" y1="60" x2="300" y2="60" stroke="#2D3850"></line><rect class="ss-bar" x="0" y="20" width="34" height="40" rx="3" fill="url(#barG)" opacity=".5"></rect><rect class="ss-bar" x="44" y="26" width="34" height="34" rx="3" fill="url(#barG)" opacity=".6"></rect><rect class="ss-bar" x="88" y="32" width="34" height="28" rx="3" fill="url(#barG)" opacity=".7"></rect><rect class="ss-bar" x="132" y="36" width="34" height="24" rx="3" fill="url(#barG)" opacity=".8"></rect><rect class="ss-bar" x="176" y="42" width="34" height="18" rx="3" fill="url(#barG)" opacity=".9"></rect><rect class="ss-bar" x="220" y="48" width="34" height="12" rx="3" fill="url(#barG)"></rect><text class="ss-label" x="270" y="36" font-family="JetBrains Mono" font-size="9" fill="#1FD17B" font-weight="600">-30%</text></g></svg></div>
+</div>
+<div class="svc-card" data-panel="1" hidden>
+  <div>
+    <div class="svc-meta"><span class="svc-num">SERVICIO 02 / 06</span></div>
+    <h3>SEO Técnico y de Contenido</h3>
+    <p>SEO técnico completo: schema markup, Core Web Vitals, Google Business Profile optimizado. Contenido mensual especializado para posicionamiento orgánico sostenible.</p>
+    <ul class="svc-bullets"><li>Schema + Core Web Vitals</li><li>Google Business + reseñas</li><li>Contenido especializado mensual</li></ul>
+    <span class="svc-pill">● Tráfico orgánico sostenible</span>
+  </div>
+  <div class="svc-illu"><svg width="100%" height="320" viewBox="0 0 380 320" fill="none"><defs><style>
+          @keyframes seoSlide{from{opacity:0;transform:translateY(-14px)}to{opacity:1;transform:none}}
+          @keyframes seoSlideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+          @keyframes seoMag{0%{opacity:0;transform:scale(.6) rotate(-20deg)}60%{transform:scale(1.05) rotate(4deg)}100%{opacity:1;transform:scale(1) rotate(0)}}
+          .seo-r3{opacity:0;animation:seoSlide .5s var(--ease-out) .10s both}
+          .seo-r2{opacity:0;animation:seoSlide .5s var(--ease-out) .25s both}
+          .seo-r1{opacity:0;animation:seoSlide .55s var(--ease-out) .45s both}
+          .seo-pulse{animation:seoPulse 2.4s var(--ease) 1.2s infinite}
+          @keyframes seoPulse{0%,100%{filter:drop-shadow(0 0 0 rgba(255,90,31,0))}50%{filter:drop-shadow(0 0 6px rgba(255,90,31,.6))}}
+          .seo-kw1{opacity:0;animation:seoSlideUp .5s var(--ease-out) .70s both}
+          .seo-kw2{opacity:0;animation:seoSlideUp .5s var(--ease-out) .80s both}
+          .seo-kw3{opacity:0;animation:seoSlideUp .5s var(--ease-out) .90s both}
+          .seo-mag{transform-origin:316px 268px;animation:seoMag .7s cubic-bezier(.2,.9,.3,1.05) 1.05s both}
+        </style></defs><g class="seo-r1"><g class="seo-pulse"><rect x="20" y="30" width="340" height="40" rx="10" fill="#1E2638" stroke="#FF5A1F" stroke-width="2"></rect><rect x="36" y="42" width="6" height="6" rx="3" fill="#FF5A1F"></rect><text x="48" y="49" font-family="JetBrains Mono" font-size="9" fill="#FF5A1F" font-weight="700">#1</text><text x="70" y="49" font-family="Bricolage Grotesque" font-size="11" fill="#F4EFE6" font-weight="600">tuempresa.mx</text><rect x="36" y="56" width="220" height="4" rx="2" fill="#3A4258"></rect></g></g><g class="seo-r2"><rect x="20" y="80" width="340" height="36" rx="10" fill="#161D2B" stroke="#2D3850"></rect><text x="36" y="100" font-family="JetBrains Mono" font-size="9" fill="#8B95A8">#2  competidor-a.mx</text><rect x="36" y="105" width="180" height="3" rx="1.5" fill="#3A4258"></rect></g><g class="seo-r3"><rect x="20" y="124" width="340" height="36" rx="10" fill="#161D2B" stroke="#2D3850"></rect><text x="36" y="144" font-family="JetBrains Mono" font-size="9" fill="#8B95A8">#3  competidor-b.mx</text><rect x="36" y="149" width="160" height="3" rx="1.5" fill="#3A4258"></rect></g><g transform="translate(20 180)"><g class="seo-kw1"><rect width="100" height="36" rx="10" fill="#0B1018" stroke="#2D3850"></rect><text x="14" y="16" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">KW · CPL</text><text x="14" y="30" font-family="Bricolage Grotesque" font-size="13" font-weight="600" fill="#1FD17B">$94</text></g><g class="seo-kw2"><rect x="110" width="100" height="36" rx="10" fill="#0B1018" stroke="#2D3850"></rect><text x="124" y="16" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">CTR</text><text x="124" y="30" font-family="Bricolage Grotesque" font-size="13" font-weight="600" fill="#F4EFE6">8.4%</text></g><g class="seo-kw3"><rect x="220" width="120" height="36" rx="10" fill="#FF5A1F"></rect><text x="234" y="16" font-family="JetBrains Mono" font-size="8" fill="#fff" opacity=".7">ORGÁNICO</text><text x="234" y="30" font-family="Bricolage Grotesque" font-size="13" font-weight="700" fill="#fff">+147%</text></g></g><g class="seo-mag"><g transform="translate(316 268)"><circle r="28" cx="0" cy="0" fill="none" stroke="#FFD23F" stroke-width="5"></circle><line x1="20" y1="20" x2="42" y2="42" stroke="#FFD23F" stroke-width="5" stroke-linecap="round"></line><text x="-12" y="4" font-family="Bricolage Grotesque" font-size="13" font-weight="700" fill="#FFD23F">SEO</text></g></g></svg></div>
+</div>
+<div class="svc-card" data-panel="2" hidden>
+  <div>
+    <div class="svc-meta"><span class="svc-num">SERVICIO 03 / 06</span></div>
+    <h3>Diseño y Desarrollo Web</h3>
+    <p>Sitios corporativos y landing pages optimizados para conversión y velocidad. Responsive profesional alineado a tu marca, con integración de CRM y tracking desde el día 1.</p>
+    <ul class="svc-bullets"><li>Diseño responsive + accesible</li><li>Integración CRM + tracking</li><li>Page speed 90+ garantizado</li></ul>
+    <span class="svc-pill">● Entrega en 2–4 semanas</span>
+  </div>
+  <div class="svc-illu"><svg width="100%" height="320" viewBox="0 0 380 320" fill="none"><defs><style>
+          @keyframes webStack{from{opacity:0;transform:translate(-14px,14px) scale(.96)}to{opacity:1;transform:none}}
+          @keyframes webFadeUp{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+          @keyframes webPop{0%{opacity:0;transform:scale(.3)}55%{transform:scale(1.12)}100%{opacity:1;transform:scale(1)}}
+          @keyframes webPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.04)}}
+          .w-back{transform-origin:center;opacity:0;animation:webStack .55s var(--ease-out) .05s both}
+          .w-mid{transform-origin:center;opacity:0;animation:webStack .55s var(--ease-out) .20s both}
+          .w-front{transform-origin:center;opacity:0;animation:webStack .55s var(--ease-out) .35s both}
+          .w-c1{opacity:0;animation:webFadeUp .5s var(--ease-out) .60s both}
+          .w-c2{opacity:0;animation:webFadeUp .5s var(--ease-out) .70s both}
+          .w-c3{opacity:0;animation:webFadeUp .5s var(--ease-out) .80s both}
+          .w-cta{opacity:0;animation:webFadeUp .5s var(--ease-out) .90s both,webPulse 2.2s var(--ease) 1.8s infinite}
+          .w-cta{transform-origin:76px 169px}
+          .w-card{opacity:0;animation:webFadeUp .45s var(--ease-out) both}
+          .w-card:nth-of-type(1){animation-delay:1.00s}
+          .w-card:nth-of-type(2){animation-delay:1.07s}
+          .w-card:nth-of-type(3){animation-delay:1.14s}
+          .w-card:nth-of-type(4){animation-delay:1.21s}
+          .w-badge{transform-origin:290px 270px;opacity:0;animation:webPop .65s cubic-bezier(.2,1,.4,1.1) 1.35s both}
+        </style></defs><g class="w-back"><rect x="60" y="30" width="280" height="180" rx="12" fill="#161D2B" stroke="#2D3850" opacity=".5"></rect></g><g class="w-mid"><rect x="40" y="50" width="280" height="180" rx="12" fill="#1A2236" stroke="#2D3850" opacity=".75"></rect></g><g class="w-front"><rect x="20" y="70" width="300" height="200" rx="12" fill="#1E2638" stroke="#2D3850"></rect><rect x="20" y="70" width="300" height="28" rx="12" fill="#161D2B"></rect><circle cx="34" cy="84" r="4" fill="#FF5A1F"></circle><circle cx="46" cy="84" r="4" fill="#FFD23F"></circle><circle cx="58" cy="84" r="4" fill="#1FD17B"></circle></g><g class="w-c1"><rect x="36" y="110" width="120" height="10" rx="3" fill="#F4EFE6"></rect></g><g class="w-c2"><rect x="36" y="126" width="180" height="6" rx="2" fill="#3A4258"></rect><rect x="36" y="138" width="140" height="6" rx="2" fill="#3A4258"></rect></g><g class="w-c3"><rect x="230" y="110" width="78" height="78" rx="10" fill="#0B1018" stroke="#2D3850"></rect><circle cx="269" cy="138" r="14" fill="#FFD23F"></circle><path d="M250 168 L262 156 L274 162 L286 150 L298 158" stroke="#FF5A1F" stroke-width="2" fill="none" stroke-linecap="round"></path></g><g class="w-cta"><rect x="36" y="158" width="80" height="22" rx="11" fill="#FF5A1F"></rect><text x="62" y="173" font-family="JetBrains Mono" font-size="8" fill="#fff">CONTACTAR →</text></g><rect class="w-card" x="36" y="200" width="60" height="46" rx="8" fill="#0B1018"></rect><rect class="w-card" x="106" y="200" width="60" height="46" rx="8" fill="#0B1018"></rect><rect class="w-card" x="176" y="200" width="60" height="46" rx="8" fill="#0B1018"></rect><rect class="w-card" x="246" y="200" width="60" height="46" rx="8" fill="#0B1018"></rect><g class="w-badge"><g transform="translate(290 270)"><circle r="26" fill="#1FD17B"></circle><text text-anchor="middle" y="-4" font-family="JetBrains Mono" font-size="7" fill="#0B1018">PAGE</text><text text-anchor="middle" y="10" font-family="Bricolage Grotesque" font-size="14" font-weight="700" fill="#0B1018">99</text></g></g></svg></div>
+</div>
+<div class="svc-card" data-panel="3" hidden>
+  <div>
+    <div class="svc-meta"><span class="svc-num">SERVICIO 04 / 06</span></div>
+    <h3>CRM e Implementación Tecnológica</h3>
+    <p>Implementación de Zoho CRM o HubSpot con pipelines de venta configurados para tu proceso comercial. Integración con sistemas existentes y dashboards de KPIs personalizados.</p>
+    <ul class="svc-bullets"><li>Zoho · HubSpot · Pipedrive</li><li>Pipelines por proceso comercial</li><li>Integraciones API a tus sistemas</li></ul>
+    <span class="svc-pill">● CRM integrado en 3 semanas</span>
+  </div>
+  <div class="svc-illu"><svg width="100%" height="320" viewBox="0 0 380 320" fill="none"><defs><style>
+          @keyframes crmCol{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+          @keyframes crmCard{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+          @keyframes crmDrawDash{from{stroke-dashoffset:34}to{stroke-dashoffset:0}}
+          @keyframes crmHead{0%{opacity:0}60%{opacity:1}}
+          .crm-c1{opacity:0;animation:crmCol .5s var(--ease-out) .05s both}
+          .crm-c2{opacity:0;animation:crmCol .5s var(--ease-out) .15s both}
+          .crm-c3{opacity:0;animation:crmCol .5s var(--ease-out) .25s both}
+          .crm-h{opacity:0;animation:crmHead .5s var(--ease) both}
+          .crm-h1{animation-delay:.15s}.crm-h2{animation-delay:.25s}.crm-h3{animation-delay:.35s}
+          .crm-card{opacity:0;animation:crmCard .45s var(--ease-out) both}
+          .crm-n1{animation-delay:.40s} .crm-n2{animation-delay:.50s} .crm-n3{animation-delay:.60s}
+          .crm-q1{animation-delay:.70s} .crm-q2{animation-delay:.80s}
+          .crm-w1{animation-delay:.90s} .crm-w2{animation-delay:1.00s} .crm-w3{animation-delay:1.10s} .crm-w4{animation-delay:1.20s}
+          .crm-arrow{stroke-dasharray:34;stroke-dashoffset:34;animation:crmDrawDash .5s var(--ease-out) 1.35s forwards}
+          .crm-arrow-head{opacity:0;animation:crmHead .35s var(--ease) 1.78s forwards}
+        </style></defs><rect class="crm-c1" x="20" y="30" width="100" height="260" rx="12" fill="#1E2638" stroke="#2D3850"></rect><rect class="crm-c2" x="130" y="30" width="100" height="260" rx="12" fill="#1E2638" stroke="#2D3850"></rect><rect class="crm-c3" x="240" y="30" width="100" height="260" rx="12" fill="#1E2638" stroke="#2D3850"></rect><text class="crm-h crm-h1" x="34" y="50" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">NUEVO</text><text class="crm-h crm-h2" x="144" y="50" font-family="JetBrains Mono" font-size="8" fill="#FFD23F">CALIFICADO</text><text class="crm-h crm-h3" x="254" y="50" font-family="JetBrains Mono" font-size="8" fill="#1FD17B">GANADO</text><g class="crm-card crm-n1"><g transform="translate(30 64)"><rect width="80" height="44" rx="8" fill="#0B1018" stroke="#2D3850"></rect><circle cx="12" cy="14" r="6" fill="#FF5A1F"></circle><rect x="22" y="10" width="42" height="4" rx="2" fill="#F4EFE6"></rect><rect x="22" y="18" width="32" height="3" rx="1.5" fill="#3A4258"></rect><rect x="8" y="30" width="40" height="8" rx="4" fill="#161D2B"></rect><text x="14" y="36" font-family="JetBrains Mono" font-size="6" fill="#8B95A8">$45k</text></g></g><g class="crm-card crm-n2"><g transform="translate(30 118)"><rect width="80" height="44" rx="8" fill="#0B1018" stroke="#2D3850"></rect><circle cx="12" cy="14" r="6" fill="#FF5A1F"></circle><rect x="22" y="10" width="42" height="4" rx="2" fill="#F4EFE6"></rect><rect x="22" y="18" width="32" height="3" rx="1.5" fill="#3A4258"></rect><rect x="8" y="30" width="40" height="8" rx="4" fill="#161D2B"></rect><text x="14" y="36" font-family="JetBrains Mono" font-size="6" fill="#8B95A8">$45k</text></g></g><g class="crm-card crm-n3"><g transform="translate(30 172)"><rect width="80" height="44" rx="8" fill="#0B1018" stroke="#2D3850"></rect><circle cx="12" cy="14" r="6" fill="#FF5A1F"></circle><rect x="22" y="10" width="42" height="4" rx="2" fill="#F4EFE6"></rect><rect x="22" y="18" width="32" height="3" rx="1.5" fill="#3A4258"></rect><rect x="8" y="30" width="40" height="8" rx="4" fill="#161D2B"></rect><text x="14" y="36" font-family="JetBrains Mono" font-size="6" fill="#8B95A8">$45k</text></g></g><g class="crm-card crm-q1"><g transform="translate(140 64)"><rect width="80" height="44" rx="8" fill="#0B1018" stroke="#2D3850"></rect><circle cx="12" cy="14" r="6" fill="#FFD23F"></circle><rect x="22" y="10" width="42" height="4" rx="2" fill="#F4EFE6"></rect><rect x="22" y="18" width="32" height="3" rx="1.5" fill="#3A4258"></rect><rect x="8" y="30" width="40" height="8" rx="4" fill="#161D2B"></rect><text x="14" y="36" font-family="JetBrains Mono" font-size="6" fill="#8B95A8">$92k</text></g></g><g class="crm-card crm-q2"><g transform="translate(140 118)"><rect width="80" height="44" rx="8" fill="#0B1018" stroke="#2D3850"></rect><circle cx="12" cy="14" r="6" fill="#FFD23F"></circle><rect x="22" y="10" width="42" height="4" rx="2" fill="#F4EFE6"></rect><rect x="22" y="18" width="32" height="3" rx="1.5" fill="#3A4258"></rect><rect x="8" y="30" width="40" height="8" rx="4" fill="#161D2B"></rect><text x="14" y="36" font-family="JetBrains Mono" font-size="6" fill="#8B95A8">$92k</text></g></g><g class="crm-card crm-w1"><g transform="translate(250 64)"><rect width="80" height="44" rx="8" fill="#0B1018" stroke="#1FD17B"></rect><circle cx="12" cy="14" r="6" fill="#1FD17B"></circle><rect x="22" y="10" width="42" height="4" rx="2" fill="#F4EFE6"></rect><rect x="22" y="18" width="32" height="3" rx="1.5" fill="#3A4258"></rect><rect x="8" y="30" width="40" height="8" rx="4" fill="#161D2B"></rect><text x="14" y="36" font-family="JetBrains Mono" font-size="6" fill="#1FD17B">$128k ✓</text></g></g><g class="crm-card crm-w2"><g transform="translate(250 118)"><rect width="80" height="44" rx="8" fill="#0B1018" stroke="#1FD17B"></rect><circle cx="12" cy="14" r="6" fill="#1FD17B"></circle><rect x="22" y="10" width="42" height="4" rx="2" fill="#F4EFE6"></rect><rect x="22" y="18" width="32" height="3" rx="1.5" fill="#3A4258"></rect><rect x="8" y="30" width="40" height="8" rx="4" fill="#161D2B"></rect><text x="14" y="36" font-family="JetBrains Mono" font-size="6" fill="#1FD17B">$128k ✓</text></g></g><g class="crm-card crm-w3"><g transform="translate(250 172)"><rect width="80" height="44" rx="8" fill="#0B1018" stroke="#1FD17B"></rect><circle cx="12" cy="14" r="6" fill="#1FD17B"></circle><rect x="22" y="10" width="42" height="4" rx="2" fill="#F4EFE6"></rect><rect x="22" y="18" width="32" height="3" rx="1.5" fill="#3A4258"></rect><rect x="8" y="30" width="40" height="8" rx="4" fill="#161D2B"></rect><text x="14" y="36" font-family="JetBrains Mono" font-size="6" fill="#1FD17B">$128k ✓</text></g></g><g class="crm-card crm-w4"><g transform="translate(250 226)"><rect width="80" height="44" rx="8" fill="#0B1018" stroke="#1FD17B"></rect><circle cx="12" cy="14" r="6" fill="#1FD17B"></circle><rect x="22" y="10" width="42" height="4" rx="2" fill="#F4EFE6"></rect><rect x="22" y="18" width="32" height="3" rx="1.5" fill="#3A4258"></rect><rect x="8" y="30" width="40" height="8" rx="4" fill="#161D2B"></rect><text x="14" y="36" font-family="JetBrains Mono" font-size="6" fill="#1FD17B">$128k ✓</text></g></g><path class="crm-arrow" d="M110 90 Q120 90 130 90" stroke="#FF5A1F" stroke-width="2" stroke-dasharray="3 3" fill="none"></path><path class="crm-arrow-head" d="M126 86 L132 90 L126 94" stroke="#FF5A1F" stroke-width="2" fill="none" stroke-linecap="round"></path></svg></div>
+</div>
+<div class="svc-card" data-panel="4" hidden>
+  <div>
+    <div class="svc-meta"><span class="svc-num">SERVICIO 05 / 06</span></div>
+    <h3>Automatización de Procesos</h3>
+    <p>Cotizaciones automáticas, notificaciones a clientes en cada etapa, confirmaciones y seguimiento post-venta. Alertas automáticas por hitos críticos de tu operación.</p>
+    <ul class="svc-bullets"><li>Cotizador PDF automático</li><li>Notificaciones WhatsApp + email</li><li>Alertas por hito y SLA</li></ul>
+    <span class="svc-pill">● 8+ procesos automatizados</span>
+  </div>
+  <div class="svc-illu"><svg width="100%" height="320" viewBox="0 0 380 320" fill="none"><defs><linearGradient id="gearG" x1="0" x2="1"><stop offset="0" stop-color="#FF8C5A"></stop><stop offset="1" stop-color="#FF5A1F"></stop></linearGradient><style>
+          @keyframes gearspin{to{transform:rotate(360deg)}}
+          @keyframes autFade{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+          @keyframes autFadeR{from{opacity:0;transform:translateX(10px)}to{opacity:1;transform:none}}
+          @keyframes autGearL{from{transform:translateX(-140px) scale(.55)}to{transform:none}}
+          @keyframes autGearR{from{transform:translateX(140px) scale(.55)}to{transform:none}}
+          @keyframes autGearFade{from{opacity:0}to{opacity:1}}
+          @keyframes autDraw{to{stroke-dashoffset:0}}
+          .aut-trig{opacity:0;animation:autFade .55s var(--ease-out) .05s both}
+          .aut-gear-big{transform-origin:190px 160px;animation:autGearFade .85s var(--ease-out) .35s both,autGearL .85s cubic-bezier(.2,.9,.3,1.05) .35s backwards,gearspin 8s linear 1.30s infinite}
+          .aut-gear-sm{transform-origin:238px 124px;animation:autGearFade .85s var(--ease-out) .50s both,autGearR .85s cubic-bezier(.2,.9,.3,1.05) .50s backwards,gearspin 6s linear 1.45s infinite reverse}
+          .aut-out{opacity:0;animation:autFadeR .55s var(--ease-out) both}
+          .aut-out-1{animation-delay:.95s}
+          .aut-out-2{animation-delay:1.05s}
+          .aut-out-3{animation-delay:1.15s}
+          .aut-path{stroke-dasharray:80;stroke-dashoffset:80;animation:autDraw .7s var(--ease-out) forwards}
+          .aut-p-in{animation-delay:.40s}
+          .aut-p-1{animation-delay:1.20s}
+          .aut-p-2{animation-delay:1.30s}
+          .aut-p-3{animation-delay:1.40s}
+        </style></defs><g class="aut-trig"><g transform="translate(30 130)"><rect width="100" height="60" rx="12" fill="#1E2638" stroke="#2D3850"></rect><circle cx="14" cy="16" r="5" fill="#FF5A1F"></circle><text x="24" y="20" font-family="JetBrains Mono" font-size="8" fill="#F4EFE6">TRIGGER</text><rect x="14" y="32" width="72" height="5" rx="2" fill="#3A4258"></rect><rect x="14" y="42" width="48" height="5" rx="2" fill="#3A4258"></rect></g></g><path class="aut-path aut-p-in" d="M130 160 L160 160" stroke="#FF5A1F" stroke-width="2" fill="none" stroke-dasharray="4 4"></path><path class="aut-path aut-p-1" d="M222 160 Q240 80 260 78" stroke="#1FD17B" stroke-width="2" fill="none" stroke-dasharray="4 4"></path><path class="aut-path aut-p-2" d="M224 160 L260 161" stroke="#1FD17B" stroke-width="2" fill="none" stroke-dasharray="4 4"></path><path class="aut-path aut-p-3" d="M222 160 Q240 240 260 244" stroke="#1FD17B" stroke-width="2" fill="none" stroke-dasharray="4 4"></path><g class="aut-out aut-out-1"><g transform="translate(260 56)"><rect width="90" height="42" rx="10" fill="#0B1018" stroke="#1FD17B"></rect><circle cx="14" cy="14" r="4" fill="#1FD17B"></circle><text x="22" y="17" font-family="JetBrains Mono" font-size="7.5" fill="#1FD17B">EMAIL</text><rect x="14" y="25" width="60" height="4" rx="2" fill="#3A4258"></rect></g></g><g class="aut-out aut-out-2"><g transform="translate(260 140)"><rect width="90" height="42" rx="10" fill="#0B1018" stroke="#1FD17B"></rect><circle cx="14" cy="14" r="4" fill="#1FD17B"></circle><text x="22" y="17" font-family="JetBrains Mono" font-size="7.5" fill="#1FD17B">WHATSAPP</text><rect x="14" y="25" width="60" height="4" rx="2" fill="#3A4258"></rect></g></g><g class="aut-out aut-out-3"><g transform="translate(260 224)"><rect width="90" height="42" rx="10" fill="#0B1018" stroke="#1FD17B"></rect><circle cx="14" cy="14" r="4" fill="#1FD17B"></circle><text x="22" y="17" font-family="JetBrains Mono" font-size="7.5" fill="#1FD17B">PDF + CRM</text><rect x="14" y="25" width="60" height="4" rx="2" fill="#3A4258"></rect></g></g><g class="aut-gear-big"><g transform="translate(190 160)"><circle r="34" fill="url(#gearG)"></circle><circle r="14" fill="#0B1018"></circle><rect x="-6" y="-44" width="12" height="10" rx="2" fill="url(#gearG)" transform="rotate(0)"></rect><rect x="-6" y="-44" width="12" height="10" rx="2" fill="url(#gearG)" transform="rotate(45)"></rect><rect x="-6" y="-44" width="12" height="10" rx="2" fill="url(#gearG)" transform="rotate(90)"></rect><rect x="-6" y="-44" width="12" height="10" rx="2" fill="url(#gearG)" transform="rotate(135)"></rect><rect x="-6" y="-44" width="12" height="10" rx="2" fill="url(#gearG)" transform="rotate(180)"></rect><rect x="-6" y="-44" width="12" height="10" rx="2" fill="url(#gearG)" transform="rotate(225)"></rect><rect x="-6" y="-44" width="12" height="10" rx="2" fill="url(#gearG)" transform="rotate(270)"></rect><rect x="-6" y="-44" width="12" height="10" rx="2" fill="url(#gearG)" transform="rotate(315)"></rect></g></g><g class="aut-gear-sm"><g transform="translate(190 160)"><g transform="translate(48 -36)"><circle r="18" fill="#FFD23F"></circle><circle r="7" fill="#0B1018"></circle><rect x="-3" y="-24" width="6" height="6" rx="1.5" fill="#FFD23F" transform="rotate(0)"></rect><rect x="-3" y="-24" width="6" height="6" rx="1.5" fill="#FFD23F" transform="rotate(60)"></rect><rect x="-3" y="-24" width="6" height="6" rx="1.5" fill="#FFD23F" transform="rotate(120)"></rect><rect x="-3" y="-24" width="6" height="6" rx="1.5" fill="#FFD23F" transform="rotate(180)"></rect><rect x="-3" y="-24" width="6" height="6" rx="1.5" fill="#FFD23F" transform="rotate(240)"></rect><rect x="-3" y="-24" width="6" height="6" rx="1.5" fill="#FFD23F" transform="rotate(300)"></rect></g></g></g></svg></div>
+</div>
+<div class="svc-card" data-panel="5" hidden>
+  <div>
+    <div class="svc-meta"><span class="svc-num">SERVICIO 06 / 06</span></div>
+    <h3>Dashboards y Reportes</h3>
+    <p>KPIs personalizados para tu negocio. Métricas de performance marketing en tiempo real. Visibilidad 360° de tu operación comercial y digital en un solo lugar.</p>
+    <ul class="svc-bullets"><li>KPIs comerciales en tiempo real</li><li>Reportes ejecutivos semanales</li><li>Vista 360° por cliente y campaña</li></ul>
+    <span class="svc-pill">● Datos en tiempo real</span>
+  </div>
+  <div class="svc-illu"><svg width="100%" height="320" viewBox="0 0 380 320" fill="none"><defs><style>
+          @keyframes dashFrame{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+          @keyframes dashKpi{from{opacity:0;transform:translateY(10px) scale(.96)}to{opacity:1;transform:none}}
+          @keyframes dashCount{from{transform:translateY(.5em)}to{transform:translateY(0)}}
+          @keyframes dashDraw{to{stroke-dashoffset:0}}
+          @keyframes dashFill{to{fill-opacity:.15}}
+          @keyframes dashRing{from{stroke-dasharray:0 289}to{stroke-dasharray:var(--len) 289}}
+          @keyframes dashRing2{from{stroke-dasharray:0 289}to{stroke-dasharray:var(--len) 289}}
+          @keyframes dashPulse{0%,100%{opacity:1}50%{opacity:.55}}
+          @keyframes dashDot{0%{transform:scale(.6);opacity:0}60%{opacity:1}100%{transform:scale(1)}}
+          .dh-frame{opacity:0;animation:dashFrame .55s var(--ease-out) .05s both}
+          .dh-live{opacity:0;animation:dashFrame .5s var(--ease-out) .35s both}
+          .dh-live circle{transform-origin:center;animation:dashPulse 1.6s var(--ease) 1.5s infinite}
+          .dh-kpi{opacity:0;animation:dashKpi .55s cubic-bezier(.2,.9,.3,1.05) both;transform-origin:center}
+          .dh-kpi-1{animation-delay:.45s}.dh-kpi-2{animation-delay:.60s}.dh-kpi-3{animation-delay:.75s}
+          .dh-chartbox{opacity:0;animation:dashFrame .55s var(--ease-out) .95s both}
+          .dh-line{stroke-dasharray:230;stroke-dashoffset:230;animation:dashDraw 1.1s var(--ease-out) 1.20s forwards}
+          .dh-area{fill-opacity:0;animation:dashFill .6s var(--ease) 1.95s forwards}
+          .dh-dot{transform-origin:212px 168px;opacity:0;animation:dashDot .5s cubic-bezier(.2,1,.4,1.1) 2.15s forwards}
+          .dh-donut-bg{opacity:0;animation:dashFrame .5s var(--ease-out) 1.05s both}
+          .dh-donut-1{transform-origin:296px 222px;transform:rotate(-90deg);--len:120;stroke-dasharray:0 289;animation:dashRing 1s var(--ease-out) 1.30s forwards}
+          .dh-donut-2{transform-origin:296px 222px;transform:rotate(-90deg);--len:80;stroke-dasharray:0 289;animation:dashRing2 1s var(--ease-out) 1.65s forwards}
+          .dh-donut-txt{opacity:0;animation:dashFrame .4s var(--ease) 2.30s both}
+        </style></defs><g class="dh-frame"><rect x="20" y="20" width="340" height="280" rx="14" fill="#1E2638" stroke="#2D3850"></rect><rect x="20" y="20" width="340" height="36" rx="14" fill="#161D2B"></rect><text x="36" y="42" font-family="Bricolage Grotesque" font-size="11" font-weight="600" fill="#F4EFE6">Operación 360°</text></g><g class="dh-live"><rect x="280" y="32" width="60" height="14" rx="7" fill="rgba(31,209,123,.10)" stroke="#1FD17B" stroke-opacity=".3"></rect><text x="296" y="42" font-family="JetBrains Mono" font-size="7.5" fill="#1FD17B">EN VIVO</text><circle cx="288" cy="39" r="2" fill="#1FD17B"></circle></g><g class="dh-kpi dh-kpi-1"><rect x="36" y="72" width="100" height="60" rx="10" fill="#0B1018"></rect><text x="48" y="90" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">LEADS</text><text x="48" y="115" font-family="Bricolage Grotesque" font-size="22" font-weight="700" fill="#F4EFE6">247</text><text x="100" y="115" font-family="JetBrains Mono" font-size="8" fill="#1FD17B">+12%</text></g><g class="dh-kpi dh-kpi-2"><rect x="146" y="72" width="100" height="60" rx="10" fill="#0B1018"></rect><text x="158" y="90" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">CONVERSIÓN</text><text x="158" y="115" font-family="Bricolage Grotesque" font-size="22" font-weight="700" fill="#FF5A1F">18.4%</text></g><g class="dh-kpi dh-kpi-3"><rect x="256" y="72" width="88" height="60" rx="10" fill="#0B1018"></rect><text x="268" y="90" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">REVENUE</text><text x="268" y="115" font-family="Bricolage Grotesque" font-size="20" font-weight="700" fill="#FFD23F">$1.2M</text></g><g class="dh-chartbox"><rect x="36" y="148" width="200" height="140" rx="10" fill="#0B1018"></rect><text x="50" y="166" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">PIPELINE 30 DÍAS</text></g><path class="dh-area" d="M50 260 L70 250 L92 240 L114 232 L138 220 L160 210 L184 192 L212 168 L212 280 L50 280 Z" fill="#FF5A1F"></path><path class="dh-line" d="M50 260 L70 250 L92 240 L114 232 L138 220 L160 210 L184 192 L212 168" stroke="#FF5A1F" stroke-width="2.5" fill="none" stroke-linecap="round"></path><circle class="dh-dot" cx="212" cy="168" r="4" fill="#FFD23F"></circle><g transform="translate(296 222)"><circle class="dh-donut-bg" r="46" fill="none" stroke="#161D2B" stroke-width="10"></circle></g><circle class="dh-donut-1" cx="296" cy="222" r="46" fill="none" stroke="#FF5A1F" stroke-width="10"></circle><circle class="dh-donut-2" cx="296" cy="222" r="46" fill="none" stroke="#1FD17B" stroke-width="10" stroke-dashoffset="-120"></circle><g class="dh-donut-txt"><g transform="translate(296 222)"><text text-anchor="middle" y="-2" font-family="JetBrains Mono" font-size="7" fill="#8B95A8">CANALES</text><text text-anchor="middle" y="12" font-family="Bricolage Grotesque" font-size="14" font-weight="700" fill="#F4EFE6">6</text></g></g></svg></div>
+</div>
+
+  </div>
+</section>
+<section class="sec process" id="proceso">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="reveal"><span class="eyebrow">CÓMO TRABAJAMOS</span><h2 class="display">De diagnóstico a resultados en semanas, no meses.</h2></div>
+      <p class="lead reveal d-1">Un proceso probado que elimina la incertidumbre y genera resultados medibles desde las primeras semanas.</p>
+    </div>
+    <div class="process-wrap">
+      <div class="process-line"></div>
+      <div class="step">
+  <div><div class="step-num">01 · Semana 1</div><h3>Diagnóstico</h3><p>Analizamos tu presencia digital, tu proceso comercial, tu competencia y tus KPIs. Identificamos las oportunidades de mayor impacto inmediato.</p><span class="step-tag">5 días</span></div>
+  <div class="step-illu"><svg width="100%" height="200" viewBox="0 0 300 200" fill="none"><rect x="40" y="20" width="180" height="160" rx="10" fill="#1E2638" stroke="#2D3850"></rect><rect x="40" y="20" width="14" height="160" rx="10" fill="#161D2B"></rect><circle cx="47" cy="44" r="3" fill="#FF5A1F"></circle><circle cx="47" cy="74" r="3" fill="#FF5A1F"></circle><circle cx="47" cy="104" r="3" fill="#FF5A1F"></circle><circle cx="47" cy="134" r="3" fill="#FF5A1F"></circle><rect x="68" y="38" width="120" height="6" rx="2" fill="#F4EFE6"></rect><rect x="68" y="50" width="86" height="4" rx="2" fill="#3A4258"></rect><rect x="68" y="68" width="120" height="6" rx="2" fill="#F4EFE6"></rect><rect x="68" y="80" width="100" height="4" rx="2" fill="#3A4258"></rect><rect x="68" y="98" width="120" height="6" rx="2" fill="#F4EFE6"></rect><rect x="68" y="110" width="76" height="4" rx="2" fill="#3A4258"></rect><rect x="68" y="128" width="120" height="6" rx="2" fill="#F4EFE6"></rect><rect x="68" y="140" width="92" height="4" rx="2" fill="#3A4258"></rect><g transform="translate(220 100) rotate(30)"><rect width="60" height="14" rx="3" fill="#FFD23F"></rect><rect x="56" width="14" height="14" rx="3" fill="#FF5A1F"></rect><polygon points="70,0 76,7 70,14" fill="#0B1018"></polygon></g></svg></div>
+</div>
+<div class="step">
+  <div><div class="step-num">02 · Semana 2</div><h3>Estrategia</h3><p>Diseñamos tu plan de transformación a medida: qué canales activar, qué automatizar primero, qué métricas perseguir y con qué presupuesto.</p><span class="step-tag">Plan a 12 meses</span></div>
+  <div class="step-illu"><svg width="100%" height="200" viewBox="0 0 300 200" fill="none"><rect x="20" y="20" width="260" height="160" rx="14" fill="#1E2638" stroke="#2D3850"></rect><path d="M30 60 Q90 50 150 70 T270 60" stroke="#2D3850" fill="none"></path><path d="M30 90 Q90 80 150 100 T270 90" stroke="#2D3850" fill="none"></path><path d="M30 120 Q90 110 150 130 T270 120" stroke="#2D3850" fill="none"></path><path d="M30 150 Q90 140 150 160 T270 150" stroke="#2D3850" fill="none"></path><path d="M64 134 Q110 80 156 100 T244 60" stroke="#FF5A1F" stroke-width="2" stroke-dasharray="4 4" fill="none"></path><g transform="translate(64 134)"><circle r="10" fill="#FF5A1F"></circle><text text-anchor="middle" y="3" font-family="JetBrains Mono" font-size="9" font-weight="700" fill="#fff">1</text></g><g transform="translate(156 100)"><circle r="10" fill="#FFD23F"></circle><text text-anchor="middle" y="3" font-family="JetBrains Mono" font-size="9" font-weight="700" fill="#0B1018">2</text></g><g transform="translate(244 60)"><circle r="14" fill="#1FD17B"></circle><text text-anchor="middle" y="4" font-family="JetBrains Mono" font-size="10" font-weight="700" fill="#0B1018">3</text><circle r="20" fill="none" stroke="#1FD17B" stroke-opacity=".4"></circle></g></svg></div>
+</div>
+<div class="step">
+  <div><div class="step-num">03 · Semanas 3–8</div><h3>Implementación</h3><p>Ejecutamos en paralelo: lanzamos campañas, desarrollamos o mejoramos tu web, implementamos el CRM y automatizamos procesos clave. Todo al mismo tiempo.</p><span class="step-tag">5 frentes en paralelo</span></div>
+  <div class="step-illu"><svg width="100%" height="200" viewBox="0 0 300 200" fill="none"><rect x="20" y="20" width="260" height="160" rx="14" fill="#1E2638" stroke="#2D3850"></rect><text x="38" y="42" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">SEM</text><rect x="80" y="34" width="120" height="14" rx="7" fill="#FF5A1F"></rect><text x="38" y="72" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">WEB</text><rect x="80" y="64" width="160" height="14" rx="7" fill="#FFD23F"></rect><text x="38" y="102" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">CRM</text><rect x="100" y="94" width="110" height="14" rx="7" fill="#9D7BFF"></rect><text x="38" y="132" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">AUTO</text><rect x="140" y="124" width="100" height="14" rx="7" fill="#1FD17B"></rect><text x="38" y="162" font-family="JetBrains Mono" font-size="8" fill="#8B95A8">QA</text><rect x="200" y="154" width="50" height="14" rx="7" fill="#5AC8FF"></rect><line x1="180" y1="26" x2="180" y2="172" stroke="#F4EFE6" stroke-dasharray="3 3" opacity=".6"></line><circle cx="180" cy="26" r="4" fill="#F4EFE6"></circle></svg></div>
+</div>
+<div class="step">
+  <div><div class="step-num">04 · Continuo</div><h3>Optimización</h3><p>Mejora constante basada en datos reales. Reuniones semanales de resultados, ajuste de campañas, nuevas automatizaciones y expansión del ecosistema.</p><span class="step-tag">Sprints semanales</span></div>
+  <div class="step-illu"><svg width="100%" height="200" viewBox="0 0 300 200" fill="none"><rect x="20" y="20" width="260" height="160" rx="14" fill="#1E2638" stroke="#2D3850"></rect><g transform="translate(150 100)"><circle r="56" fill="none" stroke="#FF5A1F" stroke-width="3" stroke-dasharray="280" stroke-dashoffset="40"></circle><path d="M-4 -56 L8 -56 L2 -64 Z" fill="#FF5A1F" transform="rotate(45)"></path></g><g transform="translate(60 60)"><rect width="56" height="22" rx="6" fill="#0B1018" stroke="#2D3850"></rect><text x="6" y="14" font-family="JetBrains Mono" font-size="7" fill="#1FD17B">+12% CTR</text></g><g transform="translate(192 60)"><rect width="56" height="22" rx="6" fill="#0B1018" stroke="#2D3850"></rect><text x="6" y="14" font-family="JetBrains Mono" font-size="7" fill="#1FD17B">-8% CPL</text></g><g transform="translate(60 130)"><rect width="56" height="22" rx="6" fill="#0B1018" stroke="#2D3850"></rect><text x="6" y="14" font-family="JetBrains Mono" font-size="7" fill="#FFD23F">A/B test</text></g><g transform="translate(192 130)"><rect width="56" height="22" rx="6" fill="#0B1018" stroke="#2D3850"></rect><text x="6" y="14" font-family="JetBrains Mono" font-size="7" fill="#FF5A1F">Iterar</text></g></svg></div>
+</div>
+
+    </div>
+  </div>
+</section>
+<section class="results-section sec" id="resultados">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="reveal"><span class="eyebrow">RESULTADOS COMPROBADOS</span><h2 class="display">Resultados que hablan por sí solos.</h2></div>
+      <p class="lead reveal d-1">Métricas promedio de nuestros clientes durante los primeros 90 días de implementación completa.</p>
+    </div>
+    <div class="results-grid">
+      <div class="result reveal"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="30" data-prefix="-" data-suffix="%">0</span></div><div class="result-label">Reducción promedio en costo por lead (CPL)</div></div>
+<div class="result reveal d-1"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="8" data-prefix="" data-suffix="+">0</span></div><div class="result-label">Procesos operativos automatizados por cliente</div></div>
+<div class="result reveal d-2"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="3" data-prefix="" data-suffix=" sem">0</span></div><div class="result-label">Tiempo de implementación completa de CRM</div></div>
+<div class="result reveal d-3"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="45" data-prefix="" data-suffix="+">0</span></div><div class="result-label">Leads calificados mensuales por cliente</div></div>
+
+    </div>
+    <!-- VERIFICAR: dato de marketing -->
+    <div class="results-callout reveal">
+      <span style="font-family:'JetBrains Mono';font-size:11px;letter-spacing:.12em;color:#FFD23F">● ROI</span>
+      <span>Inversión promedio <strong>&lt; 3% de tu revenue mensual</strong></span>
+      <span style="opacity:.4">·</span>
+      <span>Retorno visible en las primeras <strong>4 semanas</strong></span>
+    </div>
+  </div>
+</section>
+<section class="compare">
+  <div class="wrap">
+    <div class="sec-head" style="margin-bottom:0">
+      <div class="reveal"><span class="eyebrow" style="color:#6B6253">POR QUÉ ELEGIRNOS</span><h2 class="display">Resultados medibles, no promesas vacías.</h2></div>
+      <p class="lead reveal d-1" style="color:#5C5547">No somos una agencia que lanza campañas y desaparece. Nos integramos a tu operación y co-creamos el crecimiento.</p>
+    </div>
+    <div class="compare-table reveal">
+      <div class="compare-row head"><div class="cell">Aspecto</div><div class="cell">Agencia genérica</div><div class="cell rise">Riselanding</div></div>
+      <div class="compare-row"><div class="cell">Conocimiento del sector</div><div class="cell"><span class="x">✕</span>Sin experiencia en tu sector</div><div class="cell rise"><span class="check">✓</span>Expertos en tu industria y proceso comercial</div></div>
+<div class="compare-row"><div class="cell">Estrategia de campañas</div><div class="cell"><span class="x">✕</span>Keywords genéricas</div><div class="cell rise"><span class="check">✓</span>Keywords de alto valor para tu sector</div></div>
+<div class="compare-row"><div class="cell">Tecnología CRM</div><div class="cell"><span class="x">✕</span>CRM básico sin configurar</div><div class="cell rise"><span class="check">✓</span>CRM integrado con tu operación</div></div>
+<div class="compare-row"><div class="cell">Reportes y visibilidad</div><div class="cell"><span class="x">✕</span>PDF mensual estático</div><div class="cell rise"><span class="check">✓</span>Dashboard en tiempo real</div></div>
+<div class="compare-row"><div class="cell">Automatización operativa</div><div class="cell"><span class="x">✕</span>No incluida</div><div class="cell rise"><span class="check">✓</span>8+ procesos automatizados</div></div>
+<div class="compare-row"><div class="cell">Acompañamiento</div><div class="cell"><span class="x">✕</span>Email mensual</div><div class="cell rise"><span class="check">✓</span>Reuniones semanales + canal directo</div></div>
+
+    </div>
+  </div>
+</section>
+<section class="sec industries" id="industrias">
+  <div class="wrap">
+    <div class="sec-head">
+      <div class="reveal"><span class="eyebrow">NUESTRO ECOSISTEMA</span><h2 class="display">Trabajamos con empresas de todos los sectores.</h2></div>
+      <p class="lead reveal d-1">Desde servicios profesionales hasta manufactura — llevamos crecimiento digital a cualquier industria en México y Latinoamérica.</p>
+    </div>
+    <div class="industries-grid">
+      <div class="ind reveal d-1"><div><h4>Servicios Profesionales</h4><p>Consultoría, legal, contabilidad y finanzas</p></div><div class="ind-illu"><svg width="120" height="120" viewBox="0 0 120 120" fill="none"><rect x="20" y="40" width="80" height="60" rx="8" fill="#1E2638" stroke="#2D3850"></rect><rect x="44" y="32" width="32" height="12" rx="3" fill="#FF5A1F"></rect><rect x="30" y="56" width="60" height="4" rx="2" fill="#3A4258"></rect><rect x="30" y="66" width="40" height="4" rx="2" fill="#3A4258"></rect><circle cx="92" cy="84" r="10" fill="#FFD23F"></circle></svg></div></div>
+<div class="ind reveal d-2"><div><h4>Retail y E-commerce</h4><p>Tiendas físicas, digitales y marketplaces</p></div><div class="ind-illu"><svg width="120" height="120" viewBox="0 0 120 120" fill="none"><path d="M28 50 L36 36 L84 36 L92 50 L92 96 L28 96 Z" fill="#1E2638" stroke="#2D3850"></path><rect x="44" y="60" width="32" height="36" fill="#0B1018"></rect><rect x="38" y="44" width="44" height="6" fill="#FF5A1F"></rect><circle cx="60" cy="78" r="3" fill="#FFD23F"></circle></svg></div></div>
+<div class="ind reveal d-3"><div><h4>Manufactura e Industrial</h4><p>Producción, maquila y distribución B2B</p></div><div class="ind-illu"><svg width="120" height="120" viewBox="0 0 120 120" fill="none"><rect x="20" y="60" width="80" height="40" fill="#1E2638" stroke="#2D3850"></rect><polygon points="30,60 30,36 46,48 46,30 64,42 64,28 84,40 84,60" fill="#161D2B" stroke="#2D3850"></polygon><rect x="36" y="74" width="6" height="14" fill="#FF5A1F"></rect><rect x="52" y="74" width="6" height="14" fill="#FFD23F"></rect><rect x="68" y="74" width="6" height="14" fill="#1FD17B"></rect><circle cx="92" cy="40" r="6" fill="#FFD23F"></circle></svg></div></div>
+<div class="ind reveal d-4"><div><h4>Salud y Bienestar</h4><p>Clínicas, consultorios y empresas de salud</p></div><div class="ind-illu"><svg width="120" height="120" viewBox="0 0 120 120" fill="none"><rect x="28" y="28" width="64" height="76" rx="8" fill="#1E2638" stroke="#2D3850"></rect><rect x="52" y="40" width="16" height="48" fill="#FF5A1F"></rect><rect x="36" y="56" width="48" height="16" fill="#FF5A1F"></rect><circle cx="60" cy="64" r="2" fill="#fff"></circle></svg></div></div>
+<div class="ind reveal d-1"><div><h4>Inmobiliaria y Construcción</h4><p>Desarrolladores, inmobiliarias y constructoras</p></div><div class="ind-illu"><svg width="120" height="120" viewBox="0 0 120 120" fill="none"><polygon points="20,60 60,28 100,60 100,100 20,100" fill="#1E2638" stroke="#2D3850"></polygon><rect x="36" y="68" width="14" height="14" fill="#FFD23F"></rect><rect x="70" y="68" width="14" height="14" fill="#0B1018"></rect><rect x="52" y="80" width="16" height="20" fill="#FF5A1F"></rect></svg></div></div>
+<div class="ind reveal d-2"><div><h4>Tecnología y SaaS</h4><p>Startups, software y empresas digitales</p></div><div class="ind-illu"><svg width="120" height="120" viewBox="0 0 120 120" fill="none"><rect x="22" y="36" width="76" height="50" rx="6" fill="#1E2638" stroke="#2D3850"></rect><rect x="28" y="42" width="64" height="38" rx="2" fill="#0B1018"></rect><rect x="36" y="50" width="20" height="3" fill="#FF5A1F"></rect><rect x="36" y="58" width="40" height="2" fill="#3A4258"></rect><rect x="36" y="64" width="30" height="2" fill="#3A4258"></rect><rect x="40" y="90" width="40" height="6" rx="3" fill="#2D3850"></rect></svg></div></div>
+
+    </div>
+  </div>
+</section>
+<section class="sec faq-section">
+  <div class="wrap">
+    <div class="faq-grid">
+      <div class="faq-head reveal">
+        <span class="eyebrow">DUDAS COMUNES</span>
+        <h2 class="display">Preguntas que nos hacen antes de empezar.</h2>
+        <p>Si tienes alguna que no está aquí, escríbenos directamente — respondemos en menos de 24 horas.</p>
+        <div class="faq-side-card">
+          <h4>¿Aún tienes dudas específicas?</h4>
+          <p>Agenda 30 minutos con un especialista. Cero presión de venta — solo respondemos lo que te interese saber.</p>
+          <a href="#contacto">Agendar llamada <span>→</span></a>
+        </div>
+      </div>
+      <div class="faq-list reveal d-1">
+        <div class="faq-item open"><button class="faq-q" data-faq="0"><span class="faq-idx">01</span><span>¿Cuánto cuesta el servicio integral?</span><span class="faq-ico"></span></button><!-- VERIFICAR: dato de marketing --><div class="faq-a">Trabajamos con paquetes a medida según el alcance de tu operación y tus objetivos. La inversión promedio de nuestros clientes representa menos del 3% de su revenue mensual, con retorno visible en las primeras 4 semanas.</div></div>
+<div class="faq-item"><button class="faq-q" data-faq="1"><span class="faq-idx">02</span><span>¿En cuánto tiempo veo resultados reales?</span><span class="faq-ico"></span></button><div class="faq-a">Las primeras campañas SEM generan leads desde la semana 1. El CRM y la automatización están operativos en la semana 3. Resultados consolidados (CPL optimizado, pipeline saludable) llegan en 60–90 días.</div></div>
+<div class="faq-item"><button class="faq-q" data-faq="2"><span class="faq-idx">03</span><span>¿Qué pasa si ya tengo un CRM o herramientas?</span><span class="faq-ico"></span></button><div class="faq-a">Mejor — partimos de tu stack actual. Trabajamos con HubSpot, Zoho, Pipedrive, Salesforce, Notion y APIs custom. Si tu CRM no está bien configurado, lo reordenamos. No te obligamos a migrar.</div></div>
+<div class="faq-item"><button class="faq-q" data-faq="3"><span class="faq-idx">04</span><span>¿Trabajan con empresas fuera de CDMX?</span><span class="faq-ico"></span></button><div class="faq-a">Sí — operamos con clientes en Monterrey, Guadalajara, Querétaro, Mérida y otras plazas. Todo se opera remoto con reuniones semanales por video y un canal directo de Slack o WhatsApp.</div></div>
+<div class="faq-item"><button class="faq-q" data-faq="4"><span class="faq-idx">05</span><span>¿Cómo miden y reportan el ROI?</span><span class="faq-ico"></span></button><div class="faq-a">Cada cliente tiene un dashboard en tiempo real con CPL, ROAS, conversión por canal, pipeline por etapa y revenue atribuido. Además recibes un reporte ejecutivo semanal con análisis cualitativo y siguientes pasos.</div></div>
+<div class="faq-item"><button class="faq-q" data-faq="5"><span class="faq-idx">06</span><span>¿Y si quiero salir? ¿Hay contratos largos?</span><span class="faq-ico"></span></button><div class="faq-a">Trabajamos con compromiso inicial trimestral y mensualidad después. Si decides salir te entregamos todo: campañas, CRM, automatizaciones, dashboards y documentación. Cero candados — confiamos en los resultados.</div></div>
+
+      </div>
+    </div>
+  </div>
+</section>
+<section class="sec cta-section" id="contacto">
+  <div class="wrap">
+    <div class="cta-card reveal">
+      <div>
+        <span class="eyebrow">PRIMER PASO SIN COSTO</span>
+        <h2>Agenda tu diagnóstico digital gratuito.</h2>
+        <p class="lead">Cuéntanos sobre tu operación y en menos de 24 horas te mostramos exactamente cómo podemos impulsar tu crecimiento.</p>
+        <div style="margin-top:32px;display:flex;flex-direction:column;gap:14px">
+          <div style="display:flex;gap:14px;align-items:flex-start"><span style="font-family:'JetBrains Mono';font-size:11px;color:var(--accent);width:22px">01</span><span style="color:var(--ink-dim);font-size:14.5px;line-height:1.5">Análisis personalizado de tu situación digital actual</span></div>
+          <div style="display:flex;gap:14px;align-items:flex-start"><span style="font-family:'JetBrains Mono';font-size:11px;color:var(--accent);width:22px">02</span><span style="color:var(--ink-dim);font-size:14.5px;line-height:1.5">Identificación de las 3 oportunidades de mayor impacto</span></div>
+          <div style="display:flex;gap:14px;align-items:flex-start"><span style="font-family:'JetBrains Mono';font-size:11px;color:var(--accent);width:22px">03</span><span style="color:var(--ink-dim);font-size:14.5px;line-height:1.5">Propuesta a medida con presupuesto transparente</span></div>
+        </div>
+      </div>
+
+      <form class="form-grid" id="lead-form" action="https://forms.zohopublic.com/contactorisel1/form/Riselandingpage/formperma/LFQlqGVSIMQfwyTCQjD_EklIQ_8rzkb8wov6J1_YXUY/htmlRecords/submit" method="POST" accept-charset="UTF-8" enctype="multipart/form-data" novalidate>
+        <input type="hidden" name="zf_referrer_name" value="">
+        <input type="hidden" name="zf_redirect_url" value="https://riselanding.com/?enviado=1">
+        <input type="hidden" name="zc_gad" value="">
+        <input type="hidden" id="utm_source" name="utm_source">
+        <input type="hidden" id="utm_medium" name="utm_medium">
+        <input type="hidden" id="utm_campaign" name="utm_campaign">
+        <select name="Checkbox" multiple style="display:none" id="zoho-servicios" aria-hidden="true">
+          <option value="Publicidad Digital">Publicidad Digital</option>
+          <option value="SEO y Posicionamiento">SEO y Posicionamiento</option>
+          <option value="Reediseño / Desarrollo página web">Reediseño / Desarrollo página web</option>
+          <option value="Implementación de CRM">Implementación de CRM</option>
+          <option value="Automatización de procesos">Automatización de procesos</option>
+          <option value="Dashboards y reportes">Dashboards y reportes</option>
+        </select>
+        <div class="field"><label>Nombre *</label><input name="Name_First" required placeholder="María"></div>
+        <div class="field"><label>Apellido *</label><input name="Name_Last" required placeholder="González"></div>
+        <div class="field full"><label>Empresa</label><input name="SingleLine" placeholder="Tu empresa S.A."></div>
+        <div class="field full"><label>Correo de trabajo *</label><input type="email" name="Email" required placeholder="maria@tuempresa.mx"></div>
+        <div class="field full"><label>WhatsApp / Teléfono *</label><input type="tel" name="PhoneNumber_countrycode" required placeholder="+52 55 1234 5678" autocomplete="tel" inputmode="numeric"></div>
+        <div class="field full">
+          <label>¿Qué servicio(s) te interesan?</label>
+          <div class="checks">
+            <label class="chk"><input type="checkbox" data-zoho="Publicidad Digital"><span class="box"></span>SEM</label>
+            <label class="chk"><input type="checkbox" data-zoho="SEO y Posicionamiento"><span class="box"></span>SEO</label>
+            <label class="chk"><input type="checkbox" data-zoho="Reediseño / Desarrollo página web"><span class="box"></span>Web</label>
+            <label class="chk"><input type="checkbox" data-zoho="Implementación de CRM"><span class="box"></span>CRM</label>
+            <label class="chk"><input type="checkbox" data-zoho="Automatización de procesos"><span class="box"></span>Automatización</label>
+            <label class="chk"><input type="checkbox" data-zoho="Dashboards y reportes"><span class="box"></span>Dashboards</label>
+          </div>
+        </div>
+        <div class="field full" style="margin-top:10px">
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:18px 22px;font-size:15px">Quiero mi diagnóstico gratuito →</button>
+          <span style="font-size:11.5px;color:var(--ink-mute);margin-top:10px;text-align:center;font-family:'JetBrains Mono';letter-spacing:.06em;display:block">TUS DATOS ESTÁN SEGUROS · NO COMPARTIMOS CON TERCEROS</span>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
 </main>
-<!-- FOOTER (Task 10) -->
-<!-- JS (Task 12) -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div>
+        <div class="brand" style="border-right:0;margin-right:0;padding-right:0;margin-bottom:18px"><span class="brand-dot"></span>Riselanding</div>
+        <p style="color:var(--ink-dim);font-size:14px;line-height:1.55;max-width:32ch;margin:0">Transformación digital para empresas de México y Latinoamérica. Performance marketing, CRM y automatización en un solo paquete.</p>
+        <div style="display:flex;gap:10px;margin-top:24px"><a href="https://www.linkedin.com/company/riselanding" aria-label="LinkedIn" target="_blank" rel="noopener" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:11px;color:var(--ink-dim)">IN</a><a href="https://www.instagram.com/riselanding" aria-label="Instagram" target="_blank" rel="noopener" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:11px;color:var(--ink-dim)">IG</a><a href="https://www.facebook.com/riselanding" aria-label="Facebook" target="_blank" rel="noopener" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:11px;color:var(--ink-dim)">FB</a></div>
+      </div>
+      <div>
+        <h5>Servicios</h5>
+        <ul><li><a href="#servicios">Publicidad SEM</a></li><li><a href="#servicios">SEO técnico</a></li><li><a href="#servicios">Desarrollo web</a></li><li><a href="#servicios">CRM</a></li><li><a href="#servicios">Automatización</a></li><li><a href="#servicios">Dashboards</a></li></ul>
+      </div>
+      <div>
+        <h5>Empresa</h5>
+        <ul><li><a href="#proceso">Proceso</a></li><li><a href="#resultados">Resultados</a></li><li><a href="#industrias">Industrias</a></li><li><a href="#contacto">Diagnóstico</a></li></ul>
+      </div>
+      <div>
+        <h5>Contacto</h5>
+        <ul><li><a href="mailto:hola@riselanding.com">hola@riselanding.com</a></li><li><a href="tel:+525512345678">+52 55 1234 5678</a></li><li>Ciudad de México, MX</li></ul>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Riselanding · Todos los derechos reservados</span>
+      <span style="font-family:'JetBrains Mono';letter-spacing:.1em">HECHO EN CDMX</span>
+    </div>
+  </div>
+</footer>
+<script>
+(function(){
+  // 1) Reveal on scroll
+  var io = new IntersectionObserver(function(es){
+    es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-in'); io.unobserve(e.target);} });
+  }, {threshold:0.15});
+  document.querySelectorAll('.reveal, .hero, .step').forEach(function(el){ io.observe(el); });
+
+  // 2) Ambient cursor light
+  window.addEventListener('mousemove', function(e){
+    document.documentElement.style.setProperty('--mx', e.clientX+'px');
+    document.documentElement.style.setProperty('--my', e.clientY+'px');
+  });
+
+  // 3) Service tabs
+  var tabs = document.querySelectorAll('.svc-tab');
+  var panels = document.querySelectorAll('.svc-card');
+  tabs.forEach(function(t){ t.addEventListener('click', function(){
+    var i = +t.dataset.svc;
+    tabs.forEach(function(x){ x.classList.toggle('active', +x.dataset.svc===i); });
+    panels.forEach(function(p){ p.hidden = (+p.dataset.panel !== i); });
+  }); });
+
+  // 4) FAQ accordion
+  document.querySelectorAll('.faq-q').forEach(function(q){ q.addEventListener('click', function(){
+    var item = q.closest('.faq-item');
+    var wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(function(x){ x.classList.remove('open'); });
+    if(!wasOpen) item.classList.add('open');
+  }); });
+
+  // 5) CountUp
+  function countup(el){
+    var to=+el.dataset.to, pre=el.dataset.prefix||'', suf=el.dataset.suffix||'', dec=+(el.dataset.decimals||0), dur=1800, start=null;
+    function tick(t){ if(!start)start=t; var p=Math.min(1,(t-start)/dur); var eased=1-Math.pow(1-p,3);
+      var v=eased*to; el.textContent = pre + (dec?v.toFixed(dec):Math.round(v)) + suf;
+      if(p<1) requestAnimationFrame(tick); }
+    requestAnimationFrame(tick);
+  }
+  var cio = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ countup(e.target); cio.unobserve(e.target);} }); }, {threshold:0.4});
+  document.querySelectorAll('.countup').forEach(function(el){ cio.observe(el); });
+
+  // 6) Process timeline progress
+  var line = document.querySelector('.process-line');
+  if(line){ var wrap = line.parentElement;
+    function prog(){ var r=wrap.getBoundingClientRect(), vh=innerHeight, s=vh*0.65, en=-r.height+vh*0.45;
+      var p=Math.max(0,Math.min(1,(s-r.top)/(s-en))); wrap.style.setProperty('--prog',(p*100)+'%'); }
+    prog(); addEventListener('scroll', prog, {passive:true});
+  }
+
+  // 7) Mobile nav
+  var tgl=document.querySelector('.nav-toggle'), links=document.querySelector('.nav-links');
+  if(tgl){ tgl.addEventListener('click', function(){ var o=links.classList.toggle('open'); tgl.setAttribute('aria-expanded', o); }); }
+  document.querySelectorAll('.nav-links a').forEach(function(a){ a.addEventListener('click', function(){ if(links) links.classList.remove('open'); if(tgl) tgl.setAttribute('aria-expanded','false'); }); });
+
+  // 8) Checkbox -> Zoho hidden select
+  var zoho=document.getElementById('zoho-servicios');
+  document.querySelectorAll('.chk input[data-zoho]').forEach(function(cb){ cb.addEventListener('change', function(){
+    cb.closest('.chk').classList.toggle('on', cb.checked);
+    if(!zoho) return;
+    Array.prototype.forEach.call(zoho.options, function(o){ if(o.value===cb.dataset.zoho) o.selected=cb.checked; });
+  }); });
+
+  // 9) UTM capture
+  var qs=new URLSearchParams(location.search);
+  ['utm_source','utm_medium','utm_campaign'].forEach(function(k){ var el=document.getElementById(k); if(el&&qs.get(k)) el.value=qs.get(k); });
+})();
+</script>
 </body>
 </html>
