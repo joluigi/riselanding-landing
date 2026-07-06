@@ -138,10 +138,10 @@
 }
 </script>
 
-  <!-- ═══ Fuentes del rediseño (Google Fonts) ═══ -->
+  <!-- Fuentes del rediseno (Google Fonts) -->
   <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-  <!-- ═══ Estilos del rediseño (del prototipo) ═══ -->
+  <!-- Estilos del rediseno (del prototipo) -->
   <style>
 /* ───────────────── tokens ───────────────── */
 :root{
@@ -558,6 +558,21 @@ footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-
   .cta-card{padding:36px}
   .results-section{border-radius:24px 24px 0 0}
 }
+
+/* ── menú móvil + ajustes de migración ── */
+.nav-toggle{display:none;background:none;border:0;cursor:pointer;width:40px;height:40px;flex-direction:column;gap:5px;align-items:center;justify-content:center}
+.nav-toggle span{display:block;width:22px;height:2px;background:var(--ink);border-radius:2px;transition:.25s var(--ease)}
+.nav-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(3.5px) rotate(45deg)}
+.nav-toggle[aria-expanded="true"] span:nth-child(2){transform:translateY(-3.5px) rotate(-45deg)}
+@media(max-width:860px){
+  .nav-toggle{display:flex}
+  .nav-links{position:fixed;inset:64px 0 auto 0;flex-direction:column;gap:0;background:var(--bg-2);border-bottom:1px solid var(--line);padding:8px 20px 20px;transform:translateY(-12px);opacity:0;pointer-events:none;transition:.25s var(--ease)}
+  .nav-links.open{transform:none;opacity:1;pointer-events:auto}
+  .nav-links .nav-link{padding:14px 0;border-bottom:1px solid var(--line)}
+  .nav-links .cta{margin-top:14px;justify-content:center}
+}
+.testi-note{margin-top:22px;font-size:12.5px;line-height:1.6;color:var(--ink-mute);font-style:italic;max-width:52ch}
+
   </style>
 </head>
 
@@ -567,6 +582,34 @@ footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-
       style="display:none;visibility:hidden"></iframe></noscript>
   <!-- End Google Tag Manager (noscript) -->
 
-<!-- BODY: secciones se construyen en Tasks 4-11 -->
+<div id="ambient"></div>
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="#top" class="brand"><span class="brand-dot"></span>Riselanding</a>
+    <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
+    <div class="nav-links">
+      <a class="nav-link" href="#servicios">Servicios</a>
+      <a class="nav-link" href="#proceso">Proceso</a>
+      <a class="nav-link" href="#resultados">Resultados</a>
+      <a class="nav-link" href="#industrias">Industrias</a>
+      <a class="cta" href="#contacto">Diagnóstico gratis <span class="arr">→</span></a>
+    </div>
+  </div>
+</nav>
+<main>
+<!-- HERO (Task 5) -->
+<!-- MARQUEE (Task 6) -->
+<!-- PROBLEMAS (Task 6) -->
+<!-- TESTIMONIO (Task 7) -->
+<!-- SERVICIOS (Task 7) -->
+<!-- PROCESO (Task 8) -->
+<!-- RESULTADOS (Task 8) -->
+<!-- COMPARATIVA (Task 9) -->
+<!-- INDUSTRIAS (Task 9) -->
+<!-- FAQ (Task 10) -->
+<!-- CONTACTO (Task 11) -->
+</main>
+<!-- FOOTER (Task 10) -->
+<!-- JS (Task 12) -->
 </body>
 </html>
