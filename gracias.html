@@ -12,31 +12,37 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>¡Recibido! Te contactamos pronto — Riselanding</title>
 <meta name="robots" content="noindex, nofollow">
-<meta name="theme-color" content="#1A202C">
+<meta name="theme-color" content="#0B1018">
 <link rel="icon" href="/Assets/favicon-32.png" type="image/png" sizes="32x32">
 <link rel="icon" href="/Assets/favicon-192.png" type="image/png" sizes="192x192">
 <link rel="apple-touch-icon" sizes="180x180" href="/Assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,600;12..96,700&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --c-lime:   #A0D010;
-  --c-dark:   #1A202C;
-  --c-carbon: #2D3748;
-  --c-white:  #FFFFFF;
-  --c-gray:   #9CA3AF;
-  --f-heading: 'Montserrat', sans-serif;
-  --f-body:    'Inter', sans-serif;
+  --bg:        #0B1018;
+  --bg-2:      #0E141F;
+  --line:      #222B3E;
+  --ink:       #F4EFE6;
+  --ink-dim:   #B6BECC;
+  --ink-mute:  #8B95A8;
+  --accent:    #FF5A1F;
+  --accent-2:  #FF8C5A;
+  --yellow:    #FFD23F;
+  --f-display: "Bricolage Grotesque", "Helvetica Neue", sans-serif;
+  --f-body:    "Geist", "Helvetica Neue", system-ui, sans-serif;
+  --f-mono:    "JetBrains Mono", monospace;
 }
 
 html, body {
   height: 100%;
-  background: var(--c-dark);
-  color: var(--c-white);
+  background: var(--bg);
+  color: var(--ink);
   font-family: var(--f-body);
+  -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
 }
 
@@ -56,7 +62,7 @@ html, body {
   transform: translate(-50%, -60%);
   width: 700px;
   height: 700px;
-  background: radial-gradient(circle, rgba(160,208,16,0.12) 0%, transparent 70%);
+  background: radial-gradient(circle, rgba(255,90,31,0.14) 0%, transparent 70%);
   pointer-events: none;
   z-index: 0;
 }
@@ -86,7 +92,7 @@ html, body {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  border: 2.5px solid rgba(160,208,16,0.25);
+  border: 2.5px solid rgba(255,90,31,0.30);
   position: absolute;
   top: 0; left: 0;
   animation: ring-pulse 2.5s ease-out infinite;
@@ -103,13 +109,13 @@ html, body {
   width: 100px;
   height: 100px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #A0D010 0%, #6B9200 100%);
+  background: linear-gradient(135deg, #FF8C5A 0%, #FF5A1F 100%);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
   z-index: 1;
-  box-shadow: 0 0 40px rgba(160,208,16,0.35), 0 0 80px rgba(160,208,16,0.15);
+  box-shadow: 0 0 40px rgba(255,90,31,0.35), 0 0 80px rgba(255,90,31,0.15);
   animation: pop-in 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -130,38 +136,39 @@ html, body {
 
 /* ── Eyebrow ── */
 .eyebrow {
-  font-family: var(--f-body);
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.15em;
+  font-family: var(--f-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--c-lime);
+  color: var(--accent-2);
   margin-bottom: 1rem;
   animation: fade-up 0.6s ease 0.6s both;
 }
 
 /* ── Headline ── */
 .headline {
-  font-family: var(--f-heading);
+  font-family: var(--f-display);
   font-size: clamp(2rem, 5vw, 3.25rem);
-  font-weight: 700;
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  font-weight: 600;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
   margin-bottom: 1.25rem;
   animation: fade-up 0.6s ease 0.7s both;
 }
 
-.headline .accent { color: var(--c-lime); }
+.headline .accent { color: var(--accent); }
 
 /* ── Subtitle ── */
 .subtitle {
   font-size: clamp(1rem, 2vw, 1.15rem);
-  color: rgba(255,255,255,0.6);
+  color: var(--ink-dim);
   line-height: 1.7;
   max-width: 520px;
   margin: 0 auto 2.5rem;
   animation: fade-up 0.6s ease 0.8s both;
 }
+.subtitle strong { color: var(--ink); font-weight: 600; }
 
 /* ── Timer bar ── */
 .timer-wrap {
@@ -171,12 +178,32 @@ html, body {
 }
 
 .timer-label {
-  font-size: 0.8rem;
-  color: rgba(255,255,255,0.4);
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
   margin-bottom: 0.6rem;
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  gap: 1rem;
 }
+
+.timer-cancel {
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--accent-2);
+  background: none;
+  border: 0;
+  padding: 4px 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color 0.2s, background 0.2s;
+}
+.timer-cancel:hover { color: var(--accent); background: rgba(255,90,31,0.08); }
+.timer-cancel:disabled { color: var(--ink-mute); cursor: default; background: none; }
 
 .timer-bar {
   height: 4px;
@@ -187,14 +214,16 @@ html, body {
 
 .timer-fill {
   height: 100%;
-  width: 0%;
-  background: linear-gradient(90deg, #A0D010, #D4F07A);
+  width: 100%;
+  transform: scaleX(0);
+  transform-origin: left;
+  background: linear-gradient(90deg, var(--accent), var(--yellow));
   border-radius: 9999px;
-  animation: fill-bar 5s linear 1s forwards;
+  animation: fill-bar 8s linear 1s forwards;
 }
 
 @keyframes fill-bar {
-  to { width: 100%; }
+  to { transform: scaleX(1); }
 }
 
 /* ── Stats row ── */
@@ -209,10 +238,11 @@ html, body {
 
 .stat-pill {
   background: rgba(255,255,255,0.04);
-  border: 1px solid rgba(255,255,255,0.08);
+  border: 1px solid var(--line);
   border-radius: 9999px;
   padding: 0.55rem 1.25rem;
   font-size: 0.85rem;
+  color: var(--ink-dim);
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -222,7 +252,7 @@ html, body {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--c-lime);
+  background: var(--accent);
   flex-shrink: 0;
   animation: blink 1.5s ease infinite;
 }
@@ -245,47 +275,48 @@ html, body {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: var(--c-lime);
-  color: #1A202C;
-  font-family: var(--f-heading);
+  background: var(--accent);
+  color: #0B1018;
+  font-family: var(--f-body);
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 600;
   padding: 0.85rem 2rem;
   border-radius: 9999px;
   text-decoration: none;
   transition: transform 0.2s, box-shadow 0.2s;
-  box-shadow: 0 4px 24px rgba(160,208,16,0.3);
+  box-shadow: 0 10px 30px rgba(255,90,31,0.35), inset 0 1px 0 rgba(255,255,255,0.18);
 }
 .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(160,208,16,0.45);
+  box-shadow: 0 14px 38px rgba(255,90,31,0.45), inset 0 1px 0 rgba(255,255,255,0.25);
 }
 
 .btn-ghost {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
-  background: transparent;
-  color: rgba(255,255,255,0.6);
+  background: rgba(255,255,255,0.04);
+  color: var(--ink-dim);
   font-size: 0.9rem;
   font-weight: 500;
   padding: 0.85rem 1.5rem;
   border-radius: 9999px;
-  border: 1px solid rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.10);
   text-decoration: none;
-  transition: border-color 0.2s, color 0.2s;
+  transition: border-color 0.2s, color 0.2s, background 0.2s;
 }
 .btn-ghost:hover {
-  border-color: rgba(255,255,255,0.3);
-  color: var(--c-white);
+  border-color: rgba(255,255,255,0.22);
+  background: rgba(255,255,255,0.07);
+  color: var(--ink);
 }
 
 /* ── What's next card ── */
 .next-card {
   margin-top: 3.5rem;
   background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.07);
-  border-radius: 16px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
   padding: 2rem 2.5rem;
   max-width: 560px;
   width: 100%;
@@ -294,12 +325,12 @@ html, body {
 }
 
 .next-title {
-  font-family: var(--f-heading);
-  font-size: 0.85rem;
-  font-weight: 700;
-  letter-spacing: 0.1em;
+  font-family: var(--f-mono);
+  font-size: 0.6875rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(255,255,255,0.35);
+  color: var(--ink-mute);
   margin-bottom: 1.25rem;
 }
 
@@ -315,20 +346,21 @@ html, body {
   align-items: flex-start;
   gap: 0.9rem;
   font-size: 0.9rem;
-  color: rgba(255,255,255,0.7);
+  color: var(--ink-dim);
   line-height: 1.5;
 }
+.next-step strong { color: var(--ink); font-weight: 600; }
 
 .step-num {
   width: 26px;
   height: 26px;
   border-radius: 50%;
-  background: rgba(160,208,16,0.12);
-  border: 1px solid rgba(160,208,16,0.3);
-  color: var(--c-lime);
-  font-family: var(--f-heading);
-  font-size: 0.75rem;
-  font-weight: 700;
+  background: rgba(255,90,31,0.12);
+  border: 1px solid rgba(255,90,31,0.35);
+  color: var(--accent-2);
+  font-family: var(--f-mono);
+  font-size: 0.72rem;
+  font-weight: 500;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -342,22 +374,26 @@ html, body {
   top: 1.25rem;
   left: 1.5rem;
   z-index: 10;
-  opacity: 0.35;
+  opacity: 0.6;
   transition: opacity 0.2s;
 }
-.logo-wrap:hover { opacity: 0.7; }
+.logo-wrap:hover { opacity: 1; }
 .logo-wrap img {
-  height: 28px;
+  height: 26px;
   width: auto;
 }
 
 /* ── Footer note ── */
 .footer-note {
   margin-top: 3rem;
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.2);
+  font-family: var(--f-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-mute);
   animation: fade-up 0.6s ease 1.3s both;
 }
+.footer-note a { color: var(--ink-mute); text-decoration: none; }
+.footer-note a:hover { color: var(--ink-dim); }
 
 @keyframes fade-up {
   0%   { opacity: 0; transform: translateY(18px); }
@@ -369,6 +405,11 @@ html, body {
   .stat-pill { font-size: 0.78rem; padding: 0.45rem 1rem; }
   .next-card { padding: 1.5rem; }
 }
+
+/* Respeta prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important}
+}
 </style>
 </head>
 <body>
@@ -377,27 +418,27 @@ html, body {
 height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- End Google Tag Manager (noscript) -->
 
-<canvas id="canvas"></canvas>
-<div class="glow"></div>
+<canvas id="canvas" aria-hidden="true"></canvas>
+<div class="glow" aria-hidden="true"></div>
 
 <!-- Logo -->
 <div class="logo-wrap">
   <a href="https://riselanding.com">
-    <img src="/Assets/RISELANDING_logo_white.png" alt="Riselanding" loading="eager">
+    <img src="/Assets/logo-white-horizontal.png" alt="Riselanding" width="640" height="118">
   </a>
 </div>
 
 <main class="page">
 
   <!-- Checkmark animado -->
-  <div class="check-wrap">
+  <div class="check-wrap" aria-hidden="true">
     <div class="check-ring"></div>
     <div class="check-ring"></div>
     <div class="check-ring"></div>
     <div class="check-circle">
-      <svg width="44" height="44" viewBox="0 0 44 44" fill="none" aria-hidden="true">
+      <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
         <polyline class="check-svg" points="10,22 18,31 34,13"
-          stroke="#1A202C" stroke-width="4"
+          stroke="#0B1018" stroke-width="4"
           stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </div>
@@ -414,17 +455,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
   <!-- Subtitle -->
   <p class="subtitle">
-    Un especialista de Riselanding revisará tu caso y te contactará en las próximas <strong style="color:rgba(255,255,255,0.85)">24 horas hábiles</strong> para agendar tu diagnóstico gratuito.
+    Un especialista de Riselanding revisará tu caso y te contactará en las próximas <strong>24 horas hábiles</strong> para agendar tu diagnóstico gratuito.
   </p>
 
-  <!-- Barra de progreso visual -->
+  <!-- Barra de progreso / redirección cancelable -->
   <div class="timer-wrap">
     <div class="timer-label">
-      <span>Preparando tu diagnóstico</span>
-      <span style="color:var(--c-lime)">En proceso</span>
+      <span id="timer-text">Te llevamos al inicio en unos segundos</span>
+      <button type="button" id="cancel-redirect" class="timer-cancel">Cancelar</button>
     </div>
     <div class="timer-bar">
-      <div class="timer-fill"></div>
+      <div class="timer-fill" id="timer-fill"></div>
     </div>
   </div>
 
@@ -466,7 +507,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       </li>
       <li class="next-step">
         <span class="step-num">2</span>
-        <span>Te contactamos por correo o WhatsApp en las próximas <strong style="color:rgba(255,255,255,0.9)">24 horas hábiles</strong> para agendar una llamada de 30 min.</span>
+        <span>Te contactamos por correo o WhatsApp en las próximas <strong>24 horas hábiles</strong> para agendar una llamada de 30 min.</span>
       </li>
       <li class="next-step">
         <span class="step-num">3</span>
@@ -475,64 +516,81 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     </ul>
   </div>
 
-  <p class="footer-note">© 2026 Riselanding · contacto@riselanding.com</p>
+  <p class="footer-note">© 2026 Riselanding · <a href="mailto:contacto@riselanding.com">contacto@riselanding.com</a></p>
 
 </main>
 
 <script>
 (function () {
-  // ── Particle canvas ──
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // ── Particle canvas (decorativo; se omite bajo reduced-motion) ──
   var canvas = document.getElementById('canvas');
-  var ctx = canvas.getContext('2d');
-  var particles = [];
-  var W, H;
+  if (canvas && !reduce) {
+    var ctx = canvas.getContext('2d');
+    var particles = [];
+    var W, H;
 
-  function resize() {
-    W = canvas.width  = window.innerWidth;
-    H = canvas.height = window.innerHeight;
+    function resize() {
+      W = canvas.width  = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    function rand(min, max) { return Math.random() * (max - min) + min; }
+
+    for (var i = 0; i < 55; i++) {
+      particles.push({
+        x: rand(0, window.innerWidth),
+        y: rand(0, window.innerHeight),
+        r: rand(1, 3),
+        vx: rand(-0.25, 0.25),
+        vy: rand(-0.4, -0.1),
+        alpha: rand(0.05, 0.35),
+        color: Math.random() > 0.6 ? '#FF8C5A' : '#FFFFFF'
+      });
+    }
+
+    function drawParticles() {
+      ctx.clearRect(0, 0, W, H);
+      particles.forEach(function (p) {
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = p.alpha;
+        ctx.fill();
+
+        p.x += p.vx;
+        p.y += p.vy;
+
+        if (p.y < -10) { p.y = H + 10; p.x = rand(0, W); }
+        if (p.x < -10) p.x = W + 10;
+        if (p.x > W + 10) p.x = -10;
+      });
+      ctx.globalAlpha = 1;
+      requestAnimationFrame(drawParticles);
+    }
+    drawParticles();
   }
-  resize();
-  window.addEventListener('resize', resize);
 
-  function rand(min, max) { return Math.random() * (max - min) + min; }
-
-  for (var i = 0; i < 55; i++) {
-    particles.push({
-      x: rand(0, window.innerWidth),
-      y: rand(0, window.innerHeight),
-      r: rand(1, 3),
-      vx: rand(-0.25, 0.25),
-      vy: rand(-0.4, -0.1),
-      alpha: rand(0.05, 0.35),
-      color: Math.random() > 0.6 ? '#A0D010' : '#FFFFFF'
-    });
-  }
-
-  function drawParticles() {
-    ctx.clearRect(0, 0, W, H);
-    particles.forEach(function (p) {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-      ctx.fillStyle = p.color;
-      ctx.globalAlpha = p.alpha;
-      ctx.fill();
-
-      p.x += p.vx;
-      p.y += p.vy;
-
-      if (p.y < -10) { p.y = H + 10; p.x = rand(0, W); }
-      if (p.x < -10) p.x = W + 10;
-      if (p.x > W + 10) p.x = -10;
-    });
-    ctx.globalAlpha = 1;
-    requestAnimationFrame(drawParticles);
-  }
-  drawParticles();
-
-  // ── Auto-redirect after 8s ──
-  setTimeout(function () {
+  // ── Redirección al inicio, cancelable (WCAG 2.2.1) y sincronizada con la barra ──
+  var redirect = setTimeout(function () {
     window.location.href = 'https://riselanding.com';
-  }, 8000);
+  }, 9000);
+
+  var cancelBtn = document.getElementById('cancel-redirect');
+  if (cancelBtn) {
+    cancelBtn.addEventListener('click', function () {
+      clearTimeout(redirect);
+      var fill = document.getElementById('timer-fill');
+      if (fill) fill.style.animationPlayState = 'paused';
+      var txt = document.getElementById('timer-text');
+      if (txt) txt.textContent = 'Puedes tomarte tu tiempo';
+      cancelBtn.textContent = 'Cancelado';
+      cancelBtn.disabled = true;
+    });
+  }
 })();
 </script>
 

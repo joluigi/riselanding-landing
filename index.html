@@ -68,9 +68,7 @@
   <link rel="preconnect" href="https://www.googletagmanager.com" crossorigin>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=Montserrat:wght@600;700&family=Inter:wght@400;500;600&display=swap"
-    rel="stylesheet">
+  <!-- (Montserrat/Inter del diseño anterior eliminados: el index usa Bricolage/Geist/JetBrains) -->
 
   <!-- ═══ SEO: JSON-LD Structured Data ═══ -->
   <script type="application/ld+json">
@@ -85,9 +83,9 @@
       "url": "https://riselanding.com",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://riselanding.com/Assets/RISELANDING_logo_color.png",
-        "width": 320,
-        "height": 80
+        "url": "https://riselanding.com/Assets/logo-horizontal.png",
+        "width": 640,
+        "height": 296
       },
       "image": "https://riselanding.com/Assets/og-image.png",
       "description": "Agencia de transformación digital para empresas en México. Performance marketing, CRM e implementación tecnológica para impulsar el crecimiento de cualquier industria.",
@@ -159,6 +157,7 @@
   --cream-2:#EBE3D2;
   --paper:#FAF6EE;
   --accent:#FF5A1F;
+  --accent-ink:#BE3A00;
   --accent-2:#FF8C5A;
   --green:#1FD17B;
   --green-2:#7BE7B7;
@@ -183,7 +182,6 @@ img{display:block;max-width:100%}
 #ambient{
   position:fixed;inset:0;pointer-events:none;z-index:0;
   background:radial-gradient(600px 600px at var(--mx,50%) var(--my,30%), rgba(255,90,31,0.13), transparent 60%);
-  transition:background 200ms linear;
   mix-blend-mode:screen;
 }
 
@@ -229,7 +227,7 @@ section{position:relative;z-index:1}
   box-shadow:0 12px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
 }
 .brand{display:flex;align-items:center;gap:10px;font-family:"Bricolage Grotesque";font-weight:700;letter-spacing:-.02em;font-size:18px;padding-right:14px;margin-right:6px;border-right:1px solid rgba(255,255,255,0.08)}
-.brand-dot{width:18px;height:18px;border-radius:6px;background:linear-gradient(135deg,#FF5A1F,#FFD23F);box-shadow:0 0 0 1px rgba(255,255,255,.1) inset, 0 0 22px rgba(255,90,31,.55)}
+.brand img{height:24px;width:auto;display:block}
 .nav a.nav-link{font-size:13px;color:var(--ink-dim);padding:8px 14px;border-radius:999px;transition:color .2s var(--ease),background .2s var(--ease)}
 .nav a.nav-link:hover{color:var(--ink);background:rgba(255,255,255,0.05)}
 .nav .cta{
@@ -269,7 +267,7 @@ section{position:relative;z-index:1}
   display:inline-flex;align-items:center;gap:10px;font-size:14px;font-weight:500;
   padding:14px 22px;border-radius:999px;transition:transform .25s var(--ease),box-shadow .25s var(--ease),background .25s var(--ease);
 }
-.btn-primary{background:var(--accent);color:#fff;box-shadow:0 10px 30px rgba(255,90,31,.35),inset 0 1px 0 rgba(255,255,255,.18)}
+.btn-primary{background:var(--accent);color:#0B1018;box-shadow:0 10px 30px rgba(255,90,31,.35),inset 0 1px 0 rgba(255,255,255,.18)}
 .btn-primary:hover{transform:translateY(-2px);box-shadow:0 14px 38px rgba(255,90,31,.45),inset 0 1px 0 rgba(255,255,255,.25)}
 .btn-ghost{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);color:var(--ink)}
 .btn-ghost:hover{background:rgba(255,255,255,0.08)}
@@ -313,7 +311,7 @@ section{position:relative;z-index:1}
 }
 .prob::before{
   content:"";position:absolute;inset:0;border-radius:24px;
-  background:radial-gradient(400px 200px at var(--px,50%) var(--py,50%),rgba(255,90,31,.10),transparent 60%);
+  background:radial-gradient(400px 200px at 50% 50%,rgba(255,90,31,.10),transparent 60%);
   opacity:0;transition:opacity .4s var(--ease);pointer-events:none;
 }
 .prob:hover{transform:translateY(-3px);border-color:var(--line-2)}
@@ -337,11 +335,12 @@ section{position:relative;z-index:1}
   background:linear-gradient(180deg,var(--surface) 0%,#11172380 100%);
   border:1px solid var(--line);border-radius:28px;
   padding:36px;display:grid;grid-template-columns:1.2fr 1fr;gap:36px;align-items:center;min-height:420px;
-  transition:opacity .4s var(--ease),transform .4s var(--ease);
 }
+@keyframes svcEnter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.svc-card.svc-enter{animation:svcEnter .4s var(--ease-out)}
 .svc-meta{display:flex;align-items:center;gap:10px;margin-bottom:18px}
 .svc-num{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-mute);letter-spacing:.1em}
-.svc-card h3{font-family:"Bricolage Grotesque";font-weight:600;font-size:44px;letter-spacing:-.03em;line-height:1.02;margin:0 0 18px}
+.svc-card h3{font-family:"Bricolage Grotesque";font-weight:600;font-size:clamp(28px,4.5vw,44px);letter-spacing:-.03em;line-height:1.02;margin:0 0 18px}
 .svc-card p{color:var(--ink-dim);font-size:16px;line-height:1.6;max-width:48ch;margin:0 0 24px}
 .svc-bullets{display:flex;flex-direction:column;gap:10px;margin-bottom:28px}
 .svc-bullets li{list-style:none;display:flex;align-items:flex-start;gap:10px;font-size:14px;color:var(--ink-dim)}
@@ -354,9 +353,10 @@ section{position:relative;z-index:1}
 .process-wrap{position:relative;padding-left:34px}
 .process-line{position:absolute;left:9px;top:0;bottom:0;width:2px;background:var(--line);overflow:hidden}
 .process-line::after{
-  content:"";position:absolute;left:0;top:0;width:100%;height:var(--prog,0%);
+  content:"";position:absolute;left:0;top:0;width:100%;height:100%;
+  transform:scaleY(var(--prog,0));transform-origin:top;
   background:linear-gradient(180deg,var(--accent),var(--yellow));
-  transition:height .15s linear;
+  transition:transform .15s linear;
 }
 .step{padding:30px 0;display:grid;grid-template-columns:1.2fr .8fr;gap:48px;border-bottom:1px solid var(--line);position:relative}
 .step:last-child{border-bottom:0}
@@ -367,7 +367,7 @@ section{position:relative;z-index:1}
 }
 .step.is-in::before{border-color:var(--accent);background:radial-gradient(circle at 30% 30%,#FF8C5A,#FF5A1F);transform:scale(1.1);box-shadow:0 0 0 6px rgba(255,90,31,.12)}
 .step-num{font-family:"JetBrains Mono",monospace;font-size:11px;color:var(--ink-mute);letter-spacing:.1em;margin-bottom:8px}
-.step h3{font-family:"Bricolage Grotesque";font-weight:600;font-size:36px;letter-spacing:-.025em;margin:0 0 14px;line-height:1.05}
+.step h3{font-family:"Bricolage Grotesque";font-weight:600;font-size:clamp(26px,4vw,36px);letter-spacing:-.025em;margin:0 0 14px;line-height:1.05}
 .step p{color:var(--ink-dim);font-size:16px;line-height:1.6;margin:0 0 16px;max-width:48ch}
 .step-tag{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;color:var(--accent)}
 .step-illu{justify-self:end;width:100%;max-width:300px}
@@ -394,7 +394,7 @@ section{position:relative;z-index:1}
 .testi-grid{display:grid;grid-template-columns:1.4fr .9fr;gap:80px;align-items:start;margin-top:32px}
 .testi-quote{font-family:"Bricolage Grotesque";font-weight:500;font-size:clamp(28px,3.2vw,46px);line-height:1.15;letter-spacing:-.025em;color:#0B1018;margin:0;text-wrap:pretty}
 .testi-quote::before{content:"\201C";font-family:"Bricolage Grotesque";font-weight:600;color:var(--accent);font-size:1.4em;line-height:0;margin-right:.05em;vertical-align:-.18em}
-.testi-em{color:var(--accent);background:linear-gradient(180deg,transparent 62%,rgba(255,90,31,.18) 62%,rgba(255,90,31,.18) 92%,transparent 92%);padding:0 .08em}
+.testi-em{color:var(--accent-ink);background:linear-gradient(180deg,transparent 62%,rgba(255,90,31,.18) 62%,rgba(255,90,31,.18) 92%,transparent 92%);padding:0 .08em}
 .testi-attr{display:flex;align-items:center;gap:16px;margin-top:36px}
 .testi-av{width:54px;height:54px;border-radius:99px;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#FF8C5A,#FF5A1F);color:#fff;font-family:"Bricolage Grotesque";font-weight:700;font-size:18px;letter-spacing:-.02em;box-shadow:0 8px 24px rgba(255,90,31,.30)}
 .testi-name{font-family:"Bricolage Grotesque";font-weight:600;font-size:17px;letter-spacing:-.01em;color:#0B1018}
@@ -402,10 +402,10 @@ section{position:relative;z-index:1}
 .testi-metrics{display:flex;flex-direction:column;gap:14px;position:sticky;top:120px}
 .testi-metric{background:#fff;border:1px solid rgba(11,16,24,.06);border-radius:20px;padding:24px 26px;display:flex;flex-direction:column;gap:8px;transition:transform .4s var(--ease),box-shadow .4s var(--ease)}
 .testi-metric:hover{transform:translateY(-3px);box-shadow:0 18px 40px -20px rgba(11,16,24,.18)}
-.testi-metric .testi-num{font-family:"Bricolage Grotesque";font-weight:700;font-size:42px;letter-spacing:-.03em;line-height:1;color:var(--accent)}
+.testi-metric .testi-num{font-family:"Bricolage Grotesque";font-weight:700;font-size:42px;letter-spacing:-.03em;line-height:1;color:var(--accent-ink)}
 .testi-metric .testi-lbl{font-size:13.5px;color:#5C5547;line-height:1.4}
 .testi-metric.alt .testi-num{color:#0B1018}
-.testi-metric.alt .testi-num em{font-style:normal;color:var(--accent)}
+.testi-metric.alt .testi-num em{font-style:normal;color:var(--accent-ink)}
 .testi-callout{margin-top:48px;display:inline-flex;align-items:center;gap:12px;background:#0B1018;color:var(--cream);padding:12px 20px 12px 14px;border-radius:999px;font-size:13px}
 .testi-callout .arr-bg{width:26px;height:26px;border-radius:99px;background:var(--accent);display:inline-flex;align-items:center;justify-content:center;color:#fff;font-weight:600}
 
@@ -419,8 +419,8 @@ section{position:relative;z-index:1}
 .faq-side-card{margin-top:36px;padding:24px;background:#0B1018;color:var(--cream);border-radius:20px;display:flex;flex-direction:column;gap:14px}
 .faq-side-card h4{font-family:"Bricolage Grotesque";font-weight:600;font-size:20px;letter-spacing:-.01em;margin:0;line-height:1.2}
 .faq-side-card p{color:var(--ink-dim);font-size:14px;line-height:1.55;margin:0}
-.faq-side-card a{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--accent);font-weight:500;transition:gap .25s var(--ease)}
-.faq-side-card a:hover{gap:12px}
+.faq-side-card a{display:inline-flex;align-items:center;gap:8px;font-size:13.5px;color:var(--accent);font-weight:500;transition:transform .25s var(--ease)}
+.faq-side-card a:hover{transform:translateX(3px)}
 .faq-list{display:flex;flex-direction:column;border-top:1px solid rgba(11,16,24,.10)}
 .faq-item{border-bottom:1px solid rgba(11,16,24,.10);padding:0}
 .faq-q{
@@ -450,7 +450,7 @@ section{position:relative;z-index:1}
 .compare-row{display:grid;grid-template-columns:1.2fr 1fr 1fr;border-top:1px solid rgba(11,16,24,.06)}
 .compare-row:first-child{border-top:0;background:#F4EFE6}
 .compare-row.head{font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#6B6253}
-.compare-row.head .cell.rise{color:var(--accent)}
+.compare-row.head .cell.rise{color:var(--accent-ink)}
 .cell{padding:22px 24px;border-left:1px solid rgba(11,16,24,.06);display:flex;align-items:center;gap:10px;font-size:14.5px;color:#3D3830}
 .cell:first-child{border-left:0;font-weight:500;color:#0B1018}
 .cell.rise{background:rgba(255,90,31,.05);color:#0B1018}
@@ -474,9 +474,9 @@ section{position:relative;z-index:1}
 
 /* logo marquee */
 .marquee{padding:60px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line);overflow:hidden;background:var(--bg-2)}
-.marquee-track{display:flex;gap:80px;animation:scroll 36s linear infinite;width:max-content}
+.marquee-track{display:flex;animation:scroll 36s linear infinite;width:max-content}
 .marquee-track:hover{animation-play-state:paused}
-.marquee .logo-mock{font-family:"Bricolage Grotesque";font-weight:600;font-size:24px;color:var(--ink-mute);letter-spacing:-.02em;white-space:nowrap;display:flex;align-items:center;gap:10px;opacity:.7;transition:opacity .25s var(--ease)}
+.marquee .logo-mock{font-family:"Bricolage Grotesque";font-weight:600;font-size:24px;color:var(--ink-mute);letter-spacing:-.02em;white-space:nowrap;display:flex;align-items:center;gap:10px;margin-right:80px;opacity:.7;transition:opacity .25s var(--ease)}
 .marquee .logo-mock:hover{opacity:1;color:var(--ink)}
 .marquee .logo-mock .sq{width:18px;height:18px;border-radius:5px;background:linear-gradient(135deg,#2D3850,#1E2638);border:1px solid var(--line-2)}
 @keyframes scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
@@ -514,7 +514,8 @@ section{position:relative;z-index:1}
   border:1px solid var(--line);background:rgba(255,255,255,.02);cursor:pointer;
   font-size:13px;color:var(--ink-dim);transition:all .25s var(--ease);user-select:none;
 }
-.chk input{display:none}
+.chk input{position:absolute;width:1px;height:1px;opacity:0;margin:0;pointer-events:none}
+.chk:has(input:focus-visible){outline:2px solid var(--accent);outline-offset:2px}
 .chk.on{background:rgba(255,90,31,.10);border-color:rgba(255,90,31,.45);color:var(--ink)}
 .chk .box{width:14px;height:14px;border-radius:5px;border:1.5px solid var(--ink-mute);display:inline-flex;align-items:center;justify-content:center;transition:all .2s var(--ease)}
 .chk.on .box{background:var(--accent);border-color:var(--accent);color:#fff}
@@ -554,7 +555,6 @@ footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-
   .cell{border-left:0;border-top:1px solid rgba(11,16,24,.06)}
   .phase-strip{grid-template-columns:repeat(2,1fr)}
   .phase:nth-child(2){border-right:0}
-  .nav .nav-link{display:none}
   .sec{padding:80px 0}
   .cta-card{padding:36px}
   .results-section{border-radius:24px 24px 0 0}
@@ -565,11 +565,11 @@ footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-
 .nav-toggle span{display:block;width:22px;height:2px;background:var(--ink);border-radius:2px;transition:.25s var(--ease)}
 .nav-toggle[aria-expanded="true"] span:nth-child(1){transform:translateY(3.5px) rotate(45deg)}
 .nav-toggle[aria-expanded="true"] span:nth-child(2){transform:translateY(-3.5px) rotate(-45deg)}
-@media(max-width:860px){
+@media(max-width:980px){
   .nav-toggle{display:flex}
-  .nav-links{position:fixed;inset:64px 0 auto 0;flex-direction:column;gap:0;background:var(--bg-2);border-bottom:1px solid var(--line);padding:8px 20px 20px;transform:translateY(-12px);opacity:0;pointer-events:none;transition:.25s var(--ease)}
-  .nav-links.open{transform:none;opacity:1;pointer-events:auto}
-  .nav-links .nav-link{padding:14px 0;border-bottom:1px solid var(--line)}
+  .nav-links{position:fixed;inset:80px 12px auto 12px;display:flex;flex-direction:column;gap:0;background:var(--bg-2);border:1px solid var(--line);border-radius:20px;padding:8px 20px 20px;transform:translateY(-12px);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .25s var(--ease),transform .25s var(--ease),visibility .25s}
+  .nav-links.open{transform:none;opacity:1;visibility:visible;pointer-events:auto}
+  .nav-links .nav-link{display:block;padding:14px 0;border-bottom:1px solid var(--line);color:var(--ink)}
   .nav-links .cta{margin-top:14px;justify-content:center}
 }
 .testi-note{margin-top:22px;font-size:12.5px;line-height:1.6;color:var(--ink-mute);font-style:italic;max-width:52ch}
@@ -578,6 +578,13 @@ footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-
 /* Fallback sin JS: el contenido revelable se muestra igualmente (accesibilidad + indexabilidad) */
 html:not(.js) .reveal{opacity:1 !important;transform:none !important}
 html:not(.js) .hero h1 .word span{transform:none !important}
+
+/* Respeta prefers-reduced-motion: neutraliza animaciones y transiciones */
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;animation-iteration-count:1 !important;transition-duration:.01ms !important;scroll-behavior:auto !important}
+}
+/* Retiene la secuencia SVG de servicios hasta que la sección entra al viewport */
+html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
 
   </style>
 </head>
@@ -591,9 +598,9 @@ html:not(.js) .hero h1 .word span{transform:none !important}
 <div id="ambient"></div>
 <nav class="nav">
   <div class="nav-inner">
-    <a href="#top" class="brand"><span class="brand-dot"></span>Riselanding</a>
-    <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false"><span></span><span></span></button>
-    <div class="nav-links">
+    <a href="#top" class="brand"><img src="/Assets/logo-white-horizontal.png" alt="Riselanding" width="640" height="118"></a>
+    <button class="nav-toggle" aria-label="Abrir menú" aria-expanded="false" aria-controls="nav-menu"><span></span><span></span></button>
+    <div class="nav-links" id="nav-menu">
       <a class="nav-link" href="#servicios">Servicios</a>
       <a class="nav-link" href="#proceso">Proceso</a>
       <a class="nav-link" href="#resultados">Resultados</a>
@@ -788,7 +795,7 @@ html:not(.js) .hero h1 .word span{transform:none !important}
     </div>
   </div>
 </section>
-<section class="sec" id="servicios">
+<section class="sec anim-hold" id="servicios">
   <div class="wrap">
     <div class="sec-head">
       <div class="reveal"><span class="eyebrow">NUESTRA SOLUCIÓN</span><h2 class="display">Un ecosistema digital completo para tu operación.</h2></div>
@@ -1011,10 +1018,10 @@ html:not(.js) .hero h1 .word span{transform:none !important}
       <p class="lead reveal d-1">Métricas promedio de nuestros clientes durante los primeros 90 días de implementación completa.</p>
     </div>
     <div class="results-grid">
-      <div class="result reveal"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="30" data-prefix="-" data-suffix="%">0</span></div><div class="result-label">Reducción promedio en costo por lead (CPL)</div></div>
-<div class="result reveal d-1"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="8" data-prefix="" data-suffix="+">0</span></div><div class="result-label">Procesos operativos automatizados por cliente</div></div>
-<div class="result reveal d-2"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="3" data-prefix="" data-suffix=" sem">0</span></div><div class="result-label">Tiempo de implementación completa de CRM</div></div>
-<div class="result reveal d-3"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="45" data-prefix="" data-suffix="+">0</span></div><div class="result-label">Leads calificados mensuales por cliente</div></div>
+      <div class="result reveal"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="30" data-prefix="-" data-suffix="%">-30%</span></div><div class="result-label">Reducción promedio en costo por lead (CPL)</div></div>
+<div class="result reveal d-1"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="8" data-prefix="" data-suffix="+">8+</span></div><div class="result-label">Procesos operativos automatizados por cliente</div></div>
+<div class="result reveal d-2"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="3" data-prefix="" data-suffix=" sem">3 sem</span></div><div class="result-label">Tiempo de implementación completa de CRM</div></div>
+<div class="result reveal d-3"><!-- VERIFICAR: dato de marketing --><div class="result-num"><span class="countup" data-to="45" data-prefix="" data-suffix="+">45+</span></div><div class="result-label">Leads calificados mensuales por cliente</div></div>
 
     </div>
     <!-- VERIFICAR: dato de marketing -->
@@ -1115,11 +1122,11 @@ html:not(.js) .hero h1 .word span{transform:none !important}
           <option value="Automatización de procesos">Automatización de procesos</option>
           <option value="Dashboards y reportes">Dashboards y reportes</option>
         </select>
-        <div class="field"><label>Nombre *</label><input name="Name_First" required placeholder="María"></div>
-        <div class="field"><label>Apellido *</label><input name="Name_Last" required placeholder="González"></div>
-        <div class="field full"><label>Empresa</label><input name="SingleLine" placeholder="Tu empresa S.A."></div>
-        <div class="field full"><label>Correo de trabajo *</label><input type="email" name="Email" required placeholder="maria@tuempresa.mx"></div>
-        <div class="field full"><label>WhatsApp / Teléfono *</label><input type="tel" name="PhoneNumber_countrycode" required placeholder="+52 55 1234 5678" autocomplete="tel" inputmode="numeric"></div>
+        <div class="field"><label for="f-nombre">Nombre *</label><input id="f-nombre" name="Name_First" required placeholder="María"></div>
+        <div class="field"><label for="f-apellido">Apellido *</label><input id="f-apellido" name="Name_Last" required placeholder="González"></div>
+        <div class="field full"><label for="f-empresa">Empresa</label><input id="f-empresa" name="SingleLine" placeholder="Tu empresa S.A."></div>
+        <div class="field full"><label for="f-email">Correo de trabajo *</label><input id="f-email" type="email" name="Email" required placeholder="maria@tuempresa.mx"></div>
+        <div class="field full"><label for="f-tel">WhatsApp / Teléfono *</label><input id="f-tel" type="tel" name="PhoneNumber_countrycode" required placeholder="+52 55 5878 8983" autocomplete="tel" inputmode="numeric"></div>
         <div class="field full">
           <label>¿Qué servicio(s) te interesan?</label>
           <div class="checks">
@@ -1144,7 +1151,7 @@ html:not(.js) .hero h1 .word span{transform:none !important}
   <div class="wrap">
     <div class="foot-grid">
       <div>
-        <div class="brand" style="border-right:0;margin-right:0;padding-right:0;margin-bottom:18px"><span class="brand-dot"></span>Riselanding</div>
+        <div class="brand" style="border-right:0;margin-right:0;padding-right:0;margin-bottom:18px"><img src="/Assets/logo-white-horizontal.png" alt="Riselanding" width="640" height="118" loading="lazy" style="height:28px"></div>
         <p style="color:var(--ink-dim);font-size:14px;line-height:1.55;max-width:32ch;margin:0">Transformación digital para empresas de México y Latinoamérica. Performance marketing, CRM y automatización en un solo paquete.</p>
         <div style="display:flex;gap:10px;margin-top:24px"><a href="https://www.linkedin.com/company/riselanding" aria-label="LinkedIn" target="_blank" rel="noopener" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:11px;color:var(--ink-dim)">IN</a><a href="https://www.instagram.com/riselanding" aria-label="Instagram" target="_blank" rel="noopener" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:11px;color:var(--ink-dim)">IG</a><a href="https://www.facebook.com/riselanding" aria-label="Facebook" target="_blank" rel="noopener" style="width:36px;height:36px;border-radius:10px;border:1px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-family:'JetBrains Mono';font-size:11px;color:var(--ink-dim)">FB</a></div>
       </div>
@@ -1169,37 +1176,70 @@ html:not(.js) .hero h1 .word span{transform:none !important}
 </footer>
 <script>
 (function(){
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   // 1) Reveal on scroll
   var io = new IntersectionObserver(function(es){
     es.forEach(function(e){ if(e.isIntersecting){ e.target.classList.add('is-in'); io.unobserve(e.target);} });
   }, {threshold:0.15});
   document.querySelectorAll('.reveal, .hero, .step').forEach(function(el){ io.observe(el); });
 
-  // 2) Ambient cursor light
-  window.addEventListener('mousemove', function(e){
-    document.documentElement.style.setProperty('--mx', e.clientX+'px');
-    document.documentElement.style.setProperty('--my', e.clientY+'px');
+  // 1b) Oculta ilustraciones decorativas (con datos de ejemplo) a lectores de pantalla
+  ['.hero-illu','.svc-illu','.step-illu','.ind-illu','.prob .illu','.marquee'].forEach(function(sel){
+    document.querySelectorAll(sel).forEach(function(el){ el.setAttribute('aria-hidden','true'); });
   });
 
-  // 3) Service tabs
+  // 2) Ambient cursor light — rAF-throttle, solo puntero fino y sin reduced-motion
+  var ambient = document.getElementById('ambient');
+  if(ambient && !reduce && matchMedia('(pointer:fine)').matches){
+    var ax=0, ay=0, queued=false;
+    window.addEventListener('mousemove', function(e){ ax=e.clientX; ay=e.clientY;
+      if(!queued){ queued=true; requestAnimationFrame(function(){
+        ambient.style.setProperty('--mx', ax+'px'); ambient.style.setProperty('--my', ay+'px'); queued=false; }); }
+    }, {passive:true});
+  }
+
+  // 3) Service tabs — con semántica tablist y animación de entrada del panel
   var tabs = document.querySelectorAll('.svc-tab');
   var panels = document.querySelectorAll('.svc-card');
+  var tablist = document.querySelector('.svc-tabs');
+  if(tablist) tablist.setAttribute('role','tablist');
+  tabs.forEach(function(t){ t.setAttribute('role','tab'); t.setAttribute('aria-selected', t.classList.contains('active')?'true':'false'); });
+  panels.forEach(function(p){ p.setAttribute('role','tabpanel'); });
   tabs.forEach(function(t){ t.addEventListener('click', function(){
     var i = +t.dataset.svc;
-    tabs.forEach(function(x){ x.classList.toggle('active', +x.dataset.svc===i); });
-    panels.forEach(function(p){ p.hidden = (+p.dataset.panel !== i); });
+    tabs.forEach(function(x){ var on = (+x.dataset.svc===i); x.classList.toggle('active', on); x.setAttribute('aria-selected', on?'true':'false'); });
+    panels.forEach(function(p){ var show = (+p.dataset.panel === i); p.hidden = !show;
+      if(show){ p.classList.remove('svc-enter'); void p.offsetWidth; p.classList.add('svc-enter'); } });
   }); });
 
-  // 4) FAQ accordion
-  document.querySelectorAll('.faq-q').forEach(function(q){ q.addEventListener('click', function(){
+  // 3b) Reproduce la secuencia SVG de servicios solo al entrar la sección al viewport
+  var svc = document.getElementById('servicios');
+  if(svc && svc.classList.contains('anim-hold')){
+    var sio = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ svc.classList.remove('anim-hold'); sio.disconnect(); } }); }, {threshold:0.12});
+    sio.observe(svc);
+  }
+
+  // 4) FAQ accordion — altura exacta (scrollHeight) + aria-expanded
+  var faqQs = document.querySelectorAll('.faq-q');
+  faqQs.forEach(function(q){ q.setAttribute('aria-expanded','false'); });
+  faqQs.forEach(function(q){ q.addEventListener('click', function(){
     var item = q.closest('.faq-item');
     var wasOpen = item.classList.contains('open');
-    document.querySelectorAll('.faq-item').forEach(function(x){ x.classList.remove('open'); });
-    if(!wasOpen) item.classList.add('open');
+    document.querySelectorAll('.faq-item').forEach(function(x){
+      x.classList.remove('open');
+      var a=x.querySelector('.faq-a'); if(a) a.style.maxHeight='';
+      var b=x.querySelector('.faq-q'); if(b) b.setAttribute('aria-expanded','false');
+    });
+    if(!wasOpen){ item.classList.add('open'); q.setAttribute('aria-expanded','true');
+      var a=item.querySelector('.faq-a'); if(a) a.style.maxHeight = a.scrollHeight + 'px';
+    }
   }); });
 
-  // 5) CountUp
+  // 5) CountUp — respeta reduced-motion mostrando el valor final
+  function finalText(el){ return (el.dataset.prefix||'') + (+el.dataset.to) + (el.dataset.suffix||''); }
   function countup(el){
+    if(reduce){ el.textContent = finalText(el); return; }
     var to=+el.dataset.to, pre=el.dataset.prefix||'', suf=el.dataset.suffix||'', dec=+(el.dataset.decimals||0), dur=1800, start=null;
     function tick(t){ if(!start)start=t; var p=Math.min(1,(t-start)/dur); var eased=1-Math.pow(1-p,3);
       var v=eased*to; el.textContent = pre + (dec?v.toFixed(dec):Math.round(v)) + suf;
@@ -1209,18 +1249,20 @@ html:not(.js) .hero h1 .word span{transform:none !important}
   var cio = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting){ countup(e.target); cio.unobserve(e.target);} }); }, {threshold:0.4});
   document.querySelectorAll('.countup').forEach(function(el){ cio.observe(el); });
 
-  // 6) Process timeline progress
+  // 6) Process timeline progress — scaleY (compositor) + rAF-throttle
   var line = document.querySelector('.process-line');
-  if(line){ var wrap = line.parentElement;
+  if(line){ var wrap = line.parentElement, ticking=false;
     function prog(){ var r=wrap.getBoundingClientRect(), vh=innerHeight, s=vh*0.65, en=-r.height+vh*0.45;
-      var p=Math.max(0,Math.min(1,(s-r.top)/(s-en))); wrap.style.setProperty('--prog',(p*100)+'%'); }
-    prog(); addEventListener('scroll', prog, {passive:true});
+      var p=Math.max(0,Math.min(1,(s-r.top)/(s-en))); wrap.style.setProperty('--prog', p); }
+    function onScroll(){ if(!ticking){ ticking=true; requestAnimationFrame(function(){ prog(); ticking=false; }); } }
+    prog(); addEventListener('scroll', onScroll, {passive:true});
   }
 
-  // 7) Mobile nav
+  // 7) Mobile nav — aria-expanded + aria-label sincronizados
   var tgl=document.querySelector('.nav-toggle'), links=document.querySelector('.nav-links');
-  if(tgl){ tgl.addEventListener('click', function(){ var o=links.classList.toggle('open'); tgl.setAttribute('aria-expanded', o); }); }
-  document.querySelectorAll('.nav-links a').forEach(function(a){ a.addEventListener('click', function(){ if(links) links.classList.remove('open'); if(tgl) tgl.setAttribute('aria-expanded','false'); }); });
+  if(tgl){ tgl.addEventListener('click', function(){ var o=links.classList.toggle('open');
+    tgl.setAttribute('aria-expanded', o); tgl.setAttribute('aria-label', o?'Cerrar menú':'Abrir menú'); }); }
+  document.querySelectorAll('.nav-links a').forEach(function(a){ a.addEventListener('click', function(){ if(links) links.classList.remove('open'); if(tgl){ tgl.setAttribute('aria-expanded','false'); tgl.setAttribute('aria-label','Abrir menú'); } }); });
 
   // 8) Checkbox -> Zoho hidden select
   var zoho=document.getElementById('zoho-servicios');
