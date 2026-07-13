@@ -285,13 +285,12 @@ section{position:relative;z-index:1}
   display:grid;grid-template-columns:repeat(4,1fr);gap:0;
   border-top:1px solid var(--line);border-bottom:1px solid var(--line);
 }
-.phase{padding:24px 24px;border-right:1px solid var(--line);display:flex;align-items:baseline;gap:14px;transition:background .3s var(--ease)}
-.phase:last-child{border-right:0}
-.phase:hover{background:rgba(255,255,255,0.02)}
+.phase{position:relative;padding:24px 24px;display:flex;align-items:baseline;gap:14px}
+.phase:not(:last-child){border-right:1px solid var(--line)}
+/* conector de flujo entre etapas (decorativo, no interactivo) */
+.phase:not(:last-child)::after{content:"→";position:absolute;right:-8px;top:50%;transform:translateY(-50%);color:var(--accent);font-family:"JetBrains Mono",monospace;font-size:14px;line-height:1;background:var(--bg);padding:2px 3px;z-index:2}
 .phase .num{font-family:"JetBrains Mono",monospace;font-size:12px;color:var(--ink-mute)}
 .phase .name{font-family:"Bricolage Grotesque";font-weight:600;font-size:22px;letter-spacing:-.02em}
-.phase .arrow{margin-left:auto;color:var(--ink-mute);transition:transform .3s var(--ease),color .3s var(--ease)}
-.phase:hover .arrow{transform:translateX(4px);color:var(--accent)}
 
 /* ───────────────── section heading ───────────────── */
 .sec{padding:140px 0;position:relative}
@@ -553,12 +552,21 @@ footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-
   .problems-grid,.industries-grid,.results-grid,.foot-grid,.cta-card,.svc-card,.step,.compare-row,.form-grid,.testi-grid,.faq-grid{grid-template-columns:1fr;gap:18px}
   .testi-metrics{position:static}
   .compare-row.head{display:none}
-  .cell{border-left:0;border-top:1px solid rgba(11,16,24,.06)}
-  .phase-strip{grid-template-columns:repeat(2,minmax(0,1fr))}
-  .phase{padding:20px 16px}
-  .phase .name{font-size:18px}
-  .phase:nth-child(2){border-right:0}
-  .phase:nth-child(1),.phase:nth-child(2){border-bottom:1px solid var(--line)}
+  /* Comparativa: tarjetas legibles con la etiqueta de columna reinyectada */
+  .compare-table{background:transparent;border:0;overflow:visible;display:flex;flex-direction:column;gap:14px;margin-top:36px}
+  .compare-row{gap:0;background:#fff;border:1px solid rgba(11,16,24,.08);border-radius:16px;overflow:hidden}
+  .cell{border-left:0;border-top:0;align-items:flex-start;padding:14px 18px;font-size:14.5px;line-height:1.45}
+  .cell:first-child{font-family:"Bricolage Grotesque";font-weight:600;font-size:16px;color:#0B1018;background:#F4EFE6;padding:13px 18px}
+  .cell:nth-child(2),.cell.rise{border-top:1px solid rgba(11,16,24,.06);position:relative;padding-top:32px}
+  .cell:nth-child(2)::before,.cell.rise::before{position:absolute;top:11px;left:18px;font-family:"JetBrains Mono",monospace;font-size:9px;letter-spacing:.12em;text-transform:uppercase;font-weight:500}
+  .cell:nth-child(2)::before{content:"Agencia genérica";color:#6B6253}
+  .cell.rise::before{content:"Riselanding";color:var(--accent-ink)}
+  .cell.rise{background:rgba(255,90,31,.06)}
+  .phase-strip{grid-template-columns:1fr;margin-top:56px}
+  .phase{padding:18px 4px 22px}
+  .phase .name{font-size:20px}
+  .phase:not(:last-child){border-right:0;border-bottom:1px solid var(--line)}
+  .phase:not(:last-child)::after{content:"↓";right:auto;left:22px;top:auto;bottom:-11px;transform:none}
   .sec{padding:80px 0}
   .cta-card{padding:36px}
   .results-section{border-radius:24px 24px 0 0}
@@ -568,11 +576,7 @@ footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-
   /* Ilustración del hero: escala la composición completa para que quepa y no domine */
   .hero-illu{height:280px;margin-top:8px}
   .hero-illu .hi-stage{transform:translateX(-50%) scale(.66)}
-  /* Tira de fases: una columna, completa y legible */
-  .phase-strip{grid-template-columns:1fr;margin-top:44px}
-  .phase{border-right:0;border-bottom:1px solid var(--line);padding:18px 6px}
-  .phase:last-child{border-bottom:0}
-  .phase .name{font-size:20px}
+  .phase-strip{margin-top:40px}
 }
 
 /* ── menú móvil + ajustes de migración ── */
@@ -742,11 +746,11 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         .hi-badge .meta .sub{font-size:10.5px;color:var(--ink-dim);margin-top:1px}
       </style><div class="hi-stage"><div class="hi-card hi-dash"><div class="dh-row"><div class="dh-title">Panel de crecimiento</div><div class="dh-pill"><span class="lvdot"></span>EN VIVO</div></div><div class="hi-stat"><div class="s"><div class="lbl">Leads</div><div class="val">247<span class="grn"> ↑</span></div></div><div class="s"><div class="lbl">CPL</div><div class="val"><span class="acc">$184</span></div></div><div class="s"><div class="lbl">ROAS</div><div class="val">4.8<span class="grn">x</span></div></div></div><div class="hi-chart"><div class="grid-line gl1"></div><div class="grid-line gl2"></div><div class="grid-line gl3"></div><div class="hi-bars"><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div><div class="bar"></div></div><div class="hi-trend"><svg viewBox="0 0 380 110" preserveAspectRatio="none"><path d="M 6 90 L 50 78 L 95 82 L 140 60 L 185 64 L 230 42 L 275 48 L 320 22 L 360 14"></path><circle cx="360" cy="14" r="4"></circle></svg></div></div></div><div class="hi-card hi-phone floating"><div class="hi-phone-notch"></div><div class="hi-phone-screen"><div class="ph-head"><div class="ph-title">Pipeline</div><div class="ph-sub">HOY</div></div><div class="ph-lead"><div class="av">M</div><div class="lh"><div class="nm">María L.</div><div class="em">Solicitud · CRM</div></div><div class="dot-g"></div></div><div class="ph-lead l2"><div class="av">JR</div><div class="lh"><div class="nm">José R.</div><div class="em">Cotización · Auto</div></div><div class="dot-g"></div></div><div class="ph-lead l3"><div class="av">AC</div><div class="lh"><div class="nm">Ana C.</div><div class="em">Follow-up · IA</div></div><div class="dot-g"></div></div></div></div><div class="hi-card hi-note floating"><span class="nb">✓</span><span>Cotización enviada · 14s</span></div><div class="hi-card hi-badge floating"><div class="num">-30%</div><div class="meta"><div class="lbl">CPL</div><div class="sub">vs mes anterior</div></div></div></div></div>
     </div>
-    <div class="phase-strip">
-      <div class="phase"><span class="num">01</span><span class="name">Atracción</span><span class="arrow">→</span></div>
-      <div class="phase"><span class="num">02</span><span class="name">Conversión</span><span class="arrow">→</span></div>
-      <div class="phase"><span class="num">03</span><span class="name">Automatización</span><span class="arrow">→</span></div>
-      <div class="phase"><span class="num">04</span><span class="name">Crecimiento</span><span class="arrow">↗</span></div>
+    <div class="phase-strip" role="list" aria-label="Nuestro proceso de crecimiento en cuatro etapas">
+      <div class="phase" role="listitem"><span class="num">01</span><span class="name">Atracción</span></div>
+      <div class="phase" role="listitem"><span class="num">02</span><span class="name">Conversión</span></div>
+      <div class="phase" role="listitem"><span class="num">03</span><span class="name">Automatización</span></div>
+      <div class="phase" role="listitem"><span class="num">04</span><span class="name">Crecimiento</span></div>
     </div>
   </div>
 </section>
@@ -1122,21 +1126,10 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         </div>
       </div>
 
-      <form class="form-grid" id="lead-form" action="https://forms.zohopublic.com/contactorisel1/form/Riselandingpage/formperma/LFQlqGVSIMQfwyTCQjD_EklIQ_8rzkb8wov6J1_YXUY/htmlRecords/submit" method="POST" accept-charset="UTF-8" enctype="multipart/form-data" novalidate>
-        <input type="hidden" name="zf_referrer_name" value="">
-        <input type="hidden" name="zf_redirect_url" value="https://riselanding.com/?enviado=1">
-        <input type="hidden" name="zc_gad" value="">
+      <form class="form-grid" id="lead-form" novalidate>
         <input type="hidden" id="utm_source" name="utm_source">
         <input type="hidden" id="utm_medium" name="utm_medium">
         <input type="hidden" id="utm_campaign" name="utm_campaign">
-        <select name="Checkbox" multiple style="display:none" id="zoho-servicios" aria-hidden="true">
-          <option value="Publicidad Digital">Publicidad Digital</option>
-          <option value="SEO y Posicionamiento">SEO y Posicionamiento</option>
-          <option value="Reediseño / Desarrollo página web">Reediseño / Desarrollo página web</option>
-          <option value="Implementación de CRM">Implementación de CRM</option>
-          <option value="Automatización de procesos">Automatización de procesos</option>
-          <option value="Dashboards y reportes">Dashboards y reportes</option>
-        </select>
         <div class="field"><label for="f-nombre">Nombre *</label><input id="f-nombre" name="Name_First" required placeholder="María"></div>
         <div class="field"><label for="f-apellido">Apellido *</label><input id="f-apellido" name="Name_Last" required placeholder="González"></div>
         <div class="field full"><label for="f-empresa">Empresa</label><input id="f-empresa" name="SingleLine" placeholder="Tu empresa S.A."></div>
@@ -1279,17 +1272,71 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     tgl.setAttribute('aria-expanded', o); tgl.setAttribute('aria-label', o?'Cerrar menú':'Abrir menú'); }); }
   document.querySelectorAll('.nav-links a').forEach(function(a){ a.addEventListener('click', function(){ if(links) links.classList.remove('open'); if(tgl){ tgl.setAttribute('aria-expanded','false'); tgl.setAttribute('aria-label','Abrir menú'); } }); });
 
-  // 8) Checkbox -> Zoho hidden select
-  var zoho=document.getElementById('zoho-servicios');
+  // 8) Checkbox visual toggle
   document.querySelectorAll('.chk input[data-zoho]').forEach(function(cb){ cb.addEventListener('change', function(){
     cb.closest('.chk').classList.toggle('on', cb.checked);
-    if(!zoho) return;
-    Array.prototype.forEach.call(zoho.options, function(o){ if(o.value===cb.dataset.zoho) o.selected=cb.checked; });
   }); });
 
   // 9) UTM capture
   var qs=new URLSearchParams(location.search);
   ['utm_source','utm_medium','utm_campaign'].forEach(function(k){ var el=document.getElementById(k); if(el&&qs.get(k)) el.value=qs.get(k); });
+})();
+</script>
+<script>
+(function () {
+  var form = document.getElementById('lead-form');
+  if (!form) return;
+
+  function pilar(servicios) {
+    var ads = servicios.indexOf('Publicidad Digital') !== -1;
+    var web = servicios.some(function (s) { return /SEO|web/i.test(s); });
+    var ops = servicios.some(function (s) { return /CRM|Automatizaci|Dashboards/i.test(s); });
+    if ((ads + web + ops) >= 2 || servicios.length >= 3) return 'Bundle Completo';
+    if (ads) return 'Google Ads';
+    if (web) return 'Sitio Web + SEO';
+    if (ops) return 'CRM + Automatización';
+    return 'Bundle Completo';
+  }
+
+  form.addEventListener('submit', function (ev) {
+    ev.preventDefault();
+    if (!form.reportValidity()) return;
+
+    var btn = form.querySelector('button[type="submit"]');
+    var btnTexto = btn.textContent;
+    btn.disabled = true; btn.textContent = 'Enviando…';
+
+    var servicios = Array.prototype.map.call(
+      form.querySelectorAll('.checks input:checked'),
+      function (c) { return c.getAttribute('data-zoho'); }
+    );
+    var utm = ['utm_source', 'utm_medium', 'utm_campaign'].map(function (id) {
+      var el = document.getElementById(id);
+      return el && el.value ? id + '=' + el.value : null;
+    }).filter(Boolean).join(' ');
+
+    var payload = {
+      nombre: (document.getElementById('f-nombre').value + ' ' + document.getElementById('f-apellido').value).trim(),
+      empresa: document.getElementById('f-empresa').value.trim(),
+      email: document.getElementById('f-email').value.trim(),
+      telefono: document.getElementById('f-tel').value.trim(),
+      mensaje: ('Servicios: ' + (servicios.join(', ') || 'no indicó') + (utm ? ' · ' + utm : '')),
+      interes_pilar: pilar(servicios),
+      fuente: 'Sitio Web'
+    };
+
+    fetch('https://n8n-production-417ba.up.railway.app/webhook/lead-capture', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      if (!data.success) throw new Error(data.message || 'error');
+      form.innerHTML = '<div style="padding:28px;text-align:center"><strong>¡Gracias! Recibimos tu mensaje.</strong><br>Te contactamos en menos de 24 horas.</div>';
+    }).catch(function () {
+      btn.disabled = false; btn.textContent = btnTexto;
+      alert('No pudimos enviar el formulario. Escríbenos a contacto@riselanding.com o por WhatsApp.');
+    });
+  });
 })();
 </script>
 </body>
