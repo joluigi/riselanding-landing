@@ -519,11 +519,37 @@ section{position:relative;z-index:1}
 .chk .box{width:14px;height:14px;border-radius:5px;border:1.5px solid var(--ink-mute);display:inline-flex;align-items:center;justify-content:center;transition:all .2s var(--ease)}
 .chk.on .box{background:var(--accent);border-color:var(--accent);color:#fff}
 
-.success{
-  padding:28px;border-radius:18px;background:rgba(31,209,123,.08);border:1px solid rgba(31,209,123,.30);
+/* Estado de éxito del formulario */
+.form-grid.sent{display:flex;align-items:center;justify-content:center;min-height:320px}
+.form-success{
+  display:flex;flex-direction:column;align-items:center;text-align:center;
+  padding:40px 24px;max-width:40ch;outline:none;
+  animation:fsFade .6s var(--ease) both;
 }
-.success h3{font-family:"Bricolage Grotesque";font-weight:600;font-size:22px;margin:0 0 8px}
-.success p{margin:0;color:var(--ink-dim);font-size:14.5px;line-height:1.55}
+.form-success__icon{
+  width:64px;height:64px;border-radius:50%;margin-bottom:24px;
+  display:inline-flex;align-items:center;justify-content:center;color:var(--accent);
+  background:rgba(255,90,31,.10);border:1px solid rgba(255,90,31,.32);
+  box-shadow:0 0 0 6px rgba(255,90,31,.05),0 12px 34px rgba(255,90,31,.20);
+  animation:fsPop .5s var(--ease) .08s both;
+}
+.form-success__icon svg{width:30px;height:30px;stroke-dasharray:24;stroke-dashoffset:0;animation:fsCheck .55s var(--ease) .3s both}
+.form-success .eyebrow{margin-bottom:14px}
+.form-success h3{
+  font-family:"Bricolage Grotesque","Helvetica Neue",sans-serif;font-weight:700;
+  letter-spacing:-.02em;line-height:1.12;color:var(--ink);margin:0 0 12px;
+  font-size:clamp(1.55rem,1.2rem+1.3vw,2.05rem);
+}
+.form-success p{margin:0;color:var(--ink-dim);font-size:15.5px;line-height:1.6;max-width:34ch}
+.form-success__meta{
+  margin-top:26px;display:inline-flex;align-items:center;gap:9px;
+  font-family:"JetBrains Mono",monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:var(--ink-mute);border:1px solid var(--line);border-radius:999px;padding:9px 15px;
+}
+.form-success__meta .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 3px rgba(255,90,31,.16)}
+@keyframes fsFade{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes fsPop{from{opacity:0;transform:scale(.72)}to{opacity:1;transform:none}}
+@keyframes fsCheck{from{stroke-dashoffset:24}to{stroke-dashoffset:0}}
 
 /* ───────────────── footer ───────────────── */
 footer{padding:80px 0 60px;border-top:1px solid var(--line);background:var(--bg-2);position:relative;overflow:hidden}
@@ -1331,7 +1357,17 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       body: JSON.stringify(payload)
     }).then(function (r) { return r.json(); }).then(function (data) {
       if (!data.success) throw new Error(data.message || 'error');
-      form.innerHTML = '<div style="padding:28px;text-align:center"><strong>¡Gracias! Recibimos tu mensaje.</strong><br>Te contactamos en menos de 24 horas.</div>';
+      form.classList.add('sent');
+      form.innerHTML =
+        '<div class="form-success" role="status" tabindex="-1">'
+        + '<div class="form-success__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></div>'
+        + '<span class="eyebrow">Solicitud recibida</span>'
+        + '<h3>¡Gracias! Ya tenemos tu mensaje.</h3>'
+        + '<p>Un especialista de Riselanding revisará tu operación y te escribirá con los siguientes pasos de tu diagnóstico gratuito.</p>'
+        + '<span class="form-success__meta"><span class="dot"></span>Respuesta en &lt; 24 h</span>'
+        + '</div>';
+      var ok = form.querySelector('.form-success');
+      if (ok) ok.focus();
     }).catch(function () {
       btn.disabled = false; btn.textContent = btnTexto;
       alert('No pudimos enviar el formulario. Escríbenos a contacto@riselanding.com o por WhatsApp.');
