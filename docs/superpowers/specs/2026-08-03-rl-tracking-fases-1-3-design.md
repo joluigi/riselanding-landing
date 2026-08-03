@@ -109,7 +109,7 @@ La guarda G2 del contenedor bloquea Ads/Meta para todo lo que no sea `clean`; GA
 ### `lead_score` (0–100) y `lead_tier`
 
 ```
-base 30
+base 15
 +25 correo corporativo   | +5 correo gratuito | −30 correo desechable
 +15 empresa llenada
 +15 tamaño 51_200 o 200_plus | +10 tamaño 11_50 | +5 tamaño 1_10
@@ -119,7 +119,12 @@ clamp [0, 100] · Tier A ≥70 · B 40–69 · C <40
 Si flag = spam → score 0, tier C directo.
 ```
 
-Caso de QA de la guía: gmail sin empresa = 30+5 = 35 → Tier C → G3 bloquea Ads. Un lead con correo gratuito pero empresa + tamaño real puede ser B/A (realista en pymes mexicanas).
+Casos de referencia (el teléfono válido y ≥1 servicio están presentes en casi todo envío real, por ser campos obligatorios/habituales):
+
+- gmail sin empresa (+tel +servicio) = 15+5+10+5 = **35 → Tier C** → G3 bloquea Ads (caso de QA de la guía).
+- gmail + empresa + tamaño 1_10 = 55 → Tier B (pyme chica con correo gratuito, realista en MX).
+- Corporativo + empresa (sin tamaño) = 70 → Tier A; con tamaño 51_200 = 85 → Tier A.
+- Desechable = máx. 30 → Tier C y flag `suspect`.
 
 ## Manejo de errores
 
