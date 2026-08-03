@@ -13,6 +13,7 @@ const match = html.match(/<script id="rl-bootstrap">([\s\S]*?)<\/script>/);
 function run(opts) {
   opts = opts || {};
   const jar = Object.assign({}, opts.cookies); // name → valor YA codificado
+  const attrs = {}; // name → string COMPLETO del `document.cookie = ...` (con Max-Age/Path/SameSite/Secure)
   const stored = Object.assign({}, opts.sessionStorage);
   const sandbox = {
     document: {
@@ -22,12 +23,17 @@ function run(opts) {
       set cookie(str) {
         const pair = str.split(';')[0];
         const i = pair.indexOf('=');
-        jar[pair.slice(0, i).trim()] = pair.slice(i + 1).trim();
+        const name = pair.slice(0, i).trim();
+        jar[name] = pair.slice(i + 1).trim();
+        attrs[name] = str;
       },
       referrer: opts.referrer || ''
     },
     location: { search: opts.search || '', pathname: '/', hostname: 'riselanding.com' },
-    sessionStorage: {
+    sessionStorage: opts.blockStorage ? {
+      getItem: function () { throw new Error('storage blocked'); },
+      setItem: function () { throw new Error('storage blocked'); }
+    } : {
       getItem: function (k) { return (k in stored) ? stored[k] : null; },
       setItem: function (k, v) { stored[k] = String(v); }
     },
@@ -38,7 +44,7 @@ function run(opts) {
   sandbox.window = sandbox;
   vm.createContext(sandbox);
   vm.runInContext(match[1], sandbox);
-  return { dl: sandbox.dataLayer, jar, rl: sandbox.__rl, stored };
+  return { dl: sandbox.dataLayer, jar, rl: sandbox.__rl, stored, attrs };
 }
 
 function ctxEvent(dl) {
@@ -133,4 +139,22 @@ test('el consent default se empuja ANTES de rl_context_ready', function () {
   const iConsent = r.dl.findIndex(function (e) { return e && e[0] === 'consent'; });
   const iCtx = r.dl.findIndex(function (e) { return e && e.event === 'rl_context_ready'; });
   assert.ok(iConsent !== -1 && iConsent < iCtx);
+});
+
+test('cookies rl_lid/rl_attr/rl_internal llevan los atributos correctos (Max-Age, Path, SameSite, Secure)', function () {
+  const r = run({ search: '?rl_internal=1' });
+  assert.ok(r.attrs.rl_lid.indexOf('Max-Age=34560000') !== -1, 'rl_lid debe tener Max-Age=34560000 (D400)');
+  assert.ok(r.attrs.rl_lid.indexOf('Path=/') !== -1, 'rl_lid debe tener Path=/');
+  assert.ok(r.attrs.rl_lid.indexOf('SameSite=Lax') !== -1, 'rl_lid debe tener SameSite=Lax');
+  assert.ok(r.attrs.rl_lid.indexOf('Secure') !== -1, 'rl_lid debe tener Secure');
+  assert.ok(r.attrs.rl_attr.indexOf('Max-Age=7776000') !== -1, 'rl_attr debe tener Max-Age=7776000 (D90)');
+  assert.ok(r.attrs.rl_internal.indexOf('Max-Age=34560000') !== -1, 'rl_internal debe tener Max-Age=34560000 (D400)');
+});
+
+test('sessionStorage bloqueado: rl_context_ready igual se dispara, session_count y touch_count en 1', function () {
+  const r = run({ blockStorage: true });
+  const ctx = ctxEvent(r.dl);
+  assert.ok(ctx, 'no se empujó rl_context_ready aun con sessionStorage bloqueado');
+  assert.strictEqual(ctx.user.session_count, 1);
+  assert.strictEqual(ctx.traffic.touch_count, 1);
 });

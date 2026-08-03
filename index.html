@@ -47,7 +47,7 @@
       sid = Math.floor(now.getTime() / 1000) + '.' + uuid().slice(0, 5);
       sessionStorage.setItem('rl_sid', sid);
     }
-  } catch (e) { sid = Math.floor(now.getTime() / 1000) + '.noses'; }
+  } catch (e) { newSession = true; sid = Math.floor(now.getTime() / 1000) + '.noses'; }
   if (newSession) lid.sc = (lid.sc || 0) + 1;
   setCookie('rl_lid', JSON.stringify(lid), D400);
 
