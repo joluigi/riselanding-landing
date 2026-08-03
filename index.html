@@ -519,6 +519,10 @@ section{position:relative;z-index:1}
 .chk .box{width:14px;height:14px;border-radius:5px;border:1.5px solid var(--ink-mute);display:inline-flex;align-items:center;justify-content:center;transition:all .2s var(--ease)}
 .chk.on .box{background:var(--accent);border-color:var(--accent);color:#fff}
 
+/* Anti-spam: honeypot fuera de pantalla (no display:none, algunos bots lo detectan) + error inline */
+.hp-field{position:absolute!important;left:-9999px!important;top:-9999px!important;width:1px;height:1px;overflow:hidden}
+.form-error{grid-column:1/-1;margin-top:10px;padding:12px 14px;border:1px solid rgba(255,107,107,.35);border-radius:10px;background:rgba(255,107,107,.08);color:#FFB4B4;font-size:13.5px;line-height:1.5}
+
 /* Estado de éxito del formulario */
 .form-grid.sent{display:flex;align-items:center;justify-content:center;min-height:320px}
 .form-success{
@@ -1156,6 +1160,11 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         <input type="hidden" id="utm_source" name="utm_source">
         <input type="hidden" id="utm_medium" name="utm_medium">
         <input type="hidden" id="utm_campaign" name="utm_campaign">
+        <!-- Honeypot anti-bots: oculto fuera de pantalla, un humano nunca lo rellena -->
+        <div class="hp-field" aria-hidden="true">
+          <label for="f-hp">No llenar este campo</label>
+          <input id="f-hp" name="b_comments" type="text" tabindex="-1" autocomplete="nope">
+        </div>
         <div class="field"><label for="f-nombre">Nombre *</label><input id="f-nombre" name="Name_First" required placeholder="María"></div>
         <div class="field"><label for="f-apellido">Apellido *</label><input id="f-apellido" name="Name_Last" required placeholder="González"></div>
         <div class="field full"><label for="f-empresa">Empresa</label><input id="f-empresa" name="SingleLine" placeholder="Tu empresa S.A."></div>
@@ -1313,6 +1322,8 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
   var form = document.getElementById('lead-form');
   if (!form) return;
 
+  var t0 = Date.now(); // instante de carga: /api/lead descarta envíos imposiblemente rápidos
+
   function pilar(servicios) {
     var ads = servicios.indexOf('Publicidad Digital') !== -1;
     var web = servicios.some(function (s) { return /SEO|web/i.test(s); });
@@ -1324,8 +1335,22 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     return 'Bundle Completo';
   }
 
+  // Firma SHA-256 en hex con Web Crypto; sin soporte devuelve 'nocrypto' (el server lo tolera, solo puntúa)
+  function sha256hex(str){
+    if (!(window.crypto && crypto.subtle && window.TextEncoder)) return Promise.resolve('nocrypto');
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function(buf){
+      return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
+    }).catch(function(){ return 'nocrypto'; });
+  }
+
+  function quitarError(){
+    var e = form.querySelector('.form-error');
+    if (e) e.parentNode.removeChild(e);
+  }
+
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
+    quitarError(); // cada reintento parte sin el aviso del intento anterior
     if (!form.reportValidity()) return;
 
     var btn = form.querySelector('button[type="submit"]');
@@ -1351,12 +1376,19 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       fuente: 'Sitio Web'
     };
 
-    fetch('https://n8n-production-417ba.up.railway.app/webhook/lead-capture', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+    // Señales anti-bot que valida /api/lead: honeypot (clave 'website' del contrato), timestamp y firma
+    payload.website = (document.getElementById('f-hp')||{value:''}).value;
+    payload.ts = t0;
+
+    sha256hex(t0 + ':' + 'rl-diag-2026').then(function (sig) {
+      payload.sig = sig;
+      return fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Form-Token': 'rl1' },
+        body: JSON.stringify(payload)
+      });
     }).then(function (r) { return r.json(); }).then(function (data) {
-      if (!data.success) throw new Error(data.message || 'error');
+      if (!data.success) { var e = new Error(data.message || 'error'); e.delServidor = !!data.message; throw e; }
       form.classList.add('sent');
       form.innerHTML =
         '<div class="form-success" role="status" tabindex="-1">'
@@ -1368,9 +1400,15 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         + '</div>';
       var ok = form.querySelector('.form-success');
       if (ok) ok.focus();
-    }).catch(function () {
+    }).catch(function (err) {
       btn.disabled = false; btn.textContent = btnTexto;
-      alert('No pudimos enviar el formulario. Escríbenos a contacto@riselanding.com o por WhatsApp.');
+      quitarError();
+      var aviso = document.createElement('div');
+      aviso.className = 'form-error';
+      aviso.setAttribute('role', 'alert');
+      aviso.textContent = (err && err.delServidor) ? err.message
+        : 'No pudimos enviar el formulario. Inténtalo de nuevo o escríbenos a contacto@riselanding.com o por WhatsApp.';
+      form.appendChild(aviso);
     });
   });
 })();
