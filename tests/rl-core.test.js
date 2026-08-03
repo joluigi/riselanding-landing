@@ -82,3 +82,19 @@ test('sha256hex: hash conocido con Web Crypto de Node', async function () {
   const esperado = require('node:crypto').createHash('sha256').update('maria@empresa.mx').digest('hex');
   assert.strictEqual(h, esperado);
 });
+
+test('_crossedThresholds: devuelve solo los umbrales recién cruzados', function () {
+  assert.deepStrictEqual(RL._crossedThresholds(0, 30), [25]);
+  assert.deepStrictEqual(RL._crossedThresholds(0, 100), [25, 50, 75, 90]);
+  assert.deepStrictEqual(RL._crossedThresholds(30, 60), [50]);
+  assert.deepStrictEqual(RL._crossedThresholds(60, 55), []);
+  assert.deepStrictEqual(RL._crossedThresholds(90, 100), []);
+});
+
+test('_engagedReady: exige 45 s visibles + scroll 50 + 2 interacciones, una sola vez', function () {
+  assert.strictEqual(RL._engagedReady({ engagedFired: false, visibleMs: 45000, maxScroll: 50, interactions: 2 }), true);
+  assert.strictEqual(RL._engagedReady({ engagedFired: false, visibleMs: 44000, maxScroll: 90, interactions: 5 }), false);
+  assert.strictEqual(RL._engagedReady({ engagedFired: false, visibleMs: 60000, maxScroll: 49, interactions: 5 }), false);
+  assert.strictEqual(RL._engagedReady({ engagedFired: false, visibleMs: 60000, maxScroll: 90, interactions: 1 }), false);
+  assert.strictEqual(RL._engagedReady({ engagedFired: true, visibleMs: 60000, maxScroll: 90, interactions: 5 }), false);
+});

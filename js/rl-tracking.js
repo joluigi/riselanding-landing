@@ -97,6 +97,18 @@
 
   function prefilledRef(leadId) { return 'RL-' + String(leadId || '').slice(0, 8); }
 
+  function crossedThresholds(prevMax, pct) {
+    var out = [], ts = [25, 50, 75, 90];
+    for (var i = 0; i < ts.length; i++) {
+      if (pct >= ts[i] && prevMax < ts[i]) out.push(ts[i]);
+    }
+    return out;
+  }
+
+  function engagedReady(s) {
+    return !s.engagedFired && s.visibleMs >= 45000 && s.maxScroll >= 50 && s.interactions >= 2;
+  }
+
   function sha256hex(str) {
     var c = cryptoObj();
     if (!(c && c.subtle && typeof TextEncoder !== 'undefined')) return Promise.resolve(null);
@@ -111,12 +123,133 @@
     uuid: uuid, pushEvent: pushEvent, emailDomainType: emailDomainType,
     phoneE164MX: phoneE164MX, leadScore: leadScore,
     serviceLineFromPilar: serviceLineFromPilar, prefilledRef: prefilledRef,
-    sha256hex: sha256hex
+    sha256hex: sha256hex,
+    _crossedThresholds: crossedThresholds, _engagedReady: engagedReady
   };
 
   global.RL = RL;
   if (typeof module !== 'undefined' && module.exports) module.exports = RL;
   if (typeof global.document === 'undefined') return; // Node: solo el núcleo
 
-  // --- Listeners DOM (Task 4 y 5 los agregan aquí) ---
+  // --- Listeners DOM ---
+  function initDom() {
+    var state = { maxScroll: 0, interactions: 0, engagedFired: false, visibleMs: 0 };
+
+    function scrollPct() {
+      var doc = document.documentElement;
+      var h = (doc.scrollHeight - doc.clientHeight) || 1;
+      var y = window.pageYOffset || doc.scrollTop || 0;
+      return Math.min(100, Math.round((y / h) * 100));
+    }
+
+    // rl_engaged_session: 45 s visibles + scroll 50% + 2 interacciones (§2.3)
+    function maybeEngaged() {
+      if (!engagedReady(state)) return;
+      state.engagedFired = true;
+      clearInterval(engagedTimer);
+      pushEvent('rl_engaged_session', {
+        engagement_time_sec: Math.round(state.visibleMs / 1000),
+        max_scroll_pct: state.maxScroll,
+        interaction_count: state.interactions
+      });
+    }
+    var engagedTimer = setInterval(function () {
+      if (document.visibilityState === 'visible') state.visibleMs += 5000;
+      maybeEngaged();
+    }, 5000);
+    document.addEventListener('click', function () { state.interactions++; }, { passive: true, capture: true });
+    document.addEventListener('keydown', function () { state.interactions++; }, { passive: true, capture: true });
+
+    // rl_scroll_depth (25/50/75/90) + rl_case_study_view (#resultados al 75%)
+    var resEl = document.getElementById('resultados');
+    var resFired = false;
+    function checkCaseStudy() {
+      if (resFired || !resEl) return;
+      var r = resEl.getBoundingClientRect();
+      if (r.height <= 0) return;
+      var read = Math.round(((window.innerHeight - r.top) / r.height) * 100);
+      if (read >= 75) {
+        resFired = true;
+        pushEvent('rl_case_study_view', {
+          case_id: 'resultados_home', case_segment: 'general_b2b_mx',
+          read_depth_pct: Math.min(100, read)
+        });
+      }
+    }
+    var ticking = false;
+    window.addEventListener('scroll', function () {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(function () {
+        ticking = false;
+        var pct = scrollPct();
+        var cruzados = crossedThresholds(state.maxScroll, pct);
+        if (pct > state.maxScroll) state.maxScroll = pct;
+        for (var i = 0; i < cruzados.length; i++) {
+          pushEvent('rl_scroll_depth', { threshold: cruzados[i] });
+        }
+        checkCaseStudy();
+        maybeEngaged();
+      });
+    }, { passive: true });
+
+    // rl_service_view: 20 s acumulados con #servicios visible (pausa fuera de viewport/pestaña)
+    (function watchServicios() {
+      var el = document.getElementById('servicios');
+      if (!el || !('IntersectionObserver' in window)) return;
+      var visible = false, acc = 0, done = false;
+      var io = new IntersectionObserver(function (es) {
+        for (var i = 0; i < es.length; i++) visible = es[i].isIntersecting;
+      }, { threshold: 0.4 });
+      io.observe(el);
+      var t = setInterval(function () {
+        if (done) return;
+        if (visible && document.visibilityState === 'visible') acc += 1000;
+        if (acc >= 20000) {
+          done = true; clearInterval(t); io.disconnect();
+          pushEvent('rl_service_view', {
+            service_line: 'paquete_integral', assigned_partner: 'ambos',
+            dwell_time_sec: Math.round(acc / 1000)
+          });
+        }
+      }, 1000);
+    })();
+
+    // rl_phone_click + rl_whatsapp_click (dormido hasta que exista un enlace wa.me; C-19)
+    document.addEventListener('click', function (e) {
+      var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
+      if (!a) return;
+      var href = a.getAttribute('href') || '';
+      if (href.indexOf('tel:') === 0) {
+        pushEvent('rl_phone_click', { cta_location: a.closest('footer') ? 'footer' : 'body' });
+      } else if (href.indexOf('wa.me') !== -1) {
+        var ctx = global.__rl || {};
+        var ref = prefilledRef(ctx.leadId);
+        try {
+          var u = new URL(a.href);
+          var txt = u.searchParams.get('text') || '';
+          u.searchParams.set('text', (txt ? txt + ' ' : '') + '[' + ref + ']');
+          a.href = u.toString();
+        } catch (err) { /* URL inválida: el clic sigue, solo sin ref */ }
+        pushEvent('rl_whatsapp_click', {
+          transaction_id: ctx.leadId || null, prefilled_ref: ref,
+          cta_location: a.closest('footer') ? 'footer' : 'body',
+          service_line: 'paquete_integral'
+        });
+      }
+    }, true);
+
+    // rl_form_start: primer focus en el formulario (1× por instancia)
+    var form = document.getElementById('lead-form');
+    if (form) {
+      var started = false;
+      form.addEventListener('focusin', function () {
+        if (started) return;
+        started = true;
+        pushEvent('rl_form_start', { form_id: 'agenda_diagnostico', form_location: 'contacto' });
+      });
+    }
+  }
+
+  try { initDom(); } catch (e) { /* el tracking jamás rompe la página */ }
 })(typeof window !== 'undefined' ? window : globalThis);
