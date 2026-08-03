@@ -157,8 +157,12 @@
       if (document.visibilityState === 'visible') state.visibleMs += 5000;
       maybeEngaged();
     }, 5000);
-    document.addEventListener('click', function () { state.interactions++; }, { passive: true, capture: true });
-    document.addEventListener('keydown', function () { state.interactions++; }, { passive: true, capture: true });
+    document.addEventListener('click', function (e) {
+      if (e.target && e.target.closest && e.target.closest('a, button, input, select, textarea, label, .svc-tab, .faq-q')) state.interactions++;
+    }, { passive: true, capture: true });
+    document.addEventListener('keydown', function (e) {
+      if (e.target && e.target.closest && e.target.closest('a, button, input, select, textarea, label, .svc-tab, .faq-q')) state.interactions++;
+    }, { passive: true, capture: true });
 
     // rl_scroll_depth (25/50/75/90) + rl_case_study_view (#resultados al 75%)
     var resEl = document.getElementById('resultados');
@@ -216,13 +220,18 @@
     })();
 
     // rl_phone_click + rl_whatsapp_click (dormido hasta que exista un enlace wa.me; C-19)
+    var phoneFired = false, waFired = false;
     document.addEventListener('click', function (e) {
       var a = e.target && e.target.closest ? e.target.closest('a[href]') : null;
       if (!a) return;
       var href = a.getAttribute('href') || '';
       if (href.indexOf('tel:') === 0) {
+        if (phoneFired) return;
+        phoneFired = true;
         pushEvent('rl_phone_click', { cta_location: a.closest('footer') ? 'footer' : 'body' });
       } else if (href.indexOf('wa.me') !== -1) {
+        if (waFired) return;
+        waFired = true;
         var ctx = global.__rl || {};
         var ref = prefilledRef(ctx.leadId);
         try {
