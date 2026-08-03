@@ -119,11 +119,48 @@
     }).catch(function () { return null; });
   }
 
+  function buildLeadSubmit(f) {
+    var ctx = global.__rl || {};
+    var emailNorm = String(f.email || '').trim().toLowerCase();
+    var e164 = phoneE164MX(f.phoneRaw);
+    var emailType = emailDomainType(emailNorm);
+    var q = leadScore({
+      emailType: emailType, hasCompany: !!f.hasCompany, sizeBucket: f.sizeBucket || null,
+      phoneValid: !!e164, servicesCount: f.servicesCount || 0, honeypotFilled: !!f.honeypotFilled
+    });
+    var payload = {
+      event_id: uuid(),
+      transaction_id: ctx.leadId || null,
+      lead_id: ctx.leadId || null,
+      form_id: 'agenda_diagnostico', form_location: 'contacto', lead_source_channel: 'form',
+      service_line: serviceLineFromPilar(f.pilar), assigned_partner: 'ambos',
+      prospect_segment: null, prospect_geo: null,
+      company_size_bucket: f.sizeBucket || null,
+      operation_volume_bucket: null, current_marketing_maturity: null,
+      email_domain_type: emailType,
+      lead_quality_flag: q.flag, lead_score: q.score, lead_tier: q.tier,
+      vertical_fit: 'horizontal', segment_match: null,
+      time_to_convert_sec: f.t0 ? Math.max(0, Math.round((Date.now() - f.t0) / 1000)) : null,
+      touch_count: (typeof ctx.touchCount === 'number') ? ctx.touchCount : null,
+      days_since_first_touch: (typeof ctx.daysSinceFirstTouch === 'number') ? ctx.daysSinceFirstTouch : null
+    };
+    return Promise.all([
+      sha256hex(emailNorm),
+      e164 ? sha256hex(e164) : Promise.resolve(null)
+    ]).then(function (hs) {
+      var ud = {};
+      if (hs[0]) ud.sha256_email_address = hs[0];
+      if (hs[1]) ud.sha256_phone_number = hs[1];
+      if (ud.sha256_email_address || ud.sha256_phone_number) payload.user_data = ud;
+      return payload;
+    });
+  }
+
   var RL = {
     uuid: uuid, pushEvent: pushEvent, emailDomainType: emailDomainType,
     phoneE164MX: phoneE164MX, leadScore: leadScore,
     serviceLineFromPilar: serviceLineFromPilar, prefilledRef: prefilledRef,
-    sha256hex: sha256hex,
+    sha256hex: sha256hex, buildLeadSubmit: buildLeadSubmit,
     _crossedThresholds: crossedThresholds, _engagedReady: engagedReady
   };
 

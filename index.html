@@ -1300,6 +1300,15 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         <div class="field"><label for="f-nombre">Nombre *</label><input id="f-nombre" name="Name_First" required placeholder="María"></div>
         <div class="field"><label for="f-apellido">Apellido *</label><input id="f-apellido" name="Name_Last" required placeholder="González"></div>
         <div class="field full"><label for="f-empresa">Empresa</label><input id="f-empresa" name="SingleLine" placeholder="Tu empresa S.A."></div>
+        <div class="field full"><label for="f-tamano">Tamaño de tu empresa</label>
+          <select id="f-tamano">
+            <option value="" selected>Prefiero no decir</option>
+            <option value="1_10">1–10 personas</option>
+            <option value="11_50">11–50 personas</option>
+            <option value="51_200">51–200 personas</option>
+            <option value="200_plus">Más de 200 personas</option>
+          </select>
+        </div>
         <div class="field full"><label for="f-email">Correo de trabajo *</label><input id="f-email" type="email" name="Email" required placeholder="maria@tuempresa.mx"></div>
         <div class="field full"><label for="f-tel">WhatsApp / Teléfono *</label><input id="f-tel" type="tel" name="PhoneNumber_countrycode" required placeholder="+52 55 5878 8983" autocomplete="tel" inputmode="numeric"></div>
         <div class="field full">
@@ -1483,7 +1492,15 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
     quitarError(); // cada reintento parte sin el aviso del intento anterior
-    if (!form.reportValidity()) return;
+    if (!form.reportValidity()) {
+      var inv = form.querySelector(':invalid');
+      if (window.RL) RL.pushEvent('rl_form_error', {
+        form_id: 'agenda_diagnostico',
+        error_field: (inv && (inv.id || inv.name)) || 'unknown',
+        error_type: 'validation'
+      });
+      return;
+    }
 
     var btn = form.querySelector('button[type="submit"]');
     var btnTexto = btn.textContent;
@@ -1497,13 +1514,16 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       var el = document.getElementById(id);
       return el && el.value ? id + '=' + el.value : null;
     }).filter(Boolean).join(' ');
+    var tamSel = document.getElementById('f-tamano');
+    var tamano = tamSel ? tamSel.value : '';
+    var tamanoTexto = (tamSel && tamano) ? tamSel.options[tamSel.selectedIndex].text : '';
 
     var payload = {
       nombre: (document.getElementById('f-nombre').value + ' ' + document.getElementById('f-apellido').value).trim(),
       empresa: document.getElementById('f-empresa').value.trim(),
       email: document.getElementById('f-email').value.trim(),
       telefono: document.getElementById('f-tel').value.trim(),
-      mensaje: ('Servicios: ' + (servicios.join(', ') || 'no indicó') + (utm ? ' · ' + utm : '')),
+      mensaje: ('Servicios: ' + (servicios.join(', ') || 'no indicó') + (tamanoTexto ? ' · Tamaño: ' + tamanoTexto : '') + (utm ? ' · ' + utm : '')),
       interes_pilar: pilar(servicios),
       fuente: 'Sitio Web'
     };
@@ -1521,6 +1541,14 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       });
     }).then(function (r) { return r.json(); }).then(function (data) {
       if (!data.success) { var e = new Error(data.message || 'error'); e.delServidor = !!data.message; throw e; }
+      if (window.RL && RL.buildLeadSubmit) {
+        RL.buildLeadSubmit({
+          email: payload.email, phoneRaw: payload.telefono,
+          hasCompany: !!payload.empresa, sizeBucket: tamano || null,
+          servicesCount: servicios.length, honeypotFilled: !!payload.website,
+          pilar: payload.interes_pilar, t0: t0
+        }).then(function (p) { RL.pushEvent('rl_lead_submit', p); }).catch(function () {});
+      }
       form.classList.add('sent');
       form.innerHTML =
         '<div class="form-success" role="status" tabindex="-1">'
@@ -1535,6 +1563,11 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     }).catch(function (err) {
       btn.disabled = false; btn.textContent = btnTexto;
       quitarError();
+      if (window.RL) RL.pushEvent('rl_form_error', {
+        form_id: 'agenda_diagnostico',
+        error_field: 'server',
+        error_type: 'server'
+      });
       var aviso = document.createElement('div');
       aviso.className = 'form-error';
       aviso.setAttribute('role', 'alert');
