@@ -1,0 +1,10 @@
+{
+  "name": "riselanding-page",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/"
+  },
+  "dependencies": {
+    "@vercel/functions": "^3.7.7"
+  }
+}
