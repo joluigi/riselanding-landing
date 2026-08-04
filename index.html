@@ -1541,25 +1541,33 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       });
     }).then(function (r) { return r.json(); }).then(function (data) {
       if (!data.success) { var e = new Error(data.message || 'error'); e.delServidor = !!data.message; throw e; }
-      if (window.RL && RL.buildLeadSubmit) {
-        RL.buildLeadSubmit({
-          email: payload.email, phoneRaw: payload.telefono,
-          hasCompany: !!payload.empresa, sizeBucket: tamano || null,
-          servicesCount: servicios.length, honeypotFilled: !!payload.website,
-          pilar: payload.interes_pilar, t0: t0
-        }).then(function (p) { RL.pushEvent('rl_lead_submit', p); }).catch(function () {});
+
+      function mostrarExito() {
+        form.classList.add('sent');
+        form.innerHTML =
+          '<div class="form-success" role="status" tabindex="-1">'
+          + '<div class="form-success__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></div>'
+          + '<span class="eyebrow">Solicitud recibida</span>'
+          + '<h3>¡Gracias! Ya tenemos tu mensaje.</h3>'
+          + '<p>Un especialista de Riselanding revisará tu operación y te escribirá con los siguientes pasos de tu diagnóstico gratuito.</p>'
+          + '<span class="form-success__meta"><span class="dot"></span>Respuesta en &lt; 24 h</span>'
+          + '</div>';
+        var ok = form.querySelector('.form-success');
+        if (ok) ok.focus();
       }
-      form.classList.add('sent');
-      form.innerHTML =
-        '<div class="form-success" role="status" tabindex="-1">'
-        + '<div class="form-success__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></div>'
-        + '<span class="eyebrow">Solicitud recibida</span>'
-        + '<h3>¡Gracias! Ya tenemos tu mensaje.</h3>'
-        + '<p>Un especialista de Riselanding revisará tu operación y te escribirá con los siguientes pasos de tu diagnóstico gratuito.</p>'
-        + '<span class="form-success__meta"><span class="dot"></span>Respuesta en &lt; 24 h</span>'
-        + '</div>';
-      var ok = form.querySelector('.form-success');
-      if (ok) ok.focus();
+
+      var seguimiento = Promise.resolve();
+      if (window.RL && RL.buildLeadSubmit) {
+        try {
+          seguimiento = RL.buildLeadSubmit({
+            email: payload.email, phoneRaw: payload.telefono,
+            hasCompany: !!payload.empresa, sizeBucket: tamano || null,
+            servicesCount: servicios.length, honeypotFilled: !!payload.website,
+            pilar: payload.interes_pilar, t0: t0
+          }).then(function (p) { RL.pushEvent('rl_lead_submit', p); }).catch(function () {});
+        } catch (e) { seguimiento = Promise.resolve(); }
+      }
+      seguimiento.then(mostrarExito, mostrarExito);
     }).catch(function (err) {
       btn.disabled = false; btn.textContent = btnTexto;
       quitarError();
