@@ -243,8 +243,11 @@
       if (!el || !('IntersectionObserver' in window)) return;
       var visible = false, acc = 0, done = false;
       var io = new IntersectionObserver(function (es) {
-        for (var i = 0; i < es.length; i++) visible = es[i].isIntersecting;
-      }, { threshold: 0.5 });
+        for (var i = 0; i < es.length; i++) {
+          var entry = es[i];
+          visible = entry.intersectionRatio >= 0.5 || (entry.intersectionRect && entry.intersectionRect.height >= window.innerHeight * 0.5);
+        }
+      }, { threshold: [0, 0.25, 0.5] });
       io.observe(el);
       var t = setInterval(function () {
         if (done) return;

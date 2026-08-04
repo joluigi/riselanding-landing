@@ -2,6 +2,7 @@
 <html lang="es-MX">
 
 <head>
+  <meta charset="UTF-8">
   <!-- RL Bootstrap: identidad, atribución y Consent Mode v2. DEBE ir antes de GTM.
        Contrato: Guía de Tracking v2.1 §2.2 · spec docs/superpowers/specs/2026-08-03 -->
   <script id="rl-bootstrap">
@@ -144,7 +145,6 @@
     })(window, document, 'script', 'dataLayer', 'GTM-P3WZC7MV');</script>
   <!-- End Google Tag Manager -->
   <script src="/js/rl-tracking.js" defer></script>
-  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- ═══ SEO: Title & Description ═══ -->
@@ -1494,11 +1494,11 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     quitarError(); // cada reintento parte sin el aviso del intento anterior
     if (!form.reportValidity()) {
       var inv = form.querySelector(':invalid');
-      if (window.RL) RL.pushEvent('rl_form_error', {
+      try { if (window.RL) RL.pushEvent('rl_form_error', {
         form_id: 'agenda_diagnostico',
         error_field: (inv && (inv.id || inv.name)) || 'unknown',
         error_type: 'validation'
-      });
+      }); } catch (e) {}
       return;
     }
 
@@ -1571,11 +1571,11 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     }).catch(function (err) {
       btn.disabled = false; btn.textContent = btnTexto;
       quitarError();
-      if (window.RL) RL.pushEvent('rl_form_error', {
+      try { if (window.RL) RL.pushEvent('rl_form_error', {
         form_id: 'agenda_diagnostico',
         error_field: 'server',
         error_type: 'server'
-      });
+      }); } catch (e) {}
       var aviso = document.createElement('div');
       aviso.className = 'form-error';
       aviso.setAttribute('role', 'alert');
