@@ -200,6 +200,9 @@
     document.addEventListener('keydown', function (e) {
       if (e.target && e.target.closest && e.target.closest('a, button, input, select, textarea, label, .svc-tab, .faq-q')) state.interactions++;
     }, { passive: true, capture: true });
+    document.addEventListener('focusin', function (e) {
+      if (e.target && e.target.closest && e.target.closest('a, button, input, select, textarea, label, .svc-tab, .faq-q')) state.interactions++;
+    }, { passive: true, capture: true });
 
     // rl_scroll_depth (25/50/75/90) + rl_case_study_view (#resultados al 75%)
     var resEl = document.getElementById('resultados');
@@ -241,7 +244,7 @@
       var visible = false, acc = 0, done = false;
       var io = new IntersectionObserver(function (es) {
         for (var i = 0; i < es.length; i++) visible = es[i].isIntersecting;
-      }, { threshold: 0.4 });
+      }, { threshold: 0.5 });
       io.observe(el);
       var t = setInterval(function () {
         if (done) return;

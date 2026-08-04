@@ -33,6 +33,7 @@ const mapaRate = new Map(); // ip → [timestamps de envíos aceptados]
 
 const PILARES_VALIDOS = ['Google Ads', 'Sitio Web + SEO', 'CRM + Automatización', 'Bundle Completo'];
 
+// Mantener en sincronía con DISPOSABLE_DOMAINS de js/rl-tracking.js
 const DOMINIOS_DESECHABLES = [
   'mailinator.com', 'guerrillamail.com', '10minutemail.com', 'temp-mail.org', 'tempmail.com',
   'yopmail.com', 'sharklasers.com', 'trashmail.com', 'getnada.com', 'dispostable.com',
