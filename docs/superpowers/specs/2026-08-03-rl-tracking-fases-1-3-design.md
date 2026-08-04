@@ -70,7 +70,7 @@ Reglas transversales: **reset** `dataLayer.push({ rl_event_data: null })` antes 
 |---|---|---|
 | `rl_scroll_depth` | Umbrales 25/50/75/90 del documento, `passive`, rAF-throttled | `threshold` |
 | `rl_engaged_session` | ≥45 s en página **y** scroll máx ≥50% **y** ≥2 interacciones (click/keydown/focus en elementos interactivos: tabs, FAQ, nav, form) | `engagement_time_sec`, `max_scroll_pct`, `interaction_count` |
-| `rl_service_view` | 20 s **acumulados** de visibilidad de `#servicios` (IntersectionObserver ≥50% + temporizador que pausa al salir) | `service_line 'paquete_integral'`, `assigned_partner 'ambos'`, `dwell_time_sec` |
+| `rl_service_view` | 20 s **acumulados** de visibilidad de `#servicios` (IntersectionObserver: ratio ≥50% **o** la sección cubriendo ≥50% del viewport — en móvil la sección es más alta que la pantalla y el ratio nunca llega a 0.5) + temporizador que pausa al salir | `service_line 'paquete_integral'`, `assigned_partner 'ambos'`, `dwell_time_sec` |
 | `rl_case_study_view` | El fondo de `#resultados` alcanza el 75% de recorrido visible | `case_id 'resultados_home'`, `case_segment 'general_b2b_mx'`, `read_depth_pct` |
 | `rl_form_start` | Primer `focusin` en un campo de `#lead-form` (1× por instancia) | `form_id 'agenda_diagnostico'`, `form_location 'contacto'` |
 | `rl_form_error` | `reportValidity()` falla (campo y `error_type 'validation'`) o el gateway responde 422/429/5xx (`error_type 'server'`) | `form_id`, `error_field`, `error_type` |
@@ -141,7 +141,7 @@ En GTM Preview + DevTools, sobre `vercel dev`:
 3. `?rl_internal=1` → ningún tag dispara (guarda G1) y la cookie persiste.
 4. Scroll completo → `rl_scroll_depth` 25/50/75/90 una vez cada uno; GA4 solo recibe 50/90.
 5. `rl_engaged_session` solo tras 45 s + scroll + 2 interacciones; no dispara en pestaña oculta.
-6. Envío con gmail y sin empresa → `lead_tier 'C'` → `generate_lead` llega a GA4, **ningún** tag de Ads/Meta dispara.
+6. Envío con gmail y sin empresa → `lead_tier 'C'`, flag `clean` → `generate_lead` llega a GA4, **ningún** tag de Google Ads dispara (guarda G3). `Meta - Lead` **sí** dispara: por diseño de la guía (§2.5), G-3 aplica solo a Google Ads y G2 no bloquea flags `clean`.
 7. Honeypot lleno → flag `spam` → ídem.
 8. Envío real de prueba → `rl_lead_submit` con `event_id`, `transaction_id` y `user_data` hasheado; ningún dato personal en texto plano en el dataLayer.
 9. Un `rl_scroll_depth` posterior al envío no arrastra datos del formulario (reset C-13).
