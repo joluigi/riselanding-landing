@@ -21,8 +21,11 @@ Prerequisito para los pasos de tags: contenedor `GTM_riselanding_tracking_v2.1.1
       valida el fix de visibilidad por mitad de pantalla).
 [ ] 8. Recorrer #resultados al 75%: rl_case_study_view (case_id 'resultados_home').
 [ ] 9. Foco en un campo del form: rl_form_start una sola vez.
-[ ] 10. Enviar con requeridos vacíos: rl_form_error (error_type 'validation',
-      error_field correcto).
+[ ] 10. Enviar con requeridos vacíos: rl_form_error (error_type
+      'client_validation', error_field = id del primer campo inválido).
+      Teléfono '123' (pasa el cliente, /api/lead responde 422): error_type
+      'server_error' sin error_field. DevTools → Network → Offline y enviar:
+      error_type 'network_error'. Ninguno emite rl_lead_submit.
 [ ] 11. Enviar con email @gmail.com y SIN empresa: rl_lead_submit con
       lead_tier 'C', flag 'clean' · GA4 generate_lead dispara · NINGÚN tag de
       Google Ads dispara (G3) · Meta - Lead SÍ dispara (comportamiento correcto:
@@ -38,6 +41,12 @@ Prerequisito para los pasos de tags: contenedor `GTM_riselanding_tracking_v2.1.1
       con el país, sin Max-Age (cookie de sesión). Con VPN/override EEA (p. ej.
       DE): consent default 'denied' en los 4 permisos ANTES del snippet GTM y
       user.consent_state 'denied'.
+[ ] 16. En el preview deploy: site.environment = 'staging' y TODOS los tags
+      de Ads/Meta/GA4 aparecen en "Tags Not Fired" bloqueados por G5. Para
+      validar G2/G3 (casos 11 y 12) abrir cada tag en Tag Assistant → Blocking
+      Triggers: G5 ✓ y además G3/G2 evaluados según el caso. El disparo real
+      de Meta - Lead en un Tier C clean se confirma en producción después del
+      merge (sesión de GTM Preview sobre riselanding.com, sin ?rl_internal).
 ```
 
 Generado en la QA de la rama `feat/rl-tracking` (2026-08-03). Los detalles de diseño están en `docs/superpowers/specs/2026-08-03-rl-tracking-fases-1-3-design.md`.
