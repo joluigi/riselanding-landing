@@ -29,7 +29,7 @@ function run(opts) {
       },
       referrer: opts.referrer || ''
     },
-    location: { search: opts.search || '', pathname: '/', hostname: 'riselanding.com' },
+    location: { search: opts.search || '', pathname: '/', hostname: ('hostname' in opts) ? opts.hostname : 'riselanding.com' },
     sessionStorage: opts.blockStorage ? {
       getItem: function () { throw new Error('storage blocked'); },
       setItem: function () { throw new Error('storage blocked'); }
@@ -157,4 +157,15 @@ test('sessionStorage bloqueado: rl_context_ready igual se dispara, session_count
   assert.ok(ctx, 'no se empujó rl_context_ready aun con sessionStorage bloqueado');
   assert.strictEqual(ctx.user.session_count, 1);
   assert.strictEqual(ctx.traffic.touch_count, 1);
+});
+
+test('site.environment: production solo en el dominio real (guarda G5)', function () {
+  function env(host) { return ctxEvent(run({ hostname: host }).dl).site.environment; }
+  assert.strictEqual(env('riselanding.com'), 'production');
+  assert.strictEqual(env('www.riselanding.com'), 'production');
+  assert.strictEqual(env('riselanding-landing-git-feat-rl-tracking-joluigis-projects.vercel.app'), 'staging');
+  assert.strictEqual(env('riselanding.com.evil.test'), 'staging');
+  assert.strictEqual(env('localhost'), 'development');
+  assert.strictEqual(env('127.0.0.1'), 'development');
+  assert.strictEqual(env(''), 'development');
 });

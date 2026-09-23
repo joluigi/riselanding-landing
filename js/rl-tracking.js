@@ -44,16 +44,29 @@
     });
   }
 
+  // Copia sin claves null/undefined: lo que el sitio no sabe se omite, no se manda vacío
+  function compact(data) {
+    var out = {};
+    for (var k in data) {
+      if (Object.prototype.hasOwnProperty.call(data, k) && data[k] !== null && data[k] !== undefined) out[k] = data[k];
+    }
+    return out;
+  }
+
   function pushEvent(name, data) {
     var dl = global.dataLayer = global.dataLayer || [];
     dl.push({ rl_event_data: null }); // C-13: reset antes de cada evento
-    var payload = {};
-    for (var k in data) {
-      if (Object.prototype.hasOwnProperty.call(data, k)) payload[k] = data[k];
-    }
+    var payload = compact(data);
     if (!payload.event_id) payload.event_id = uuid(); // C-15
     dl.push({ event: name, rl_event_data: payload });
     return payload;
+  }
+
+  // error_type: 'client_validation' | 'server_error' | 'network_error'; error_field solo en validación
+  function pushFormError(errorType, errorField) {
+    return pushEvent('rl_form_error', {
+      form_id: 'agenda_diagnostico', error_type: errorType, error_field: errorField
+    });
   }
 
   function emailDomainType(email) {
@@ -73,6 +86,8 @@
     return d.length === 10 ? '+52' + d : null;
   }
 
+  // TODO: descalificadores de la Guía (competitor / job_seeker / student) y denylist de
+  // dominios de agencias. Aún no definidos en el spec; cuando existan, bajan el flag aquí.
   function leadScore(input) {
     if (input.honeypotFilled) return { score: 0, tier: 'C', flag: 'spam' };
     var s = 15;
@@ -124,26 +139,27 @@
     var emailNorm = String(f.email || '').trim().toLowerCase();
     var e164 = phoneE164MX(f.phoneRaw);
     var emailType = emailDomainType(emailNorm);
+    var leadId = ctx.leadId || uuid(); // transaction_id === lead_id aunque falte el bootstrap
     var q = leadScore({
       emailType: emailType, hasCompany: !!f.hasCompany, sizeBucket: f.sizeBucket || null,
       phoneValid: !!e164, servicesCount: f.servicesCount || 0, honeypotFilled: !!f.honeypotFilled
     });
-    var payload = {
+    // prospect_segment, prospect_geo, operation_volume_bucket, current_marketing_maturity y
+    // segment_match se omiten: el formulario no los captura.
+    var payload = compact({
       event_id: uuid(),
-      transaction_id: ctx.leadId || null,
-      lead_id: ctx.leadId || null,
+      transaction_id: leadId,
+      lead_id: leadId,
       form_id: 'agenda_diagnostico', form_location: 'contacto', lead_source_channel: 'form',
       service_line: serviceLineFromPilar(f.pilar), assigned_partner: 'ambos',
-      prospect_segment: null, prospect_geo: null,
-      company_size_bucket: f.sizeBucket || null,
-      operation_volume_bucket: null, current_marketing_maturity: null,
+      company_size_bucket: f.sizeBucket,
       email_domain_type: emailType,
       lead_quality_flag: q.flag, lead_score: q.score, lead_tier: q.tier,
-      vertical_fit: 'horizontal', segment_match: null,
+      vertical_fit: 'horizontal',
       time_to_convert_sec: f.t0 ? Math.max(0, Math.round((Date.now() - f.t0) / 1000)) : null,
-      touch_count: (typeof ctx.touchCount === 'number') ? ctx.touchCount : null,
-      days_since_first_touch: (typeof ctx.daysSinceFirstTouch === 'number') ? ctx.daysSinceFirstTouch : null
-    };
+      touch_count: ctx.touchCount,
+      days_since_first_touch: ctx.daysSinceFirstTouch
+    });
     return Promise.all([
       sha256hex(emailNorm),
       e164 ? sha256hex(e164) : Promise.resolve(null)
@@ -157,7 +173,7 @@
   }
 
   var RL = {
-    uuid: uuid, pushEvent: pushEvent, emailDomainType: emailDomainType,
+    uuid: uuid, pushEvent: pushEvent, pushFormError: pushFormError, emailDomainType: emailDomainType,
     phoneE164MX: phoneE164MX, leadScore: leadScore,
     serviceLineFromPilar: serviceLineFromPilar, prefilledRef: prefilledRef,
     sha256hex: sha256hex, buildLeadSubmit: buildLeadSubmit,
