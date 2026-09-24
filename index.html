@@ -2,6 +2,144 @@
 <html lang="es-MX">
 
 <head>
+  <meta charset="UTF-8">
+  <!-- RL Bootstrap: identidad, atribución y Consent Mode v2. DEBE ir antes de GTM.
+       Contrato: Guía de Tracking v2.1 §2.2 · spec docs/superpowers/specs/2026-08-03 -->
+  <script id="rl-bootstrap">
+(function () {
+  var now = new Date();
+
+  function uuid() {
+    if (window.crypto && crypto.getRandomValues) {
+      var b = crypto.getRandomValues(new Uint8Array(16));
+      b[6] = (b[6] & 15) | 64; b[8] = (b[8] & 63) | 128;
+      var h = '';
+      for (var i = 0; i < 16; i++) h += ('0' + b[i].toString(16)).slice(-2);
+      return h.slice(0, 8) + '-' + h.slice(8, 12) + '-' + h.slice(12, 16) + '-' + h.slice(16, 20) + '-' + h.slice(20);
+    }
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+      var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 3 | 8)).toString(16);
+    });
+  }
+  function getCookie(name) {
+    var m = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+    return m ? decodeURIComponent(m[1]) : '';
+  }
+  function setCookie(name, value, maxAge) {
+    document.cookie = name + '=' + encodeURIComponent(value) + '; Path=/; Max-Age=' + maxAge + '; SameSite=Lax; Secure';
+  }
+  function getJSON(name) { try { return JSON.parse(getCookie(name) || 'null'); } catch (e) { return null; } }
+
+  var D400 = 34560000, D90 = 7776000;
+  var qs = new URLSearchParams(location.search);
+
+  // --- rl_internal (guarda G1): ?rl_internal=1 marca la cookie para siempre ---
+  if (qs.get('rl_internal') === '1') setCookie('rl_internal', '1', D400);
+  var isInternal = getCookie('rl_internal') === '1';
+
+  // --- rl_lid: lead_id persistente + sesión ---
+  var lid = getJSON('rl_lid');
+  if (!lid || !lid.id) lid = { id: uuid(), fs: now.toISOString(), sc: 0 };
+  var sid = '', newSession = false;
+  try {
+    sid = sessionStorage.getItem('rl_sid') || '';
+    if (!sid) {
+      newSession = true;
+      sid = Math.floor(now.getTime() / 1000) + '.' + uuid().slice(0, 5);
+      sessionStorage.setItem('rl_sid', sid);
+    }
+  } catch (e) { newSession = true; sid = Math.floor(now.getTime() / 1000) + '.noses'; }
+  if (newSession) lid.sc = (lid.sc || 0) + 1;
+  setCookie('rl_lid', JSON.stringify(lid), D400);
+
+  // --- rl_attr: click IDs + first/last touch. first_touch JAMÁS se sobrescribe ---
+  var attr = getJSON('rl_attr') || {};
+  var ids = ['gclid', 'gbraid', 'wbraid', 'fbclid', 'msclkid'];
+  var hasClickId = false;
+  for (var i = 0; i < ids.length; i++) {
+    var v = qs.get(ids[i]);
+    if (v) { attr[ids[i]] = v; hasClickId = true; }
+  }
+  var ref = document.referrer || '';
+  var refExterno = !!ref && ref.indexOf(location.hostname) === -1;
+  var identificable = !!(qs.get('utm_source') || qs.get('utm_medium') || hasClickId || refExterno);
+  function touchActual() {
+    var src = qs.get('utm_source'), med = qs.get('utm_medium');
+    if (!src) {
+      if (qs.get('gclid') || qs.get('gbraid') || qs.get('wbraid')) { src = 'google'; med = med || 'cpc'; }
+      else if (qs.get('fbclid')) { src = 'meta'; med = med || 'paid_social'; }
+      else if (qs.get('msclkid')) { src = 'bing'; med = med || 'cpc'; }
+      else if (refExterno) {
+        try { src = new URL(ref).hostname; } catch (e) { src = 'referral'; }
+        med = med || 'referral';
+      }
+    }
+    return {
+      source: src || '(direct)', medium: med || '(none)',
+      campaign: qs.get('utm_campaign') || null, content: qs.get('utm_content') || null,
+      term: qs.get('utm_term') || null, timestamp: now.toISOString(), landing_page: location.pathname
+    };
+  }
+  if (newSession) {
+    attr.tc = (attr.tc || 0) + 1;
+    if (identificable || !attr.lt) attr.lt = touchActual();
+    if (!attr.ft) attr.ft = attr.lt;
+  }
+  setCookie('rl_attr', JSON.stringify(attr), D90);
+  var nm = { referrer: ref || null };
+  if (qs.get('rl_net')) nm.network = qs.get('rl_net');
+  if (qs.get('rl_mt')) nm.match_type = qs.get('rl_mt');
+  if (qs.get('rl_dev')) nm.device = qs.get('rl_dev');
+
+  // --- Consent Mode v2 (C-25): denied solo EEA/UK vía cookie rl_geo del middleware ---
+  window.dataLayer = window.dataLayer || [];
+  function gtag() { dataLayer.push(arguments); }
+  var EEA = ['AT','BE','BG','HR','CY','CZ','DK','EE','FI','FR','DE','GR','HU','IE','IT','LV','LT','LU','MT','NL','PL','PT','RO','SK','SI','ES','SE','IS','LI','NO','GB'];
+  var consentState = EEA.indexOf(getCookie('rl_geo').toUpperCase()) !== -1 ? 'denied' : 'granted';
+  gtag('consent', 'default', {
+    ad_storage: consentState, ad_user_data: consentState,
+    ad_personalization: consentState, analytics_storage: consentState
+  });
+  gtag('set', 'url_passthrough', true);
+  if (consentState === 'denied') gtag('set', 'ads_data_redaction', true);
+
+  // --- site.environment (guarda G5): 'production' solo en el dominio real ---
+  var host = location.hostname;
+  var env = (host === 'riselanding.com' || host === 'www.riselanding.com') ? 'production'
+    : (!host || host === 'localhost' || host === '127.0.0.1' || host === '[::1]') ? 'development'
+    : 'staging';
+
+  // --- rl_context_ready (§2.2) ---
+  var days = Math.max(0, Math.floor((now.getTime() - Date.parse(lid.fs)) / 86400000)) || 0;
+  window.dataLayer.push({
+    event: 'rl_context_ready',
+    rl_schema_version: '2.1.0',
+    site: { environment: env, domains: ['riselanding.com', 'www.riselanding.com'], currency: 'MXN' },
+    page: {
+      type: 'landing', service_line: 'paquete_integral', vertical_fit: 'horizontal',
+      target_segment: 'general_b2b_mx', language: 'es-MX', template: 'lp_home_v1',
+      path: location.pathname, publish_date: '2026-07-06', is_landing_page: true,
+      experiment_id: null, variant_id: null
+    },
+    user: {
+      lead_id: lid.id, session_id: sid, user_type: 'anonymous', consent_state: consentState,
+      is_internal: isInternal, is_returning: lid.sc > 1, session_count: lid.sc
+    },
+    traffic: {
+      gclid: attr.gclid || null, gbraid: attr.gbraid || null, wbraid: attr.wbraid || null,
+      fbclid: attr.fbclid || null, msclkid: attr.msclkid || null,
+      first_touch: attr.ft || null, last_touch: attr.lt || null, network_meta: nm,
+      touch_count: attr.tc || 0, days_since_first_touch: days
+    }
+  });
+
+  // Handoff para js/rl-tracking.js
+  window.__rl = {
+    leadId: lid.id, sessionId: sid, sessionCount: lid.sc, isInternal: isInternal,
+    touchCount: attr.tc || 0, daysSinceFirstTouch: days, consentState: consentState
+  };
+})();
+  </script>
   <!-- Google Tag Manager -->
   <script>(function (w, d, s, l, i) {
       w[l] = w[l] || []; w[l].push({
@@ -12,7 +150,7 @@
           'https://www.googletagmanager.com/gtm.js?id=' + i + dl; f.parentNode.insertBefore(j, f);
     })(window, document, 'script', 'dataLayer', 'GTM-P3WZC7MV');</script>
   <!-- End Google Tag Manager -->
-  <meta charset="UTF-8">
+  <script src="/js/rl-tracking.js" defer></script>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
   <!-- ═══ SEO: Title & Description ═══ -->
@@ -1168,6 +1306,15 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         <div class="field"><label for="f-nombre">Nombre *</label><input id="f-nombre" name="Name_First" required placeholder="María"></div>
         <div class="field"><label for="f-apellido">Apellido *</label><input id="f-apellido" name="Name_Last" required placeholder="González"></div>
         <div class="field full"><label for="f-empresa">Empresa</label><input id="f-empresa" name="SingleLine" placeholder="Tu empresa S.A."></div>
+        <div class="field full"><label for="f-tamano">Tamaño de tu empresa</label>
+          <select id="f-tamano">
+            <option value="" selected>Prefiero no decir</option>
+            <option value="1_10">1–10 personas</option>
+            <option value="11_50">11–50 personas</option>
+            <option value="51_200">51–200 personas</option>
+            <option value="200_plus">Más de 200 personas</option>
+          </select>
+        </div>
         <div class="field full"><label for="f-email">Correo de trabajo *</label><input id="f-email" type="email" name="Email" required placeholder="maria@tuempresa.mx"></div>
         <div class="field full"><label for="f-tel">WhatsApp / Teléfono *</label><input id="f-tel" type="tel" name="PhoneNumber_countrycode" required placeholder="+52 55 5878 8983" autocomplete="tel" inputmode="numeric"></div>
         <div class="field full">
@@ -1351,7 +1498,11 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
     quitarError(); // cada reintento parte sin el aviso del intento anterior
-    if (!form.reportValidity()) return;
+    if (!form.reportValidity()) {
+      var inv = form.querySelector(':invalid');
+      try { if (window.RL) RL.pushFormError('client_validation', (inv && (inv.id || inv.name)) || 'unknown'); } catch (e) {}
+      return;
+    }
 
     var btn = form.querySelector('button[type="submit"]');
     var btnTexto = btn.textContent;
@@ -1365,13 +1516,16 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       var el = document.getElementById(id);
       return el && el.value ? id + '=' + el.value : null;
     }).filter(Boolean).join(' ');
+    var tamSel = document.getElementById('f-tamano');
+    var tamano = tamSel ? tamSel.value : '';
+    var tamanoTexto = (tamSel && tamano) ? tamSel.options[tamSel.selectedIndex].text : '';
 
     var payload = {
       nombre: (document.getElementById('f-nombre').value + ' ' + document.getElementById('f-apellido').value).trim(),
       empresa: document.getElementById('f-empresa').value.trim(),
       email: document.getElementById('f-email').value.trim(),
       telefono: document.getElementById('f-tel').value.trim(),
-      mensaje: ('Servicios: ' + (servicios.join(', ') || 'no indicó') + (utm ? ' · ' + utm : '')),
+      mensaje: ('Servicios: ' + (servicios.join(', ') || 'no indicó') + (tamanoTexto ? ' · Tamaño: ' + tamanoTexto : '') + (utm ? ' · ' + utm : '')),
       interes_pilar: pilar(servicios),
       fuente: 'Sitio Web'
     };
@@ -1386,23 +1540,40 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Form-Token': 'rl1' },
         body: JSON.stringify(payload)
-      });
+      }).catch(function (e) { e.tipo = 'network_error'; throw e; }); // sin respuesta HTTP
     }).then(function (r) { return r.json(); }).then(function (data) {
       if (!data.success) { var e = new Error(data.message || 'error'); e.delServidor = !!data.message; throw e; }
-      form.classList.add('sent');
-      form.innerHTML =
-        '<div class="form-success" role="status" tabindex="-1">'
-        + '<div class="form-success__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></div>'
-        + '<span class="eyebrow">Solicitud recibida</span>'
-        + '<h3>¡Gracias! Ya tenemos tu mensaje.</h3>'
-        + '<p>Un especialista de Riselanding revisará tu operación y te escribirá con los siguientes pasos de tu diagnóstico gratuito.</p>'
-        + '<span class="form-success__meta"><span class="dot"></span>Respuesta en &lt; 24 h</span>'
-        + '</div>';
-      var ok = form.querySelector('.form-success');
-      if (ok) ok.focus();
+
+      function mostrarExito() {
+        form.classList.add('sent');
+        form.innerHTML =
+          '<div class="form-success" role="status" tabindex="-1">'
+          + '<div class="form-success__icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 13l4 4L19 7"/></svg></div>'
+          + '<span class="eyebrow">Solicitud recibida</span>'
+          + '<h3>¡Gracias! Ya tenemos tu mensaje.</h3>'
+          + '<p>Un especialista de Riselanding revisará tu operación y te escribirá con los siguientes pasos de tu diagnóstico gratuito.</p>'
+          + '<span class="form-success__meta"><span class="dot"></span>Respuesta en &lt; 24 h</span>'
+          + '</div>';
+        var ok = form.querySelector('.form-success');
+        if (ok) ok.focus();
+      }
+
+      var seguimiento = Promise.resolve();
+      if (window.RL && RL.buildLeadSubmit) {
+        try {
+          seguimiento = RL.buildLeadSubmit({
+            email: payload.email, phoneRaw: payload.telefono,
+            hasCompany: !!payload.empresa, sizeBucket: tamano || null,
+            servicesCount: servicios.length, honeypotFilled: !!payload.website,
+            pilar: payload.interes_pilar, t0: t0
+          }).then(function (p) { RL.pushEvent('rl_lead_submit', p); }).catch(function () {});
+        } catch (e) { seguimiento = Promise.resolve(); }
+      }
+      seguimiento.then(mostrarExito, mostrarExito);
     }).catch(function (err) {
       btn.disabled = false; btn.textContent = btnTexto;
       quitarError();
+      try { if (window.RL) RL.pushFormError((err && err.tipo) || 'server_error'); } catch (e) {}
       var aviso = document.createElement('div');
       aviso.className = 'form-error';
       aviso.setAttribute('role', 'alert');
