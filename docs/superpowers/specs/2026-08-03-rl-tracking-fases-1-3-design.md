@@ -50,7 +50,7 @@ Implementar la Capa 1 (sitio) del esquema de tracking: publicar los eventos `rl_
 Bloques `site`, `page`, `user`, `traffic` completos. Taxonomía para este one-pager:
 
 ```
-site:    environment 'production' · currency 'MXN'
+site:    environment (por hostname) · currency 'MXN'
 page:    type 'landing' · service_line 'paquete_integral' · vertical_fit 'horizontal'
          target_segment 'general_b2b_mx' · language 'es-MX' · template 'lp_home_v1'
          path location.pathname · is_landing_page true · experiment_id/variant_id null
@@ -60,7 +60,7 @@ traffic: click IDs + first_touch/last_touch/network_meta de rl_attr · touch_cou
          days_since_first_touch (entero, desde first_seen)
 ```
 
-`site.environment` es `'production'` fijo: el sitio no tiene entorno de staging desplegado; si algún día existe, se deriva de `location.hostname`.
+`site.environment` se deriva de `location.hostname`: `'production'` solo en `riselanding.com` / `www.riselanding.com`; `localhost`, `127.0.0.1` y host vacío → `'development'`; cualquier otro host (previews `*.vercel.app`) → `'staging'`. Así la guarda G5 bloquea las conversiones de prueba.
 
 ## Fase 2 — Engagement (`js/rl-tracking.js`)
 
@@ -73,7 +73,7 @@ Reglas transversales: **reset** `dataLayer.push({ rl_event_data: null })` antes 
 | `rl_service_view` | 20 s **acumulados** de visibilidad de `#servicios` (IntersectionObserver: ratio ≥50% **o** la sección cubriendo ≥50% del viewport — en móvil la sección es más alta que la pantalla y el ratio nunca llega a 0.5) + temporizador que pausa al salir | `service_line 'paquete_integral'`, `assigned_partner 'ambos'`, `dwell_time_sec` |
 | `rl_case_study_view` | El fondo de `#resultados` alcanza el 75% de recorrido visible | `case_id 'resultados_home'`, `case_segment 'general_b2b_mx'`, `read_depth_pct` |
 | `rl_form_start` | Primer `focusin` en un campo de `#lead-form` (1× por instancia) | `form_id 'agenda_diagnostico'`, `form_location 'contacto'` |
-| `rl_form_error` | `reportValidity()` falla (campo y `error_type 'validation'`) o el gateway responde 422/429/5xx (`error_type 'server'`) | `form_id`, `error_field`, `error_type` |
+| `rl_form_error` | `reportValidity()` falla (`error_type 'client_validation'` + `error_field` = id del primer campo inválido); el gateway responde `success: false` o un cuerpo no JSON (`error_type 'server_error'`); `fetch` rechaza sin respuesta HTTP (`error_type 'network_error'`) | `form_id`, `error_type`, `error_field` (solo en validación) |
 | `rl_phone_click` | Click delegado en `a[href^="tel:"]` | `cta_location` (`footer`) |
 | `rl_whatsapp_click` | Click delegado en `a[href*="wa.me"]` — **dormido** hasta que exista el enlace | `transaction_id`, `prefilled_ref`, `cta_location`, `service_line` — `prefilled_ref` = `RL-` + primeros 8 caracteres del `lead_id`; el listener lo inserta en el parámetro `text` de la URL wa.me al momento del click (C-19) |
 

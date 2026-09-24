@@ -103,12 +103,18 @@
   gtag('set', 'url_passthrough', true);
   if (consentState === 'denied') gtag('set', 'ads_data_redaction', true);
 
+  // --- site.environment (guarda G5): 'production' solo en el dominio real ---
+  var host = location.hostname;
+  var env = (host === 'riselanding.com' || host === 'www.riselanding.com') ? 'production'
+    : (!host || host === 'localhost' || host === '127.0.0.1' || host === '[::1]') ? 'development'
+    : 'staging';
+
   // --- rl_context_ready (§2.2) ---
   var days = Math.max(0, Math.floor((now.getTime() - Date.parse(lid.fs)) / 86400000)) || 0;
   window.dataLayer.push({
     event: 'rl_context_ready',
     rl_schema_version: '2.1.0',
-    site: { environment: 'production', domains: ['riselanding.com', 'www.riselanding.com'], currency: 'MXN' },
+    site: { environment: env, domains: ['riselanding.com', 'www.riselanding.com'], currency: 'MXN' },
     page: {
       type: 'landing', service_line: 'paquete_integral', vertical_fit: 'horizontal',
       target_segment: 'general_b2b_mx', language: 'es-MX', template: 'lp_home_v1',
@@ -1494,11 +1500,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     quitarError(); // cada reintento parte sin el aviso del intento anterior
     if (!form.reportValidity()) {
       var inv = form.querySelector(':invalid');
-      try { if (window.RL) RL.pushEvent('rl_form_error', {
-        form_id: 'agenda_diagnostico',
-        error_field: (inv && (inv.id || inv.name)) || 'unknown',
-        error_type: 'validation'
-      }); } catch (e) {}
+      try { if (window.RL) RL.pushFormError('client_validation', (inv && (inv.id || inv.name)) || 'unknown'); } catch (e) {}
       return;
     }
 
@@ -1538,7 +1540,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Form-Token': 'rl1' },
         body: JSON.stringify(payload)
-      });
+      }).catch(function (e) { e.tipo = 'network_error'; throw e; }); // sin respuesta HTTP
     }).then(function (r) { return r.json(); }).then(function (data) {
       if (!data.success) { var e = new Error(data.message || 'error'); e.delServidor = !!data.message; throw e; }
 
@@ -1571,11 +1573,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     }).catch(function (err) {
       btn.disabled = false; btn.textContent = btnTexto;
       quitarError();
-      try { if (window.RL) RL.pushEvent('rl_form_error', {
-        form_id: 'agenda_diagnostico',
-        error_field: 'server',
-        error_type: 'server'
-      }); } catch (e) {}
+      try { if (window.RL) RL.pushFormError((err && err.tipo) || 'server_error'); } catch (e) {}
       var aviso = document.createElement('div');
       aviso.className = 'form-error';
       aviso.setAttribute('role', 'alert');
