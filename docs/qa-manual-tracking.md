@@ -5,48 +5,52 @@ Pasos que requieren navegador + GTM Preview y no pudieron automatizarse. Correr 
 Prerequisito para los pasos de tags: contenedor `GTM_riselanding_tracking_v2.1.1.json` importado en un workspace de GTM-P3WZC7MV (Combinar, no Sobrescribir) y GTM Preview (Tag Assistant) conectado a la URL de prueba.
 
 ```
-[ ] 1. Cargar la home con ?gclid=test123 en ventana privada (sin cookies):
+[x] 1. Cargar la home con ?gclid=test123 en ventana privada (sin cookies):
       - rl_context_ready es el PRIMER evento rl_* · 4 bloques completos · traffic.gclid = 'test123'.
-[ ] 2. Recargar la misma pestaña: session_count y touch_count NO suben.
-[ ] 3. Cerrar y reabrir el navegador (mismo perfil): first_touch intacto,
+[x] 2. Recargar la misma pestaña: session_count y touch_count NO suben.
+[x] 3. Cerrar y reabrir el navegador (mismo perfil): first_touch intacto,
       session_count +1, is_returning true.
-[ ] 4. Cargar con ?rl_internal=1: NINGÚN tag dispara (G1). Recargar sin el
+[x] 4. Cargar con ?rl_internal=1: NINGÚN tag dispara (G1). Recargar sin el
       parámetro: sigue bloqueado (cookie persistente).
-[ ] 5. Scroll completo: rl_scroll_depth una vez por umbral 25/50/75/90;
+[x] 5. Scroll completo: rl_scroll_depth una vez por umbral 25/50/75/90;
       el tag GA4 - scroll solo dispara en 50 y 90.
-[ ] 6. 45 s visibles + scroll ≥50% + 2 interacciones en elementos interactivos:
+[x] 6. 45 s visibles + scroll ≥50% + 2 interacciones en elementos interactivos:
       rl_engaged_session dispara UNA vez. Con la pestaña oculta el tiempo no avanza.
-[ ] 7. #servicios visible ≥20 s: rl_service_view con dwell_time_sec ≈ 20.
+[~] 7. #servicios visible ≥20 s: rl_service_view con dwell_time_sec ≈ 20.
       REPETIR EN UN TELÉFONO REAL (la sección es más alta que el viewport;
       valida el fix de visibilidad por mitad de pantalla).
-[ ] 8. Recorrer #resultados al 75%: rl_case_study_view (case_id 'resultados_home').
-[ ] 9. Foco en un campo del form: rl_form_start una sola vez.
-[ ] 10. Enviar con requeridos vacíos: rl_form_error (error_type
+[x] 8. Recorrer #resultados al 75%: rl_case_study_view (case_id 'resultados_home').
+[x] 9. Foco en un campo del form: rl_form_start una sola vez.
+[x] 10. Enviar con requeridos vacíos: rl_form_error (error_type
       'client_validation', error_field = id del primer campo inválido).
       Teléfono '123' (pasa el cliente, /api/lead responde 422): error_type
       'server_error' sin error_field. DevTools → Network → Offline y enviar:
       error_type 'network_error'. Ninguno emite rl_lead_submit.
-[ ] 11. Enviar con email @gmail.com y SIN empresa: rl_lead_submit con
+[x] 11. Enviar con email @gmail.com y SIN empresa: rl_lead_submit con
       lead_tier 'C', flag 'clean' · GA4 generate_lead dispara · NINGÚN tag de
       Google Ads dispara (G3) · Meta - Lead SÍ dispara (comportamiento correcto:
       G-3 aplica solo a Ads según la guía §2.5).
-[ ] 12. Honeypot lleno (consola: document.getElementById('f-hp').value='x'):
+[x] 12. Honeypot lleno (consola: document.getElementById('f-hp').value='x'):
       flag 'spam', score 0 · ningún tag de Ads NI Meta (G2) · GA4 sí lo recibe.
-[ ] 13. Envío real de prueba: user_data con 2 hashes de 64 hex; el correo y
+[x] 13. Envío real de prueba: user_data con 2 hashes de 64 hex; el correo y
       teléfono JAMÁS aparecen en claro en el dataLayer. (Aviso: llega a
       n8n/Notion como lead de prueba — borrar después.)
-[ ] 14. Tras el envío, cruzar otro umbral de scroll: ese rl_scroll_depth no
+[x] 14. Tras el envío, cruzar otro umbral de scroll: ese rl_scroll_depth no
       arrastra claves del lead (reset C-13).
-[ ] 15. Solo en preview deploy: DevTools → Application → Cookies: rl_geo existe
+[-] 15. Solo en preview deploy: DevTools → Application → Cookies: rl_geo existe
       con el país, sin Max-Age (cookie de sesión). Con VPN/override EEA (p. ej.
       DE): consent default 'denied' en los 4 permisos ANTES del snippet GTM y
       user.consent_state 'denied'.
-[ ] 16. En el preview deploy: site.environment = 'staging' y TODOS los tags
+[x] 16. En el preview deploy: site.environment = 'staging' y TODOS los tags
       de Ads/Meta/GA4 aparecen en "Tags Not Fired" bloqueados por G5. Para
       validar G2/G3 (casos 11 y 12) abrir cada tag en Tag Assistant → Blocking
       Triggers: G5 ✓ y además G3/G2 evaluados según el caso. El disparo real
       de Meta - Lead en un Tier C clean se confirma en producción después del
       merge (sesión de GTM Preview sobre riselanding.com, sin ?rl_internal).
 ```
+
+Resultado QA 2026-09-23 (preview de feat/rl-datalayer-lead-submit, GTM Preview):
+[x] pasó · [~] 7: escritorio OK, falta repetir en teléfono real ·
+[-] 15: cookie rl_geo verificada (MX, de sesión); override EEA no se aplicará.
 
 Generado en la QA de la rama `feat/rl-tracking` (2026-08-03). Los detalles de diseño están en `docs/superpowers/specs/2026-08-03-rl-tracking-fases-1-3-design.md`.
