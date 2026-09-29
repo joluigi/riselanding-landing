@@ -93,38 +93,26 @@ Select opcional "Tamaño de tu empresa": `1_10`, `11_50`, `51_200`, `200_plus` (
 - Origen: `form_id 'agenda_diagnostico'`, `form_location 'contacto'`, `lead_source_channel 'form'`.
 - Interés: `service_line` derivado de `pilar()` existente — mapa: Bundle Completo → `paquete_integral`, Google Ads → `publicidad_digital`, Sitio Web + SEO → `web_seo`, CRM + Automatización → `crm_automatizacion`; `assigned_partner 'ambos'`.
 - Cualificación: `company_size_bucket` (o `null`), `prospect_segment null`, `prospect_geo null`, `operation_volume_bucket null`, `current_marketing_maturity null` (el form no los captura; claves presentes con `null` para mantener el contrato).
-- Calidad: `email_domain_type` (`corporate` | `free` | `disposable`). Lista `free`: gmail.com, hotmail.com/.es, outlook.com/.es, yahoo.com/.com.mx, live.com/.com.mx, icloud.com, proton.me, protonmail.com, aol.com, msn.com. Lista `disposable`: la misma de `api/lead.js`, duplicada en cliente (con comentario cruzado en ambos archivos para mantenerlas en sincronía). Todo lo demás → `corporate`. Además `lead_quality_flag`, `lead_score`, `lead_tier`.
+- Calidad: `email_domain_type`, `lead_quality_flag`, `lead_score`, `lead_tier` — vienen del veredicto del servidor (ver sección siguiente). Las listas viven en `lib/lead-quality/data/*.json`.
 - Alineación: `vertical_fit 'horizontal'`, `segment_match null` (no hay `prospect_segment` que comparar).
 - `user_data`: `sha256_email_address` (correo en minúsculas, sin espacios) y `sha256_phone_number` (E.164: dígitos, con `+52` antepuesto a los 10 dígitos nacionales) vía `crypto.subtle` (ya hay un helper `sha256hex` en el sitio; se reutiliza/mueve a rl-tracking). Sin Web Crypto → claves omitidas, jamás texto plano.
 - Contexto: `time_to_convert_sec` (desde `t0` existente), `touch_count`, `days_since_first_touch`.
 
-### `lead_quality_flag`
+### `lead_quality_flag`, `lead_score`, `lead_tier` y `email_domain_type`
 
-- `spam`: honeypot `b_comments` lleno.
-- `suspect`: correo desechable **o** teléfono que no valida como MX de 10 dígitos (tras normalizar).
-- `clean`: el resto.
+> **Sustituido (2026-09-29, lead quality gate, Fase 3).** El modelo de cliente descrito aquí
+> originalmente (base 15, flags `clean`/`suspect`/`spam` calculados en el navegador) se eliminó.
+> Los cuatro campos los calcula ahora el motor del servidor `lib/lead-quality/engine.js`
+> (`evaluateLead`), `/api/lead` los devuelve en la respuesta y `rl_lead_submit` los publica
+> tal cual, con los mismos nombres de campo. Sin veredicto del servidor (fake success de un
+> rechazo duro, error de red) no se publica `rl_lead_submit`. Reglas, puntos y fixtures:
+> `lib/lead-quality/engine.js` y `tests/lead-engine.test.js`.
+>
+> Valores de `lead_quality_flag`: `spam` · `student` · `job_seeker` · `competitor` · `suspect` ·
+> `clean`. `student` y `job_seeker` (y `competitor` autodeclarado) nunca llegan a `rl_lead_submit`:
+> se publican como `rl_non_commercial_submit`. Tiers: A ≥ 70 · B 40–69 · C < 40.
 
 La guarda G2 del contenedor bloquea Ads/Meta para todo lo que no sea `clean`; GA4 lo recibe todo etiquetado ("se mide todo, se optimiza poco").
-
-### `lead_score` (0–100) y `lead_tier`
-
-```
-base 15
-+25 correo corporativo   | +5 correo gratuito | −30 correo desechable
-+15 empresa llenada
-+15 tamaño 51_200 o 200_plus | +10 tamaño 11_50 | +5 tamaño 1_10
-+10 teléfono MX válido (10 dígitos)
-+5  ≥1 servicio seleccionado
-clamp [0, 100] · Tier A ≥70 · B 40–69 · C <40
-Si flag = spam → score 0, tier C directo.
-```
-
-Casos de referencia (el teléfono válido y ≥1 servicio están presentes en casi todo envío real, por ser campos obligatorios/habituales):
-
-- gmail sin empresa (+tel +servicio) = 15+5+10+5 = **35 → Tier C** → G3 bloquea Ads (caso de QA de la guía).
-- gmail + empresa + tamaño 1_10 = 55 → Tier B (pyme chica con correo gratuito, realista en MX).
-- Corporativo + empresa (sin tamaño) = 70 → Tier A; con tamaño 51_200 = 85 → Tier A.
-- Desechable = máx. 30 → Tier C y flag `suspect`.
 
 ## Manejo de errores
 

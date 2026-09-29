@@ -19,7 +19,7 @@ sospechoso se etiqueta y SIEMPRE llega a Notion para que un humano decida.
 | 6b | Solicitante no comercial | "Proyecto personal / escolar", "Busco empleo" o "Proveedor o agencia" → mensaje propio, log `lead_not_forwarded` con `student` / `job_seeker` / `competitor` | **No** se reenvía a n8n, en ningún modo |
 | 7 | Rate limit en memoria | Máx 5 envíos / 10 min por IP. **Parcial**: cada instancia serverless tiene su propia memoria y se recicla; la capa firme es el WAF (paso 4 de la escalación) | 429 visible |
 | 8 | Turnstile (Managed) | Solo si existen `TURNSTILE_SITE_KEY` **y** `TURNSTILE_SECRET_KEY`. Va después de validar para no gastar el token de un solo uso en un 422 | Fallo o sin token → fake success* (`turnstile_failed`). Cloudflare con timeout de 3 s, 5xx, red o `internal-error` → **sigue** con `turnstile_unavailable` (log nivel info). Secreto ausente/inválido u otro error de configuración → **sigue** con `turnstile_misconfigured` (log nivel **error**: hay que corregir las variables) |
-| 9 | Scoring suave | URLs en campos, email desechable, keywords spam, cirílico/CJK… **Nunca bloquea**: solo etiqueta | Llega a Notion con ⚠️ |
+| 9 | Motor de calidad | `lib/lead-quality/engine.js`: `spam_points` (≥ 3 → `spam`), `lead_score` 0–100, `lead_tier` A/B/C, `lead_quality_flag` y `signals[]` auditables. Hoy **solo etiqueta** (el modo `enforce` llega en la Fase 4) | Llega a Notion; con ⚠️ si el flag es `spam` |
 
 \* **Fake success** = respondemos `200 {"success":true}` sin reenviar nada a n8n; el bot cree que funcionó
 y no muta su ataque. Consecuencia: **un 200 no garantiza que el lead llegó** — la prueba real es la fila
@@ -37,12 +37,25 @@ para que un humano nunca caiga en un fake success.
 
 ## Qué significan `spam_score` y el prefijo ⚠️ en Notion
 
-- Si un envío pasa las capas duras pero acumula señales (score ≥ 3), su mensaje llega con prefijo:
-  `⚠️ Posible spam (score 5: <flags legibles>) · <mensaje original>`.
-- El lead **sí quedó registrado**: revísalo y decide tú (borrar la fila, o quitar el prefijo y tratarlo como lead real).
-- El payload también lleva `spam_score`, `spam_flags`, `ip` y `user_agent`. Hoy n8n los ignora; si mañana
-  quieres una columna "Spam score" en Notion, ya viajan — solo hay que mapearlos en el workflow.
+- `spam_score` = `spam_points` del motor y `spam_flags` = sus `signals` (códigos legibles, p. ej.
+  `company_junk`, `phone_invalid_len_9`, `email_name_mismatch`). n8n hoy los ignora; si se quiere una
+  columna en Notion, ya viajan.
+- Si el motor da `lead_quality_flag = spam`, el mensaje llega con prefijo:
+  `⚠️ Posible spam (score 5: phone_invalid_len_8, company_junk, …) · <mensaje original>`.
+  El lead **sí quedó registrado** (aún no hay modo `enforce`): revísalo y decide tú.
 - Términos legítimos del negocio (SEO, SEM, CRM, ads, marketing, automatización, dashboards…) NO puntúan.
+
+### Cómo editar las listas (sin tocar código)
+
+| Archivo | Para qué | Formato |
+|---|---|---|
+| `lib/lead-quality/data/junk-company.json` | Empresas que no son negocio ("nada", "ama de casa"…) | `values: [...]`; se comparan sin acentos, en minúsculas |
+| `lib/lead-quality/data/free-email-domains.json` | Correos gratuitos (no son spam, solo no suman como corporativos) | `domains: [...]`, coincidencia exacta |
+| `lib/lead-quality/data/disposable-email-domains.json` | Correos desechables (se rechazan en el formulario) | `domains: [...]`, incluye subdominios |
+| `api/_data/agency-denylist.json` | Agencias competidoras → `competitor` | `entries: [{ "domain": "…", "note": "…", "added": "AAAA-MM-DD" }]`. Vive en `api/_data` para no publicarse |
+
+Los archivos de `lib/` son públicos (el navegador los usa para validar); el de `api/_data` no. Todo cambio
+requiere commit + deploy.
 
 ### Auditar un rechazo duro
 Cada fake success deja una línea JSON en Vercel → proyecto → **Logs**: buscar `"evento":"lead_blocked"`.

@@ -3,22 +3,6 @@
 (function (global) {
   'use strict';
 
-  var FREE_DOMAINS = [
-    'gmail.com', 'hotmail.com', 'hotmail.es', 'outlook.com', 'outlook.es',
-    'yahoo.com', 'yahoo.com.mx', 'live.com', 'live.com.mx', 'icloud.com',
-    'proton.me', 'protonmail.com', 'aol.com', 'msn.com'
-  ];
-  // Mantener en sincronía con DOMINIOS_DESECHABLES de api/lead.js
-  var DISPOSABLE_DOMAINS = [
-    'mailinator.com', 'guerrillamail.com', '10minutemail.com', 'temp-mail.org', 'tempmail.com',
-    'yopmail.com', 'sharklasers.com', 'trashmail.com', 'getnada.com', 'dispostable.com',
-    'maildrop.cc', 'mintemail.com', 'throwawaymail.com', 'fakeinbox.com', 'mohmal.com',
-    'emailondeck.com', 'mailnesia.com', 'mytemp.email', 'tempr.email', 'discard.email',
-    'mailcatch.com', 'tempmailo.com', 'moakt.com', 'tmpmail.org', 'correotemporal.org',
-    'luxusmail.org', 'mailpoof.com', 'tempail.com', 'cuvox.de', 'dayrep.com',
-    'einrot.com', 'fleckens.hu', 'gustr.com', 'jourrapide.com', 'rhyta.com',
-    'superrito.com', 'teleworm.us', 'armyspy.com'
-  ];
   var SERVICE_LINE_MAP = {
     'Bundle Completo': 'paquete_integral',
     'Google Ads': 'publicidad_digital',
@@ -111,43 +95,11 @@
     });
   }
 
-  function emailDomainType(email) {
-    var dom = String(email || '').trim().toLowerCase().split('@')[1] || '';
-    if (!dom) return 'free';
-    for (var i = 0; i < DISPOSABLE_DOMAINS.length; i++) {
-      var d = DISPOSABLE_DOMAINS[i];
-      if (dom === d || dom.slice(-(d.length + 1)) === '.' + d) return 'disposable';
-    }
-    return FREE_DOMAINS.indexOf(dom) !== -1 ? 'free' : 'corporate';
-  }
-
   function phoneE164MX(raw) {
     var d = String(raw || '').replace(/\D/g, '');
     if (d.length === 13 && d.slice(0, 3) === '521') d = d.slice(3); // formato legado +52 1
     if (d.length === 12 && d.slice(0, 2) === '52') d = d.slice(2);
     return d.length === 10 ? '+52' + d : null;
-  }
-
-  // TODO: descalificadores de la Guía (competitor / job_seeker / student) y denylist de
-  // dominios de agencias. Aún no definidos en el spec; cuando existan, bajan el flag aquí.
-  function leadScore(input) {
-    if (input.honeypotFilled) return { score: 0, tier: 'C', flag: 'spam' };
-    var s = 15;
-    if (input.emailType === 'corporate') s += 25;
-    else if (input.emailType === 'free') s += 5;
-    else if (input.emailType === 'disposable') s -= 30;
-    if (input.hasCompany) s += 15;
-    if (input.sizeBucket === '51_200' || input.sizeBucket === '200_plus') s += 15;
-    else if (input.sizeBucket === '11_50') s += 10;
-    else if (input.sizeBucket === '1_10') s += 5;
-    if (input.phoneValid) s += 10;
-    if (input.servicesCount > 0) s += 5;
-    s = Math.max(0, Math.min(100, s));
-    return {
-      score: s,
-      tier: s >= 70 ? 'A' : (s >= 40 ? 'B' : 'C'),
-      flag: (input.emailType === 'disposable' || !input.phoneValid) ? 'suspect' : 'clean'
-    };
   }
 
   function serviceLineFromPilar(p) { return SERVICE_LINE_MAP[p] || 'paquete_integral'; }
@@ -176,16 +128,21 @@
     }).catch(function () { return null; });
   }
 
+  // Veredicto del servidor (motor de calidad de /api/lead). Es la ÚNICA fuente de
+  // lead_quality_flag / lead_score / lead_tier / email_domain_type: sin él no hay rl_lead_submit.
+  function validVerdict(v) {
+    return !!v && typeof v.lead_quality_flag === 'string' && typeof v.lead_score === 'number' &&
+      typeof v.lead_tier === 'string' && typeof v.email_domain_type === 'string';
+  }
+
+  // Resuelve con el payload de rl_lead_submit, o con null si falta el veredicto del servidor
   function buildLeadSubmit(f) {
+    if (!validVerdict(f && f.verdict)) return Promise.resolve(null);
     var ctx = global.__rl || {};
     var emailNorm = String(f.email || '').trim().toLowerCase();
     var e164 = phoneE164MX(f.phoneRaw);
-    var emailType = emailDomainType(emailNorm);
+    var v = f.verdict;
     var leadId = ctx.leadId || uuid(); // transaction_id === lead_id aunque falte el bootstrap
-    var q = leadScore({
-      emailType: emailType, hasCompany: !!f.hasCompany, sizeBucket: f.sizeBucket || null,
-      phoneValid: !!e164, servicesCount: f.servicesCount || 0, honeypotFilled: !!f.honeypotFilled
-    });
     // prospect_segment, prospect_geo, operation_volume_bucket, current_marketing_maturity y
     // segment_match se omiten: el formulario no los captura.
     var payload = compact({
@@ -195,8 +152,8 @@
       form_id: 'agenda_diagnostico', form_location: 'contacto', lead_source_channel: 'form',
       service_line: serviceLineFromPilar(f.pilar), assigned_partner: 'ambos',
       company_size_bucket: f.sizeBucket,
-      email_domain_type: emailType,
-      lead_quality_flag: q.flag, lead_score: q.score, lead_tier: q.tier,
+      email_domain_type: v.email_domain_type,
+      lead_quality_flag: v.lead_quality_flag, lead_score: v.lead_score, lead_tier: v.lead_tier,
       vertical_fit: 'horizontal',
       time_to_convert_sec: f.t0 ? Math.max(0, Math.round((Date.now() - f.t0) / 1000)) : null,
       touch_count: ctx.touchCount,
@@ -217,8 +174,7 @@
   var RL = {
     uuid: uuid, pushEvent: pushEvent, pushFormError: pushFormError, classifySubmitError: classifySubmitError,
     attributionFromCookie: attributionFromCookie, pushNonCommercialSubmit: pushNonCommercialSubmit,
-    emailDomainType: emailDomainType,
-    phoneE164MX: phoneE164MX, leadScore: leadScore,
+    phoneE164MX: phoneE164MX,
     serviceLineFromPilar: serviceLineFromPilar, prefilledRef: prefilledRef,
     sha256hex: sha256hex, buildLeadSubmit: buildLeadSubmit,
     _crossedThresholds: crossedThresholds, _engagedReady: engagedReady

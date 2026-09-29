@@ -1917,12 +1917,15 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       var seguimiento = Promise.resolve();
       if (window.RL && RL.buildLeadSubmit) {
         try {
+          // Veredicto del servidor; un fake success (rechazo duro) no lo trae y no se publica nada
           seguimiento = RL.buildLeadSubmit({
-            email: raw.email, phoneRaw: raw.telefono,
-            hasCompany: !!raw.empresa, sizeBucket: v.datos.tamano || null,
-            servicesCount: v.datos.servicios.length, honeypotFilled: !!payload.website_url_2,
-            pilar: S.pilar(v.datos.servicios), t0: t0
-          }).then(function (p) { RL.pushEvent('rl_lead_submit', p); }).catch(function () {});
+            email: raw.email, phoneRaw: raw.telefono, sizeBucket: v.datos.tamano || null,
+            pilar: S.pilar(v.datos.servicios), t0: t0,
+            verdict: {
+              lead_quality_flag: data.lead_quality_flag, lead_score: data.lead_score,
+              lead_tier: data.lead_tier, email_domain_type: data.email_domain_type
+            }
+          }).then(function (p) { if (p) RL.pushEvent('rl_lead_submit', p); }).catch(function () {});
         } catch (e) { seguimiento = Promise.resolve(); }
       }
       seguimiento.then(mostrarExito, mostrarExito);

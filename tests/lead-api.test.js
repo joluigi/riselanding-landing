@@ -136,7 +136,8 @@ test('form-token: POST → 405; sin FORM_TOKEN_SECRET devuelve form_token null',
 test('envío válido: 200, se reenvía una vez y el payload conserva exactamente las 11 llaves', async function () {
   const r = await enviar(cuerpoValido());
   assert.strictEqual(r.status, 200);
-  assert.deepStrictEqual(r.data, { success: true });
+  // Respuesta con el veredicto del servidor (el cliente lo publica en rl_lead_submit)
+  assert.deepStrictEqual(r.data, { success: true, lead_quality_flag: 'clean', lead_score: 83, lead_tier: 'A', email_domain_type: 'corporate' });
   assert.strictEqual(reenvios.length, 1);
   assert.deepStrictEqual(Object.keys(reenvios[0]).sort(), LLAVES_CONTRATO);
   assert.strictEqual(typeof reenvios[0].spam_score, 'number');
@@ -475,4 +476,41 @@ test('log: el mismo teléfono mexicano da el mismo phone_sha256 en cualquier for
   await enviar(cuerpoValido({ solicitante: 'empleo', telefono: '+52 1 55 0000 0000' }));
   assert.strictEqual(ultimoLog('lead_not_forwarded').phone_sha256, bloqueado);
   assert.strictEqual(bloqueado, h);
+});
+
+// --- Fase 3: motor de calidad en la ruta ---
+
+test('motor: spam_score = spam_points, spam_flags = signals; prefijo ⚠️ solo si el flag es spam', async function () {
+  // Empresa numérica pasa la validación (2+ caracteres, no está en la lista) pero suma +3 → spam
+  let r = await enviar(cuerpoValido({ empresa: '12345' }));
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(r.data.lead_quality_flag, 'spam');
+  let s = reenvios[0];
+  assert.strictEqual(s.spam_score, 3);
+  assert.deepStrictEqual(s.spam_flags, ['company_numeric']);
+  assert.strictEqual(s.mensaje, '⚠️ Posible spam (score 3: company_numeric) · Servicios: Implementación de CRM · Tamaño: 11–50 personas');
+
+  // Par repetido en empresa: +1, suspect, se reenvía SIN prefijo
+  r = await enviar(cuerpoValido({ empresa: 'Papelería Papalote' }));
+  assert.strictEqual(r.data.lead_quality_flag, 'suspect');
+  s = reenvios[1];
+  assert.deepStrictEqual([s.spam_score, s.spam_flags], [1, ['company_pair_repeat']]);
+  assert.strictEqual(s.mensaje, 'Servicios: Implementación de CRM · Tamaño: 11–50 personas');
+  assert.deepStrictEqual(Object.keys(s).sort(), LLAVES_CONTRATO);
+});
+
+test('motor: señales de auditoría de la ruta (sin puntos) y log lead_evaluated sin PII', async function () {
+  const r = await enviar(cuerpoValido({ form_token: tokenDeHace(5000) }), {});
+  assert.strictEqual(r.data.lead_quality_flag, 'clean');
+  assert.ok(reenvios[0].spam_flags.indexOf('fast_submit_lt_8s') !== -1);
+  assert.strictEqual(reenvios[0].spam_score, 0);
+  const l = ultimoLog('lead_evaluated');
+  assert.deepStrictEqual([l.lead_quality_flag, l.lead_tier, l.forwarded, l.destination_status], ['clean', 'A', true, 200]);
+  assert.match(l.email_sha256, /^[0-9a-f]{64}$/);
+  assert.ok(logs.join('\n').indexOf('ana.prueba@example.mx') === -1);
+});
+
+test('rechazos duros siguen respondiendo solo {success:true}, sin veredicto', async function () {
+  const r = await enviar(cuerpoValido({ website_url_2: 'x' }));
+  assert.deepStrictEqual(r.data, { success: true });
 });

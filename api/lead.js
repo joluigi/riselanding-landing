@@ -17,8 +17,9 @@
 //      validar para no consumir el token de un solo uso en un envío que devuelve 422.
 //   5. Solicitantes no comerciales (proyecto personal, empleo, proveedor): mensaje propio,
 //      log con su lead_quality_flag y SIN reenvío a n8n.
-//   6. Scoring suave: NUNCA bloquea. Solo etiqueta (spam_score, prefijo ⚠️ en el
-//      mensaje) y reenvía; el humano decide en Notion.
+//   6. Motor de calidad (lib/lead-quality/engine.js): lead_quality_flag, lead_score,
+//      lead_tier, spam_points y signals. Hoy solo etiqueta (spam_score = spam_points,
+//      spam_flags = signals, prefijo ⚠️ si el flag es spam) y reenvía; el humano decide.
 //   Las capas 1 y 4 (honeypot, token, Turnstile fallido) NUNCA reenvían, sea cual sea
 //   LEAD_GATE_MODE: ese modo solo gobierna el veredicto del motor de calidad.
 'use strict';
@@ -28,6 +29,7 @@ const { validarLead } = require('./_lib/validar-lead');
 const contrato = require('./_lib/contrato-n8n');
 const schema = require('../lib/lead-quality/schema.js');
 const turnstile = require('./_lib/turnstile');
+const calidad = require('./_lib/calidad');
 const log = require('./_lib/log');
 
 // --- Constante compartida con index.html (debe coincidir EXACTO) ---
@@ -42,39 +44,6 @@ const VENTANA_RATE_MS = 10 * 60 * 1000;
 const MAX_ENVIOS_VENTANA = 5;
 const MAX_IPS_MAPA = 500;
 const mapaRate = new Map(); // ip → [timestamps de envíos aceptados]
-
-// Mantener en sincronía con DISPOSABLE_DOMAINS de js/rl-tracking.js
-const DOMINIOS_DESECHABLES = [
-  'mailinator.com', 'guerrillamail.com', '10minutemail.com', 'temp-mail.org', 'tempmail.com',
-  'yopmail.com', 'sharklasers.com', 'trashmail.com', 'getnada.com', 'dispostable.com',
-  'maildrop.cc', 'mintemail.com', 'throwawaymail.com', 'fakeinbox.com', 'mohmal.com',
-  'emailondeck.com', 'mailnesia.com', 'mytemp.email', 'tempr.email', 'discard.email',
-  'mailcatch.com', 'tempmailo.com', 'moakt.com', 'tmpmail.org', 'correotemporal.org',
-  'luxusmail.org', 'mailpoof.com', 'tempail.com', 'cuvox.de', 'dayrep.com',
-  'einrot.com', 'fleckens.hu', 'gustr.com', 'jourrapide.com', 'rhyta.com',
-  'superrito.com', 'teleworm.us', 'armyspy.com'
-];
-
-// OJO: nada de términos legítimos de esta agencia (seo, sem, crm, marketing, ads,
-// publicidad, automatización, dashboards) — generarían falsos positivos en cada lead real.
-const KEYWORDS_SPAM = [
-  'casino', 'viagra', 'cialis', 'porn', 'xxx', 'forex',
-  'guest post', 'link insertion', 'gana dinero', 'make money fast',
-  'lottery', 'lotería', 'préstamo urgente', 'loan approved',
-  'hacking service', 'seguidores baratos', 'buy followers',
-  'recover your funds', 'crypto investment', 'inversión en cripto'
-];
-
-// Con límite de palabra: 'xxx' o 'forex' dentro de una palabra más larga no puntúan
-const RE_KEYWORDS = KEYWORDS_SPAM.map(function (k) {
-  return new RegExp('\\b' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
-});
-
-// URL: http(s)://, www. o dominio.tld con TLDs habituales del spam (lista cerrada
-// para no marcar abreviaturas tipo "S.A. de C.V.")
-const RE_URL = /(?:https?:\/\/|www\.)\S+|\b[a-z0-9][a-z0-9.-]*\.(?:com|net|org|info|biz|io|co|ru|cn|xyz|top|site|online|club|shop|store|live|vip|link|click|icu|buzz|work|space|pro)\b/i;
-const RE_URL_G = new RegExp(RE_URL.source, 'gi');
-const RE_CIRILICO_CJK = /[Ѐ-ӿ一-鿿]/; // Ѐ-ӿ (cirílico) y 一-鿿 (CJK)
 
 // Mensaje para quien declaró no ser prospecto comercial (student / job_seeker / competitor)
 function mensajeNoComercial(flag) {
@@ -184,61 +153,6 @@ function podarMapaRate(ahora) {
     if (mapaRate.size <= MAX_IPS_MAPA) break;
     mapaRate.delete(clave);
   }
-}
-
-function esEmailDesechable(email) {
-  const dominio = (email.split('@')[1] || '').toLowerCase();
-  if (!dominio) return '';
-  for (let i = 0; i < DOMINIOS_DESECHABLES.length; i++) {
-    const d = DOMINIOS_DESECHABLES[i];
-    if (dominio === d || dominio.slice(-(d.length + 1)) === '.' + d) return dominio;
-  }
-  return '';
-}
-
-function nombreSospechoso(nombre) {
-  if (!nombre) return false;
-  if (/\d/.test(nombre)) return true;
-  if (/[bcdfghjklmnpqrstvwxyz]{6,}/i.test(nombre)) return true;
-  const letras = nombre.replace(/[^a-záéíóúüñ]/gi, '');
-  return letras.length > 6 && !/[aeiouáéíóúü]/i.test(letras);
-}
-
-// Scoring suave: solo etiqueta, jamás decide un bloqueo.
-function puntuarSpam(datos) {
-  let score = 0;
-  const flags = [];
-
-  if (RE_URL.test(datos.nombre)) { score += 2; flags.push('URL en nombre'); }
-  if (RE_URL.test(datos.empresa)) { score += 2; flags.push('URL en empresa'); }
-  if (RE_URL.test(datos.telefono)) { score += 2; flags.push('URL en teléfono'); }
-
-  const urlsMensaje = (datos.mensaje.match(RE_URL_G) || []).length;
-  if (urlsMensaje > 0) {
-    score += Math.min(urlsMensaje, 3);
-    flags.push(urlsMensaje > 1 ? 'URL en mensaje ×' + urlsMensaje : 'URL en mensaje');
-  }
-
-  const dominioDesechable = esEmailDesechable(datos.email);
-  if (dominioDesechable) { score += 2; flags.push('email desechable (' + dominioDesechable + ')'); }
-
-  const texto = (datos.nombre + ' ' + datos.empresa + ' ' + datos.mensaje).toLowerCase();
-  for (let i = 0; i < KEYWORDS_SPAM.length; i++) {
-    if (RE_KEYWORDS[i].test(texto)) { score += 2; flags.push('palabra spam: ' + KEYWORDS_SPAM[i]); }
-  }
-
-  if (RE_CIRILICO_CJK.test(datos.nombre + datos.empresa + datos.mensaje)) {
-    score += 1; flags.push('caracteres cirílicos/CJK');
-  }
-
-  if (nombreSospechoso(datos.nombre)) { score += 1; flags.push('nombre sospechoso'); }
-
-  // Edad del token (reloj del servidor); menos de 4 s ya se descartó como too_fast
-  if (datos.edadMs !== null && datos.edadMs < 8000) { score += 1; flags.push('envío en menos de 8 s'); }
-
-  if (datos.sinToken) { score += 2; flags.push('sin header de formulario'); }
-
-  return { score: score, flags: flags };
 }
 
 async function procesar(req, res) {
@@ -368,24 +282,20 @@ async function procesar(req, res) {
     });
   }
 
-  // 8) Scoring suave: etiqueta sin bloquear
-  const mensaje = contrato.mensajeBase(datos, body);
-  const puntuacion = puntuarSpam({
-    nombre: nombre,
-    empresa: empresa,
-    email: email,
-    telefono: telefono,
-    mensaje: datos.necesidad,
-    edadMs: tk.edadMs,
-    sinToken: sinToken
-  });
-  // Señal de auditoría sin puntos: el envío no pasó por la verificación de Cloudflare
-  if (senalTurnstile) puntuacion.flags.push(senalTurnstile);
+  // 8) Motor de calidad (lib/lead-quality/engine.js). Por ahora solo etiqueta: el reenvío no
+  // depende del veredicto (LEAD_GATE_MODE llega en la Fase 4). Las señales de la ruta van como
+  // auditoría sin puntos.
+  const extras = [];
+  if (senalTurnstile) extras.push(senalTurnstile);
+  if (tk.edadMs !== null && tk.edadMs < 8000) extras.push('fast_submit_lt_8s');
+  if (sinToken) extras.push('missing_form_header');
+  const veredicto = calidad.evaluar(datos, extras);
 
+  const mensaje = contrato.mensajeBase(datos, body);
   let mensajeFinal = mensaje;
-  if (puntuacion.score >= 3) {
+  if (veredicto.lead_quality_flag === 'spam') {
     // Prefijo visible en Notion sin tocar n8n: el humano decide
-    mensajeFinal = '⚠️ Posible spam (score ' + puntuacion.score + ': ' + puntuacion.flags.join(', ') + ') · ' + mensaje;
+    mensajeFinal = '⚠️ Posible spam (score ' + veredicto.spam_points + ': ' + veredicto.signals.join(', ') + ') · ' + mensaje;
   }
 
   // Siempre hay al menos un servicio (validación): el pilar sale de los servicios marcados
@@ -400,8 +310,8 @@ async function procesar(req, res) {
     mensaje: mensajeFinal,
     interes_pilar: interesPilar,
     fuente: 'Sitio Web', // forzado server-side: el cliente no decide la fuente
-    spam_score: puntuacion.score,
-    spam_flags: puntuacion.flags,
+    spam_score: veredicto.spam_points,
+    spam_flags: veredicto.signals,
     ip: ip,
     user_agent: String(headers['user-agent'] || '')
   };
@@ -426,8 +336,29 @@ async function procesar(req, res) {
     clearTimeout(temporizador);
   }
 
-  if (respuestaN8n && respuestaN8n.ok) {
-    return send(res, 200, { success: true });
+  const reenviado = !!(respuestaN8n && respuestaN8n.ok);
+  log.registrar('lead_evaluated', {
+    lead_quality_flag: veredicto.lead_quality_flag,
+    lead_score: veredicto.lead_score,
+    lead_tier: veredicto.lead_tier,
+    spam_points: veredicto.spam_points,
+    signals: veredicto.signals,
+    email_domain_type: veredicto.email_domain_type,
+    email_sha256: log.sha256(datos.email),
+    phone_sha256: log.sha256Telefono(datos.telefonoE164 || datos.telefono),
+    forwarded: reenviado,
+    destination_status: respuestaN8n ? respuestaN8n.status : 'sin_respuesta'
+  });
+
+  if (reenviado) {
+    // El cliente publica rl_lead_submit con este veredicto (el del servidor, nunca uno propio)
+    return send(res, 200, {
+      success: true,
+      lead_quality_flag: veredicto.lead_quality_flag,
+      lead_score: veredicto.lead_score,
+      lead_tier: veredicto.lead_tier,
+      email_domain_type: veredicto.email_domain_type
+    });
   }
 
   // Un lead real nunca se pierde en silencio: ve el error y tiene fallback de contacto

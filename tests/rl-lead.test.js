@@ -5,6 +5,9 @@ const nodeCrypto = require('node:crypto');
 const RL = require('../js/rl-tracking.js');
 
 function sha(s) { return nodeCrypto.createHash('sha256').update(s).digest('hex'); }
+// Veredicto tal como lo devuelve /api/lead (motor del servidor)
+const VEREDICTO_A = { lead_quality_flag: 'clean', lead_score: 85, lead_tier: 'A', email_domain_type: 'corporate' };
+
 function nullKeys(o) {
   return Object.keys(o).filter(function (k) { return o[k] === null || o[k] === undefined; });
 }
@@ -12,9 +15,8 @@ function nullKeys(o) {
 test('buildLeadSubmit: payload completo, hasheado y sin PII en claro', async function () {
   globalThis.__rl = { leadId: '3f8a91c2-6d4e-4b17-9a05-2ce8f1b74d30', sessionId: '1.a', sessionCount: 1, isInternal: false, touchCount: 2, daysSinceFirstTouch: 2, consentState: 'granted' };
   const p = await RL.buildLeadSubmit({
-    email: ' Maria@Empresa.MX ', phoneRaw: '55 5878 8983', hasCompany: true,
-    sizeBucket: '51_200', servicesCount: 2, honeypotFilled: false,
-    pilar: 'Bundle Completo', t0: Date.now() - 2000
+    email: ' Maria@Empresa.MX ', phoneRaw: '55 5878 8983',
+    sizeBucket: '51_200', pilar: 'Bundle Completo', t0: Date.now() - 2000, verdict: VEREDICTO_A
   });
   assert.strictEqual(p.transaction_id, '3f8a91c2-6d4e-4b17-9a05-2ce8f1b74d30');
   assert.strictEqual(p.lead_id, p.transaction_id);
@@ -45,54 +47,43 @@ test('buildLeadSubmit: payload completo, hasheado y sin PII en claro', async fun
   delete globalThis.__rl;
 });
 
-test('buildLeadSubmit: honeypot → spam, y teléfono inválido no se hashea', async function () {
-  globalThis.__rl = { leadId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', touchCount: 1, daysSinceFirstTouch: 0 };
-  const p = await RL.buildLeadSubmit({
-    email: 'bot@gmail.com', phoneRaw: '123', hasCompany: false, sizeBucket: null,
-    servicesCount: 0, honeypotFilled: true, pilar: 'Google Ads', t0: null
-  });
-  assert.strictEqual(p.lead_quality_flag, 'spam');
-  assert.strictEqual(p.lead_score, 0);
-  assert.strictEqual(p.lead_tier, 'C');
+test('buildLeadSubmit: sin veredicto del servidor resuelve null (no hay rl_lead_submit)', async function () {
+  assert.strictEqual(await RL.buildLeadSubmit({ email: 'a@empresa.mx', phoneRaw: '5558788983' }), null);
+  assert.strictEqual(await RL.buildLeadSubmit({ email: 'a@empresa.mx', verdict: { lead_quality_flag: 'clean' } }), null);
+  assert.strictEqual(await RL.buildLeadSubmit(null), null);
+});
+
+test('buildLeadSubmit: flag, score, tier y email_domain_type salen tal cual del servidor', async function () {
+  globalThis.__rl = { leadId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' };
+  const casos = [
+    { lead_quality_flag: 'spam', lead_score: 35, lead_tier: 'C', email_domain_type: 'free' },
+    { lead_quality_flag: 'suspect', lead_score: 40, lead_tier: 'C', email_domain_type: 'free' },
+    { lead_quality_flag: 'clean', lead_score: 53, lead_tier: 'B', email_domain_type: 'free' },
+    { lead_quality_flag: 'competitor', lead_score: 98, lead_tier: 'A', email_domain_type: 'corporate' }
+  ];
+  for (const v of casos) {
+    const p = await RL.buildLeadSubmit({ email: 'maria@gmail.com', phoneRaw: '+52 55 5878 8983', verdict: v });
+    assert.deepStrictEqual(
+      [p.lead_quality_flag, p.lead_score, p.lead_tier, p.email_domain_type],
+      [v.lead_quality_flag, v.lead_score, v.lead_tier, v.email_domain_type]);
+  }
+  delete globalThis.__rl;
+});
+
+test('buildLeadSubmit: teléfono inválido no se hashea y sin tamaño la clave se omite', async function () {
+  globalThis.__rl = { leadId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' };
+  const p = await RL.buildLeadSubmit({ email: 'a@empresa.mx', phoneRaw: '123', pilar: 'Google Ads', t0: null, verdict: VEREDICTO_A });
   assert.strictEqual(p.service_line, 'publicidad_digital');
   assert.ok(!('time_to_convert_sec' in p), 'sin t0 la clave se omite');
-  assert.deepStrictEqual(nullKeys(p), []);
-  assert.ok(!p.user_data || !p.user_data.sha256_phone_number, 'teléfono inválido no se hashea');
-  delete globalThis.__rl;
-});
-
-test('buildLeadSubmit: @gmail.com sin datos de empresa → Tier C (G3) con flag clean, aun con todo lo demás al máximo', async function () {
-  globalThis.__rl = { leadId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee' };
-  const p = await RL.buildLeadSubmit({
-    email: 'maria@gmail.com', phoneRaw: '+52 55 5878 8983', hasCompany: false, sizeBucket: null,
-    servicesCount: 6, honeypotFilled: false, pilar: 'Bundle Completo', t0: Date.now()
-  });
-  assert.strictEqual(p.email_domain_type, 'free');
-  assert.strictEqual(p.lead_tier, 'C');
-  assert.strictEqual(p.lead_quality_flag, 'clean');
   assert.ok(!('company_size_bucket' in p), 'sin tamaño la clave se omite');
-  assert.match(p.user_data.sha256_email_address, /^[0-9a-f]{64}$/);
-  assert.match(p.user_data.sha256_phone_number, /^[0-9a-f]{64}$/);
+  assert.ok(!p.user_data.sha256_phone_number, 'teléfono inválido no se hashea');
+  assert.deepStrictEqual(nullKeys(p), []);
   delete globalThis.__rl;
-});
-
-test('buildLeadSubmit: lead_quality_flag siempre presente (G2 bloquea si falta)', async function () {
-  const casos = [
-    { email: 'a@empresa.mx', phoneRaw: '5558788983', honeypotFilled: false },
-    { email: 'a@gmail.com', phoneRaw: '123', honeypotFilled: false },
-    { email: 'a@mailinator.com', phoneRaw: '5558788983', honeypotFilled: false },
-    { email: '', phoneRaw: '', honeypotFilled: false },
-    { email: 'bot@empresa.mx', phoneRaw: '5558788983', honeypotFilled: true }
-  ];
-  for (const c of casos) {
-    const p = await RL.buildLeadSubmit(c);
-    assert.ok(['clean', 'suspect', 'spam'].indexOf(p.lead_quality_flag) !== -1, JSON.stringify(c));
-  }
 });
 
 test('buildLeadSubmit: sin bootstrap (__rl ausente) transaction_id === lead_id con UUID nuevo', async function () {
   delete globalThis.__rl;
-  const p = await RL.buildLeadSubmit({ email: 'a@empresa.mx', phoneRaw: '5558788983' });
+  const p = await RL.buildLeadSubmit({ email: 'a@empresa.mx', phoneRaw: '5558788983', verdict: VEREDICTO_A });
   assert.match(p.lead_id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   assert.strictEqual(p.transaction_id, p.lead_id);
   ['touch_count', 'days_since_first_touch'].forEach(function (k) { assert.ok(!(k in p), k + ' debe omitirse'); });
@@ -144,7 +135,7 @@ test('classifySubmitError: códigos de fricción sin valores del formulario', fu
 test('rl_lead_submit en el dataLayer: ningún valor contiene PII en claro', async function () {
   globalThis.dataLayer = [];
   globalThis.__rl = { leadId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', touchCount: 1, daysSinceFirstTouch: 0 };
-  const p = await RL.buildLeadSubmit({ email: 'Maria@Empresa.mx', phoneRaw: '55 5878 8983', hasCompany: true });
+  const p = await RL.buildLeadSubmit({ email: 'Maria@Empresa.mx', phoneRaw: '55 5878 8983', verdict: VEREDICTO_A });
   RL.pushEvent('rl_lead_submit', p);
   (function walk(v) {
     if (v && typeof v === 'object') { Object.keys(v).forEach(function (k) { walk(v[k]); }); return; }
