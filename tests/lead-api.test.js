@@ -8,6 +8,7 @@ const lead = require('../api/lead.js');
 const formTokenHandler = require('../api/form-token.js');
 const formToken = require('../api/_lib/form-token.js');
 const turnstile = require('../api/_lib/turnstile.js');
+const validarLead = require('../api/_lib/validar-lead.js');
 
 const URL_N8N = 'https://n8n.test.invalid/webhook/lead';
 const URL_CF = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
@@ -25,6 +26,8 @@ beforeEach(function () {
   delete process.env.TURNSTILE_SECRET_KEY;
   reenvios = []; llamadasCf = 0; logs = []; warns = []; errores = [];
   respuestaCf = function () { return { ok: true, status: 200, json: async function () { return { success: true }; } }; };
+  // DNS simulado: ningún test sale a la red; cada dominio tiene MX salvo que la prueba diga otra cosa
+  validarLead._setResolverMx(async function () { return [{ exchange: 'mx.example.invalid', priority: 10 }]; });
   fetchOriginal = global.fetch;
   global.fetch = async function (url, opts) {
     if (url === URL_CF) { llamadasCf++; return respuestaCf(opts); }
@@ -63,15 +66,22 @@ async function enviar(body, opciones) {
 
 function tokenDeHace(ms) { return formToken.emitir(Date.now() - ms); }
 
+// Envío sintético que pasa todas las validaciones de la Fase 2
 function cuerpoValido(extra) {
   return Object.assign({
-    nombre: 'Ana Prueba',
-    empresa: 'Empresa Sintética Uno',
+    solicitante: 'empresa',
+    nombre: 'Ana',
+    apellido: 'Prueba',
     email: 'ana.prueba@example.mx',
     telefono: '+52 55 0000 0000',
-    mensaje: 'Servicios: Implementación de CRM · Tamaño: 11–50 personas',
-    interes_pilar: 'CRM + Automatización',
-    fuente: 'Sitio Web',
+    telefono_pais: 'MX',
+    empresa: 'Empresa Sintética Uno',
+    sitio_web: '',
+    tamano: '11_50',
+    servicios: ['Implementación de CRM'],
+    presupuesto: '10k_25k',
+    necesidad: 'Queremos ordenar el seguimiento de prospectos en un CRM.',
+    consentimiento: true,
     website_url_2: '',
     form_token: tokenDeHace(20000)
   }, extra || {});
@@ -316,4 +326,140 @@ test('rate limit: 5 envíos por IP en 10 min pasan, el 6.º recibe 429', async f
   assert.strictEqual(r6.data.code, 'rate_limited');
   assert.match(r6.data.message, /contacto@riselanding\.com/);
   assert.strictEqual(reenvios.length, 5);
+});
+
+// --- Fase 2: validación del servidor, contrato con n8n y solicitantes no comerciales ---
+
+// Réplica exacta de cómo armaba el payload el index.html anterior (commit 1e2184a)
+function payloadClienteAnterior(c) {
+  const servicios = c.servicios;
+  function pilar(s) {
+    const ads = s.indexOf('Publicidad Digital') !== -1;
+    const web = s.some(function (x) { return /SEO|web/i.test(x); });
+    const ops = s.some(function (x) { return /CRM|Automatizaci|Dashboards/i.test(x); });
+    if ((ads + web + ops) >= 2 || s.length >= 3) return 'Bundle Completo';
+    if (ads) return 'Google Ads';
+    if (web) return 'Sitio Web + SEO';
+    if (ops) return 'CRM + Automatización';
+    return 'Bundle Completo';
+  }
+  const tamanos = { '1_10': '1–10 personas', '11_50': '11–50 personas', '51_200': '51–200 personas', '200_plus': 'Más de 200 personas' };
+  const utm = ['utm_source', 'utm_medium', 'utm_campaign'].map(function (k) { return c[k] ? k + '=' + c[k] : null; }).filter(Boolean).join(' ');
+  return {
+    nombre: (c.nombre + ' ' + c.apellido).trim(),
+    empresa: c.empresa.trim(),
+    email: c.email.trim(),
+    telefono: c.telefono.trim(),
+    mensaje: 'Servicios: ' + (servicios.join(', ') || 'no indicó') + (tamanos[c.tamano] ? ' · Tamaño: ' + tamanos[c.tamano] : '') + (utm ? ' · ' + utm : ''),
+    interes_pilar: pilar(servicios),
+    fuente: 'Sitio Web'
+  };
+}
+
+test('contrato: nombre, empresa, email, teléfono, mensaje, interes_pilar y fuente idénticos al cliente anterior', async function () {
+  const casos = [
+    {},
+    { servicios: ['Publicidad Digital', 'SEO y Posicionamiento'], tamano: '200_plus', utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'marca-sintetica' },
+    { servicios: ['SEO y Posicionamiento', 'Reediseño / Desarrollo página web'], tamano: '1_10', utm_source: 'meta' },
+    { servicios: SERVICIOS_TODOS(), tamano: '51_200', email: 'Ana.Prueba@Example.MX' },
+    { servicios: ['Implementación de CRM', 'Automatización de procesos', 'Dashboards y reportes'], empresa: '  Empresa Sintética Dos  ' }
+  ];
+  for (let i = 0; i < casos.length; i++) {
+    const c = cuerpoValido(casos[i]);
+    await enviar(c);
+    const saliente = reenvios[i];
+    const esperado = payloadClienteAnterior(c);
+    Object.keys(esperado).forEach(function (k) { assert.strictEqual(saliente[k], esperado[k], 'caso ' + i + ', llave ' + k); });
+    assert.deepStrictEqual(Object.keys(saliente).sort(), LLAVES_CONTRATO);
+  }
+});
+function SERVICIOS_TODOS() { return require('../lib/lead-quality/schema.js').SERVICIOS.slice(); }
+
+test('422 con el error de cada campo y el primero como message; no se reenvía', async function () {
+  const r = await enviar(cuerpoValido({ nombre: 'T', apellido: 'T', telefono: '55 1234 567', empresa: 'Nada', servicios: [], necesidad: 'corto', consentimiento: false }));
+  assert.strictEqual(r.status, 422);
+  assert.strictEqual(r.data.code, 'validation');
+  assert.deepStrictEqual(Object.keys(r.data.errors), ['nombre', 'apellido', 'telefono', 'empresa', 'servicios', 'necesidad', 'consentimiento']);
+  assert.strictEqual(r.data.errors.telefono, 'Escribe tu número a 10 dígitos');
+  assert.strictEqual(r.data.errors.empresa, 'Escribe el nombre de tu empresa o negocio');
+  assert.strictEqual(r.data.message, r.data.errors.nombre);
+  assert.strictEqual(reenvios.length, 0);
+});
+
+test('teléfonos MX de 7, 8, 9 u 11 dígitos, o con lada que empieza en 1 → 422', async function () {
+  const malos = ['5500000', '55000000', '550000000', '55000000000', '1500000000'];
+  for (let i = 0; i < malos.length; i++) {
+    const r = await enviar(cuerpoValido({ telefono: malos[i] }));
+    assert.strictEqual(r.status, 422, malos[i]);
+    assert.strictEqual(r.data.errors.telefono, 'Escribe tu número a 10 dígitos');
+  }
+  assert.strictEqual(reenvios.length, 0);
+});
+
+test('correo cuyo dominio no tiene MX → 422; timeout o error del DNS no bloquea', async function () {
+  validarLead._setResolverMx(async function () { const e = new Error('no'); e.code = 'ENOTFOUND'; throw e; });
+  let r = await enviar(cuerpoValido({ email: 'ana@dominio-sin-correo.invalid' }));
+  assert.strictEqual(r.status, 422);
+  assert.strictEqual(r.data.errors.email, 'Revisa tu correo: ese dominio no recibe correos.');
+
+  validarLead._setResolverMx(async function () { return [{ exchange: '.', priority: 0 }]; }); // MX nulo (RFC 7505)
+  r = await enviar(cuerpoValido({ email: 'ana@mx-nulo.invalid' }));
+  assert.strictEqual(r.status, 422);
+
+  validarLead._setResolverMx(async function () { const e = new Error('x'); e.code = 'ESERVFAIL'; throw e; });
+  r = await enviar(cuerpoValido());
+  assert.strictEqual(r.status, 200);
+
+  validarLead._setResolverMx(function () { return new Promise(function () {}); }); // nunca responde
+  const inicio = Date.now();
+  r = await enviar(cuerpoValido({ email: 'ana@lento.invalid' }));
+  assert.strictEqual(r.status, 200);
+  assert.ok(Date.now() - inicio >= 1900 && Date.now() - inicio < 3500, 'timeout de 2 s');
+  assert.strictEqual(reenvios.length, 2);
+});
+
+test('correo desechable → 422; Gmail sí pasa', async function () {
+  let r = await enviar(cuerpoValido({ email: 'qa1@mailinator.com' }));
+  assert.strictEqual(r.status, 422);
+  r = await enviar(cuerpoValido({ email: 'ana.prueba.sintetica@gmail.com' }));
+  assert.strictEqual(r.status, 200);
+});
+
+test('teléfono fuera de México: libphonenumber valida; al saliente se antepone el código si falta', async function () {
+  let r = await enviar(cuerpoValido({ telefono_pais: 'US', telefono: '202 555 0123' }));
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(reenvios[0].telefono, '+1 202 555 0123');
+  r = await enviar(cuerpoValido({ telefono_pais: 'INTL', telefono: '+57 601 5550000' }));
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(reenvios[1].telefono, '+57 601 5550000');
+  r = await enviar(cuerpoValido({ telefono_pais: 'CO', telefono: '999999' }));
+  assert.strictEqual(r.status, 422);
+  assert.strictEqual(reenvios.length, 2);
+});
+
+test('solicitantes no comerciales: no se reenvían, mensaje propio y log con su flag', async function () {
+  delete process.env.VENDOR_CONTACT_EMAIL;
+  const casos = [
+    ['personal', 'student', /trabajamos con empresas y negocios/i],
+    ['empleo', 'job_seeker', /^Gracias por tu interés\. Por ahora no tenemos vacantes abiertas; puedes seguirnos en @riselanding$/],
+    ['proveedor', 'competitor', /no estamos buscando proveedores/]
+  ];
+  for (let i = 0; i < casos.length; i++) {
+    const r = await enviar(cuerpoValido({ solicitante: casos[i][0], empresa: '', servicios: [], tamano: '', presupuesto: '', necesidad: '' }));
+    assert.strictEqual(r.status, 200);
+    assert.strictEqual(r.data.success, true);
+    assert.strictEqual(r.data.outcome, 'no_comercial');
+    assert.strictEqual(r.data.lead_quality_flag, casos[i][1]);
+    assert.match(r.data.message, casos[i][2]);
+    const l = ultimoLog('lead_not_forwarded');
+    assert.strictEqual(l.lead_quality_flag, casos[i][1]);
+    assert.match(l.email_sha256, /^[0-9a-f]{64}$/);
+  }
+  assert.strictEqual(reenvios.length, 0);
+  assert.ok(logs.join('\n').indexOf('ana.prueba@example.mx') === -1, 'correo en claro en el log');
+
+  process.env.VENDOR_CONTACT_EMAIL = 'proveedores@example.invalid';
+  const r = await enviar(cuerpoValido({ solicitante: 'proveedor' }));
+  assert.match(r.data.message, /proveedores@example\.invalid/);
+  delete process.env.VENDOR_CONTACT_EMAIL;
 });

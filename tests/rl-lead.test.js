@@ -131,6 +131,7 @@ test('classifySubmitError: códigos de fricción sin valores del formulario', fu
   assert.deepStrictEqual(RL.classifySubmitError({ tipo: 'network_error' }), ['network_error', 'network']);
   assert.deepStrictEqual(RL.classifySubmitError({ code: 'rate_limited', message: 'x' }), ['server_error', 'rate_limited']);
   assert.deepStrictEqual(RL.classifySubmitError({ code: 'form_expired' }), ['server_error', 'form_expired']);
+  assert.deepStrictEqual(RL.classifySubmitError({ code: 'validation', campo: 'telefono' }), ['server_error', 'telefono']);
   assert.deepStrictEqual(RL.classifySubmitError({ delServidor: true }), ['server_error', undefined]);
   assert.deepStrictEqual(RL.classifySubmitError(null), ['server_error', undefined]);
   globalThis.dataLayer = [];

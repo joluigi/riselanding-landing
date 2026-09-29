@@ -15,7 +15,8 @@ sospechoso se etiqueta y SIEMPRE llega a Notion para que un humano decida.
 | 3 | Tiempo mínimo | Envío a < 4 s de emitido el token (reloj del servidor) | Fake success* (`too_fast`) |
 | 4 | Token vencido | Token de más de 2 h. El cliente lo renueva solo cada 90 min, así que un humano casi nunca lo ve | 409 `form_expired`: pide reenviar, **no** es spam |
 | 5 | Header `X-Form-Token` | Lo añade el JS del form. Su ausencia NO bloquea | +2 al score |
-| 6 | Validación de campos | Email/teléfono/longitudes; mensajes en español | 422 visible en el form |
+| 6 | Validación de campos | Esquema compartido con el navegador (`lib/lead-quality/schema.js`): nombre (2+ letras en la primera palabra, sin dígitos), correo (formato, desechables de `lib/lead-quality/data/disposable-email-domains.json`, **registros MX** con timeout de 2 s que no bloquea), teléfono (México: 10 dígitos sin 0/1 inicial; otros países: libphonenumber), empresa (obligatoria para empresa/emprendimiento, lista `junk-company.json`), sitio, tamaño, servicios (mín. 1), presupuesto, necesidad (30+), consentimiento | 422 con un error por campo, en línea |
+| 6b | Solicitante no comercial | "Proyecto personal / escolar", "Busco empleo" o "Proveedor o agencia" → mensaje propio, log `lead_not_forwarded` con `student` / `job_seeker` / `competitor` | **No** se reenvía a n8n, en ningún modo |
 | 7 | Rate limit en memoria | Máx 5 envíos / 10 min por IP. **Parcial**: cada instancia serverless tiene su propia memoria y se recicla; la capa firme es el WAF (paso 4 de la escalación) | 429 visible |
 | 8 | Turnstile (Managed) | Solo si existen `TURNSTILE_SITE_KEY` **y** `TURNSTILE_SECRET_KEY`. Va después de validar para no gastar el token de un solo uso en un 422 | Fallo o sin token → fake success* (`turnstile_failed`). Cloudflare con timeout de 3 s, 5xx, red o `internal-error` → **sigue** con `turnstile_unavailable` (log nivel info). Secreto ausente/inválido u otro error de configuración → **sigue** con `turnstile_misconfigured` (log nivel **error**: hay que corregir las variables) |
 | 9 | Scoring suave | URLs en campos, email desechable, keywords spam, cirílico/CJK… **Nunca bloquea**: solo etiqueta | Llega a Notion con ⚠️ |
@@ -78,6 +79,7 @@ Las respuestas 429 y 409 muestran un mensaje en español con contacto alterno (c
 |----------|--------|--------------|
 | `N8N_WEBHOOK_URL` | Destino del reenvío | URL de Railway quemada en `api/lead.js` |
 | `FORM_SHARED_SECRET` | Valor del header `x-form-secret` que se envía a n8n | `riselanding-form-v1` |
+| `VENDOR_CONTACT_EMAIL` | Correo que ven proveedores/agencias al enviar | El mensaje no incluye correo |
 | `FORM_TOKEN_SECRET` | Firma HMAC del token de formulario (capas 2–4) | Capas 2–4 apagadas + warning en el log |
 | `TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` | Con las DOS, se enciende Turnstile (widget + verificación) | Con una sola o ninguna: Turnstile apagado + warning |
 

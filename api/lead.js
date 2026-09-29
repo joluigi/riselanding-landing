@@ -1,25 +1,32 @@
 // api/lead.js — Guardián del formulario de leads (función serverless de Vercel).
-// CommonJS, cero dependencias: solo built-ins de Node.
+// CommonJS. Única dependencia: libphonenumber-js (validación de teléfonos fuera de México).
 //
 // Capas, en orden:
 //   1. Señales bot-ciertas (honeypot, token HMAC ausente/inválido, envío < 4 s
 //      desde la emisión del token) → "fake success": 200 {"success":true} SIN
 //      reenviar a n8n, para que el bot no aprenda. Cada descarte queda en el log
 //      como JSON sin PII (correo y teléfono hasheados).
-//   2. Validación de campos → 422 con mensaje claro (esto sí lo ve el usuario real).
+//   2. Validación de campos → 422 con un mensaje por campo (esto sí lo ve el usuario
+//      real). Esquema compartido con el navegador (lib/lead-quality/schema.js) + MX del
+//      correo + libphonenumber fuera de México.
 //   3. Rate limit en memoria (best-effort: bajo Fluid Compute las instancias se
 //      reutilizan pero no es durable ni compartido; la capa firme es el WAF de Vercel).
 //   4. Turnstile: solo si existen TURNSTILE_SITE_KEY y TURNSTILE_SECRET_KEY. Fallo →
 //      fake success; Cloudflare caído → sigue (turnstile_unavailable); secreto
 //      inválido → sigue con log de error (turnstile_misconfigured). Va después de
 //      validar para no consumir el token de un solo uso en un envío que devuelve 422.
+//   5. Solicitantes no comerciales (proyecto personal, empleo, proveedor): mensaje propio,
+//      log con su lead_quality_flag y SIN reenvío a n8n.
+//   6. Scoring suave: NUNCA bloquea. Solo etiqueta (spam_score, prefijo ⚠️ en el
+//      mensaje) y reenvía; el humano decide en Notion.
 //   Las capas 1 y 4 (honeypot, token, Turnstile fallido) NUNCA reenvían, sea cual sea
 //   LEAD_GATE_MODE: ese modo solo gobierna el veredicto del motor de calidad.
-//   5. Scoring suave: NUNCA bloquea. Solo etiqueta (spam_score, prefijo ⚠️ en el
-//      mensaje) y reenvía; el humano decide en Notion.
 'use strict';
 
 const formToken = require('./_lib/form-token');
+const { validarLead } = require('./_lib/validar-lead');
+const contrato = require('./_lib/contrato-n8n');
+const schema = require('../lib/lead-quality/schema.js');
 const turnstile = require('./_lib/turnstile');
 const log = require('./_lib/log');
 
@@ -35,8 +42,6 @@ const VENTANA_RATE_MS = 10 * 60 * 1000;
 const MAX_ENVIOS_VENTANA = 5;
 const MAX_IPS_MAPA = 500;
 const mapaRate = new Map(); // ip → [timestamps de envíos aceptados]
-
-const PILARES_VALIDOS = ['Google Ads', 'Sitio Web + SEO', 'CRM + Automatización', 'Bundle Completo'];
 
 // Mantener en sincronía con DISPOSABLE_DOMAINS de js/rl-tracking.js
 const DOMINIOS_DESECHABLES = [
@@ -65,12 +70,25 @@ const RE_KEYWORDS = KEYWORDS_SPAM.map(function (k) {
   return new RegExp('\\b' + k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'i');
 });
 
-const RE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // URL: http(s)://, www. o dominio.tld con TLDs habituales del spam (lista cerrada
 // para no marcar abreviaturas tipo "S.A. de C.V.")
 const RE_URL = /(?:https?:\/\/|www\.)\S+|\b[a-z0-9][a-z0-9.-]*\.(?:com|net|org|info|biz|io|co|ru|cn|xyz|top|site|online|club|shop|store|live|vip|link|click|icu|buzz|work|space|pro)\b/i;
 const RE_URL_G = new RegExp(RE_URL.source, 'gi');
 const RE_CIRILICO_CJK = /[Ѐ-ӿ一-鿿]/; // Ѐ-ӿ (cirílico) y 一-鿿 (CJK)
+
+// Mensaje para quien declaró no ser prospecto comercial (student / job_seeker / competitor)
+function mensajeNoComercial(flag) {
+  if (flag === 'job_seeker') {
+    return 'Gracias por tu interés. Por ahora no tenemos vacantes abiertas; puedes seguirnos en @riselanding';
+  }
+  if (flag === 'competitor') {
+    const correo = (process.env.VENDOR_CONTACT_EMAIL || '').trim();
+    return correo
+      ? 'Gracias por tu interés. Las propuestas de proveedores y agencias las recibimos en ' + correo + '.'
+      : 'Gracias por tu interés. Por ahora no estamos buscando proveedores ni agencias.';
+  }
+  return 'Gracias por escribirnos. Trabajamos con empresas y negocios, así que no podemos ayudarte con proyectos personales o escolares. Si más adelante emprendes o trabajas en una empresa, aquí estaremos.';
+}
 
 // Responder SIEMPRE por aquí: fija Content-Type y Cache-Control y evita doble respuesta.
 function send(res, status, obj) {
@@ -297,40 +315,19 @@ async function procesar(req, res) {
     return send(res, 409, { success: false, code: 'form_expired', message: 'El formulario expiró por seguridad. Vuelve a enviarlo; si el aviso se repite, recarga la página o escríbenos a contacto@riselanding.com o por WhatsApp.' });
   }
 
-  // 4) Validación de campos → 422 (esto SÍ lo ve el usuario real en el aviso inline)
-  const nombre = campo(body.nombre);
+  // 4) Validación de campos → 422 con el error de cada campo (esquema compartido + MX y
+  // libphonenumber). El cliente pinta cada mensaje junto a su campo.
+  const validacion = await validarLead(body);
+  if (!validacion.ok) {
+    const errores = {};
+    validacion.errores.forEach(function (e) { errores[e.campo] = e.mensaje; });
+    return send(res, 422, { success: false, code: 'validation', errors: errores, message: validacion.errores[0].mensaje });
+  }
+  const datos = validacion.datos;
+  const nombre = contrato.nombreSaliente(body);
   const empresa = campo(body.empresa);
   const email = campo(body.email);
-  const telefono = campo(body.telefono);
-  const mensaje = campo(body.mensaje);
-
-  if (!nombre) {
-    return send(res, 422, { success: false, message: 'Escribe tu nombre para poder contactarte.' });
-  }
-  if (nombre.length > 200) {
-    return send(res, 422, { success: false, message: 'El nombre es demasiado largo (máximo 200 caracteres).' });
-  }
-  if (!email) {
-    return send(res, 422, { success: false, message: 'Escribe tu email para poder responderte.' });
-  }
-  if (email.length > 320 || !RE_EMAIL.test(email)) {
-    return send(res, 422, { success: false, message: 'Revisa tu email: parece incompleto o mal escrito.' });
-  }
-  if (!telefono) {
-    return send(res, 422, { success: false, message: 'Escribe tu teléfono para poder contactarte.' });
-  }
-  if (telefono.length > 30) {
-    return send(res, 422, { success: false, message: 'Revisa tu teléfono: es demasiado largo.' });
-  }
-  if (telefono.replace(/\D/g, '').length < 7) {
-    return send(res, 422, { success: false, message: 'Revisa tu teléfono: debe tener al menos 7 dígitos.' });
-  }
-  if (empresa.length > 200) {
-    return send(res, 422, { success: false, message: 'El nombre de la empresa es demasiado largo (máximo 200 caracteres).' });
-  }
-  if (mensaje.length > 2000) {
-    return send(res, 422, { success: false, message: 'El mensaje es demasiado largo (máximo 2000 caracteres).' });
-  }
+  const telefono = contrato.telefonoSaliente(body, datos);
 
   // 5) Rate limit por IP
   if (superaRateLimit(ip, ahora)) {
@@ -355,13 +352,30 @@ async function procesar(req, res) {
     }
   }
 
-  // 7) Scoring suave: etiqueta sin bloquear
+  // 7) Solicitantes que no son prospecto comercial: no se crea lead en n8n (en ningún modo).
+  // Se responde con su mensaje específico y queda en el log con su lead_quality_flag.
+  if (!datos.comercial) {
+    log.registrar('lead_not_forwarded', {
+      lead_quality_flag: datos.flagSolicitante,
+      email_sha256: log.sha256(datos.email),
+      phone_sha256: log.sha256Telefono(datos.telefonoE164 || datos.telefono)
+    });
+    return send(res, 200, {
+      success: true,
+      outcome: 'no_comercial',
+      lead_quality_flag: datos.flagSolicitante,
+      message: mensajeNoComercial(datos.flagSolicitante)
+    });
+  }
+
+  // 8) Scoring suave: etiqueta sin bloquear
+  const mensaje = contrato.mensajeBase(datos, body);
   const puntuacion = puntuarSpam({
     nombre: nombre,
     empresa: empresa,
     email: email,
     telefono: telefono,
-    mensaje: mensaje,
+    mensaje: datos.necesidad,
     edadMs: tk.edadMs,
     sinToken: sinToken
   });
@@ -374,10 +388,10 @@ async function procesar(req, res) {
     mensajeFinal = '⚠️ Posible spam (score ' + puntuacion.score + ': ' + puntuacion.flags.join(', ') + ') · ' + mensaje;
   }
 
-  const interesCliente = campo(body.interes_pilar);
-  const interesPilar = PILARES_VALIDOS.indexOf(interesCliente) !== -1 ? interesCliente : 'Bundle Completo';
+  // Siempre hay al menos un servicio (validación): el pilar sale de los servicios marcados
+  const interesPilar = schema.pilar(datos.servicios);
 
-  // 8) Reenvío a n8n con el contrato de siempre + campos extra (n8n ignora los que no mapea)
+  // 9) Reenvío a n8n con el contrato de siempre + campos extra (n8n ignora los que no mapea)
   const reenvio = {
     nombre: nombre,
     empresa: empresa,
@@ -426,7 +440,7 @@ module.exports = async function handler(req, res) {
   try {
     return await procesar(req, res);
   } catch (err) {
-    // 9) Nunca un crash sin respuesta
+    // Nunca un crash sin respuesta
     console.error('[lead] error inesperado:', (err && err.stack) || err);
     return send(res, 500, { success: false, message: 'Error interno. Escríbenos a contacto@riselanding.com.' });
   }

@@ -79,6 +79,7 @@
     if (tipo === 'sin_token' || tipo === 'network_error') return ['network_error', 'network'];
     if (code === 'rate_limited') return ['server_error', 'rate_limited'];
     if (code === 'form_expired') return ['server_error', 'form_expired'];
+    if (code === 'validation') return ['server_error', err.campo]; // 422: código del primer campo
     return ['server_error', undefined];
   }
 
