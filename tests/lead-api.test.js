@@ -463,3 +463,16 @@ test('solicitantes no comerciales: no se reenvían, mensaje propio y log con su 
   assert.match(r.data.message, /proveedores@example\.invalid/);
   delete process.env.VENDOR_CONTACT_EMAIL;
 });
+
+test('log: el mismo teléfono mexicano da el mismo phone_sha256 en cualquier formato y evento', async function () {
+  const log = require('../api/_lib/log.js');
+  const h = log.sha256Telefono('55 0000 0000');
+  ['5500000000', '+52 55 0000 0000', '+52 1 55 0000 0000', '+525500000000'].forEach(function (t) {
+    assert.strictEqual(log.sha256Telefono(t), h, t);
+  });
+  await enviar(cuerpoValido({ website_url_2: 'x', telefono: '55 0000 0000' }));
+  const bloqueado = ultimoLog('lead_blocked').phone_sha256;
+  await enviar(cuerpoValido({ solicitante: 'empleo', telefono: '+52 1 55 0000 0000' }));
+  assert.strictEqual(ultimoLog('lead_not_forwarded').phone_sha256, bloqueado);
+  assert.strictEqual(bloqueado, h);
+});

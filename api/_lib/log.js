@@ -3,15 +3,19 @@
 'use strict';
 
 const crypto = require('crypto');
+const schema = require('../../lib/lead-quality/schema.js');
 
 function sha256(valor) {
   const v = String(valor || '').trim().toLowerCase();
   return v ? crypto.createHash('sha256').update(v).digest('hex') : null;
 }
 
-// El teléfono se hashea solo con sus dígitos para que "+52 55…" y "5255…" coincidan
+// El teléfono se hashea con sus dígitos en forma E.164 sin "+": un número mexicano
+// válido siempre como 52 + 10 dígitos ("55 …", "+52 55 …" y "+52 1 55 …" dan el mismo
+// hash); cualquier otro, con los dígitos tal cual.
 function sha256Telefono(valor) {
-  return sha256(String(valor || '').replace(/\D/g, ''));
+  const mx = schema.digitosMX(valor);
+  return sha256(mx ? '52' + mx : String(valor || '').replace(/\D/g, ''));
 }
 
 function registrar(evento, datos) {
