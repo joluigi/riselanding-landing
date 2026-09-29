@@ -156,3 +156,32 @@ test('rl_lead_submit en el dataLayer: ningún valor contiene PII en claro', asyn
   delete globalThis.dataLayer;
   delete globalThis.__rl;
 });
+
+test('rl_non_commercial_submit: reset previo, payload mínimo + atribución sin PII, nunca rl_lead_submit', function () {
+  const attr = { gclid: 'gclid-sintetico', ft: { source: 'google', medium: 'cpc', campaign: 'marca', landing_page: '/' }, lt: { source: '(direct)', medium: '(none)' }, tc: 2 };
+  globalThis.document = { cookie: 'otra=1; rl_attr=' + encodeURIComponent(JSON.stringify(attr)) + '; rl_lid=x' };
+  globalThis.__rl = { touchCount: 2, daysSinceFirstTouch: 3 };
+  globalThis.dataLayer = [];
+  try {
+    RL.pushNonCommercialSubmit('job_seeker');
+    const dl = globalThis.dataLayer;
+    assert.strictEqual(dl.length, 2);
+    assert.deepStrictEqual(dl[0], { rl_event_data: null });
+    assert.strictEqual(dl[1].event, 'rl_non_commercial_submit');
+    const d = dl[1].rl_event_data;
+    assert.deepStrictEqual(Object.keys(d).sort(), ['applicant_type', 'attribution', 'event_id', 'form_id', 'form_location']);
+    assert.strictEqual(d.applicant_type, 'job_seeker');
+    assert.match(d.event_id, /^[0-9a-f-]{36}$/);
+    assert.deepStrictEqual(d.attribution, { gclid: 'gclid-sintetico', first_touch: attr.ft, last_touch: attr.lt, touch_count: 2, days_since_first_touch: 3 });
+    assert.ok(!dl.some(function (e) { return e.event === 'rl_lead_submit'; }));
+    assert.ok(!/@|lead_quality_flag|lead_score|user_data/.test(JSON.stringify(d)), 'sin PII ni campos de conversión');
+  } finally {
+    delete globalThis.document; delete globalThis.__rl; delete globalThis.dataLayer;
+  }
+});
+
+test('attributionFromCookie: sin cookie o con cookie corrupta devuelve solo lo que hay', function () {
+  delete globalThis.__rl;
+  assert.deepStrictEqual(RL.attributionFromCookie(''), {});
+  assert.deepStrictEqual(RL.attributionFromCookie('rl_attr=%7Bnope'), {});
+});

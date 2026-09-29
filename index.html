@@ -684,6 +684,8 @@ section{position:relative;z-index:1}
 .form-notice{display:flex;flex-direction:column;align-items:center;text-align:center;padding:40px 24px;max-width:44ch;outline:none}
 .form-notice h3{font-family:"Bricolage Grotesque","Helvetica Neue",sans-serif;font-weight:700;font-size:24px;margin:0 0 12px}
 .form-notice p{color:var(--ink-dim);line-height:1.55;margin:0}
+.form-notice__back{margin-top:22px;background:none;border:1px solid var(--line);border-radius:999px;padding:10px 18px;color:var(--ink);font:inherit;font-size:14px;cursor:pointer;transition:border-color .2s var(--ease)}
+.form-notice__back:hover,.form-notice__back:focus-visible{border-color:var(--accent);outline:none}
 .form-error{grid-column:1/-1;margin-top:10px;padding:12px 14px;border:1px solid rgba(255,107,107,.35);border-radius:10px;background:rgba(255,107,107,.08);color:#FFB4B4;font-size:13.5px;line-height:1.5}
 
 /* Estado de éxito del formulario */
@@ -1814,15 +1816,31 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     try { if (window.RL) RL.pushEvent(nombre, datos); } catch (e) {}
   }
 
-  // Solicitante no comercial: mensaje honesto en lugar de la pantalla de gracias
+  // Solicitante no comercial: mensaje honesto en lugar de la pantalla de gracias. Los campos
+  // solo se ocultan (no se borran) para que "Cambia la opción" regrese con todo lo capturado.
   function mostrarAviso(texto) {
+    var ocultos = [];
+    Array.prototype.forEach.call(form.children, function (el) {
+      if (!el.hidden) { el.hidden = true; ocultos.push(el); }
+    });
     form.classList.add('sent');
-    form.innerHTML =
-      '<div class="form-notice" role="status" tabindex="-1">'
-      + '<span class="eyebrow">Gracias por escribirnos</span>'
-      + '<h3>Recibimos tu mensaje</h3><p></p></div>';
-    form.querySelector('.form-notice p').textContent = texto;
-    form.querySelector('.form-notice').focus();
+    var aviso = document.createElement('div');
+    aviso.className = 'form-notice';
+    aviso.setAttribute('role', 'status');
+    aviso.tabIndex = -1;
+    aviso.innerHTML = '<span class="eyebrow">Gracias por escribirnos</span><h3>Recibimos tu mensaje</h3><p></p>'
+      + '<button type="button" class="form-notice__back">¿Elegiste mal? Cambia la opción</button>';
+    aviso.querySelector('p').textContent = texto;
+    aviso.querySelector('button').addEventListener('click', function () {
+      form.removeChild(aviso);
+      form.classList.remove('sent');
+      ocultos.forEach(function (el) { el.hidden = false; });
+      $('f-solicitante').value = '';
+      aplicarSolicitante();
+      $('f-solicitante').focus();
+    });
+    form.appendChild(aviso);
+    aviso.focus();
   }
 
   form.addEventListener('submit', function (ev) {
@@ -1872,7 +1890,15 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         throw e;
       }
 
-      if (data.outcome === 'no_comercial') { mostrarAviso(data.message); return; }
+      if (data.outcome === 'no_comercial') {
+        // No es lead: evento propio (nunca rl_lead_submit) y el formulario queda listo por si eligió mal
+        try { if (window.RL) RL.pushNonCommercialSubmit(data.lead_quality_flag); } catch (e) {}
+        enviando = false;
+        reiniciarTurnstile();
+        btn.disabled = false; btn.textContent = btnTexto;
+        mostrarAviso(data.message);
+        return;
+      }
 
       function mostrarExito() {
         form.classList.add('sent');

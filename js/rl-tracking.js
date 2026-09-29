@@ -83,6 +83,34 @@
     return ['server_error', undefined];
   }
 
+  // Atribución sin PII a partir de la cookie rl_attr (la escribe el bootstrap de index.html):
+  // click IDs + first/last touch (fuente, medio, campaña, landing) + contadores del bootstrap.
+  function attributionFromCookie(cookieStr) {
+    var m = String(cookieStr || '').match(/(?:^|; )rl_attr=([^;]*)/);
+    var a = null;
+    try { a = m ? JSON.parse(decodeURIComponent(m[1])) : null; } catch (e) { a = null; }
+    a = a || {};
+    var ctx = global.__rl || {};
+    return compact({
+      gclid: a.gclid, gbraid: a.gbraid, wbraid: a.wbraid, fbclid: a.fbclid, msclkid: a.msclkid,
+      first_touch: a.ft, last_touch: a.lt,
+      touch_count: ctx.touchCount, days_since_first_touch: ctx.daysSinceFirstTouch
+    });
+  }
+
+  function attribution() {
+    return attributionFromCookie(global.document ? global.document.cookie : '');
+  }
+
+  // Solicitante que se declaró no comercial (student / job_seeker / competitor). Evento propio,
+  // NUNCA rl_lead_submit: ninguna etiqueta de conversión escucha este nombre.
+  function pushNonCommercialSubmit(applicantType) {
+    return pushEvent('rl_non_commercial_submit', {
+      applicant_type: applicantType, form_id: 'agenda_diagnostico', form_location: 'contacto',
+      attribution: attribution()
+    });
+  }
+
   function emailDomainType(email) {
     var dom = String(email || '').trim().toLowerCase().split('@')[1] || '';
     if (!dom) return 'free';
@@ -188,6 +216,7 @@
 
   var RL = {
     uuid: uuid, pushEvent: pushEvent, pushFormError: pushFormError, classifySubmitError: classifySubmitError,
+    attributionFromCookie: attributionFromCookie, pushNonCommercialSubmit: pushNonCommercialSubmit,
     emailDomainType: emailDomainType,
     phoneE164MX: phoneE164MX, leadScore: leadScore,
     serviceLineFromPilar: serviceLineFromPilar, prefilledRef: prefilledRef,
