@@ -658,6 +658,7 @@ section{position:relative;z-index:1}
 
 /* Anti-spam: honeypot fuera de pantalla (no display:none, algunos bots lo detectan) + error inline */
 .hp-field{position:absolute!important;left:-9999px!important;top:-9999px!important;width:1px;height:1px;overflow:hidden}
+.turnstile-slot{min-height:65px}
 .form-error{grid-column:1/-1;margin-top:10px;padding:12px 14px;border:1px solid rgba(255,107,107,.35);border-radius:10px;background:rgba(255,107,107,.08);color:#FFB4B4;font-size:13.5px;line-height:1.5}
 
 /* Estado de éxito del formulario */
@@ -1299,8 +1300,8 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         <input type="hidden" id="utm_campaign" name="utm_campaign">
         <!-- Honeypot anti-bots: oculto fuera de pantalla, un humano nunca lo rellena -->
         <div class="hp-field" aria-hidden="true">
-          <label for="f-hp">No llenar este campo</label>
-          <input id="f-hp" name="b_comments" type="text" tabindex="-1" autocomplete="nope">
+          <label for="f-hp">Sitio web alterno</label>
+          <input id="f-hp" name="website_url_2" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
         </div>
         <div class="field"><label for="f-nombre">Nombre *</label><input id="f-nombre" name="Name_First" required placeholder="María"></div>
         <div class="field"><label for="f-apellido">Apellido *</label><input id="f-apellido" name="Name_Last" required placeholder="González"></div>
@@ -1327,6 +1328,8 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
             <label class="chk"><input type="checkbox" data-zoho="Dashboards y reportes"><span class="box"></span>Dashboards</label>
           </div>
         </div>
+        <!-- Cloudflare Turnstile: solo se muestra si /api/form-token entrega una site key -->
+        <div class="field full turnstile-slot" id="f-turnstile" hidden></div>
         <div class="field full" style="margin-top:10px">
           <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:18px 22px;font-size:15px">Quiero mi diagnóstico gratuito →</button>
           <span style="font-size:11.5px;color:var(--ink-mute);margin-top:10px;text-align:center;font-family:'JetBrains Mono';letter-spacing:.06em;display:block">TUS DATOS ESTÁN SEGUROS · AL ENVIAR ACEPTAS EL <a href="/aviso-de-privacidad" target="_blank" rel="noopener" style="color:var(--ink-dim);text-decoration:underline;text-underline-offset:3px">AVISO DE PRIVACIDAD</a></span>
@@ -1468,7 +1471,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
   var form = document.getElementById('lead-form');
   if (!form) return;
 
-  var t0 = Date.now(); // instante de carga: /api/lead descarta envíos imposiblemente rápidos
+  var t0 = Date.now(); // instante de carga: base de time_to_convert_sec
 
   function pilar(servicios) {
     var ads = servicios.indexOf('Publicidad Digital') !== -1;
@@ -1481,13 +1484,98 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     return 'Bundle Completo';
   }
 
-  // Firma SHA-256 en hex con Web Crypto; sin soporte devuelve 'nocrypto' (el server lo tolera, solo puntúa)
-  function sha256hex(str){
-    if (!(window.crypto && crypto.subtle && window.TextEncoder)) return Promise.resolve('nocrypto');
-    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(str)).then(function(buf){
-      return Array.prototype.map.call(new Uint8Array(buf), function(b){ return ('0'+b.toString(16)).slice(-2); }).join('');
-    }).catch(function(){ return 'nocrypto'; });
+  // --- Token de formulario (HMAC del servidor) ---
+  // /api/lead descarta envíos a menos de 4 s de emitido el token y pide reenvío pasadas 2 h.
+  // Se renueva solo en segundo plano; al enviar, si falta o está por vencer, se pide
+  // uno nuevo y se espera lo necesario para no caer en too_fast.
+  var TOKEN_RENOVAR_MS = 90 * 60 * 1000;  // renovación silenciosa
+  var TOKEN_MAX_MS = 110 * 60 * 1000;     // al enviar, más viejo que esto → pedir otro
+  var TOKEN_ESPERA_MS = 4500;             // margen sobre los 4 s del servidor
+  var tk = { valor: null, en: 0, obtenido: false, pidiendo: null };
+
+  function pedirToken() {
+    if (tk.pidiendo) return tk.pidiendo;
+    tk.pidiendo = fetch('/api/form-token', { cache: 'no-store', credentials: 'same-origin' })
+      .then(function (r) { if (!r.ok) throw new Error('form-token ' + r.status); return r.json(); })
+      .then(function (d) {
+        tk.valor = d.form_token || null; // null = capa apagada en el servidor, se envía sin token
+        tk.en = Date.now();
+        tk.obtenido = true;
+        if (d.turnstile_site_key) montarTurnstile(d.turnstile_site_key);
+      })
+      .then(function () { tk.pidiendo = null; }, function () { tk.pidiendo = null; });
+    return tk.pidiendo;
   }
+
+  function esperar(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+  function errorCliente(tipo) { var e = new Error(tipo); e.tipo = tipo; return e; }
+
+  function asegurarToken() {
+    var vencido = !tk.obtenido || (Date.now() - tk.en) > TOKEN_MAX_MS;
+    return (vencido ? pedirToken() : Promise.resolve()).then(function () {
+      if (!tk.obtenido) throw errorCliente('sin_token');
+      var falta = TOKEN_ESPERA_MS - (Date.now() - tk.en);
+      return falta > 0 ? esperar(falta) : null;
+    });
+  }
+
+  var enviando = false;
+  function renovarSiToca() {
+    if (!enviando && tk.obtenido && (Date.now() - tk.en) > TOKEN_RENOVAR_MS) pedirToken();
+  }
+  setInterval(renovarSiToca, 5 * 60 * 1000);
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) renovarSiToca(); });
+
+  // --- Cloudflare Turnstile (modo Managed; carga explícita solo con site key) ---
+  var ts = { activo: false, id: null, fallo: false };
+
+  function montarTurnstile(siteKey) {
+    if (ts.activo) return;
+    ts.activo = true;
+    var slot = document.getElementById('f-turnstile');
+    if (slot) slot.hidden = false;
+    window.rlTurnstileListo = function () {
+      try {
+        ts.id = window.turnstile.render(slot, {
+          sitekey: siteKey, theme: 'dark', size: 'flexible', action: 'lead_form',
+          language: 'es', 'refresh-expired': 'auto'
+        });
+      } catch (e) { ts.fallo = true; }
+    };
+    var sc = document.createElement('script');
+    sc.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=rlTurnstileListo';
+    sc.async = true;
+    sc.onerror = function () { ts.fallo = true; }; // bloqueador o red: se avisa al enviar
+    document.head.appendChild(sc);
+  }
+
+  // Resuelve con el token de Turnstile ('' si la capa está apagada); espera hasta 8 s al widget
+  function tokenTurnstile() {
+    if (!ts.activo) return Promise.resolve('');
+    return new Promise(function (resolve, reject) {
+      var inicio = Date.now();
+      (function revisar() {
+        var v = '';
+        try { if (window.turnstile && ts.id !== null) v = window.turnstile.getResponse(ts.id) || ''; } catch (e) {}
+        if (v) return resolve(v);
+        if ((ts.fallo && !window.turnstile) || Date.now() - inicio > 8000) return reject(errorCliente('turnstile'));
+        setTimeout(revisar, 250);
+      })();
+    });
+  }
+
+  // El token de Turnstile es de un solo uso: tras cada intento se pide uno nuevo
+  function reiniciarTurnstile() {
+    try { if (window.turnstile && ts.id !== null) window.turnstile.reset(ts.id); } catch (e) {}
+  }
+
+  var MENSAJES_CLIENTE = {
+    sin_token: 'No pudimos preparar el formulario. Revisa tu conexión e inténtalo de nuevo, o escríbenos a contacto@riselanding.com o por WhatsApp.',
+    turnstile: 'No pudimos completar la verificación de seguridad de Cloudflare. Si usas un bloqueador de anuncios o de scripts, desactívalo para este sitio y recarga la página, o escríbenos a contacto@riselanding.com o por WhatsApp.'
+  };
+
+  pedirToken();
 
   function quitarError(){
     var e = form.querySelector('.form-error');
@@ -1496,6 +1584,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
 
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
+    if (enviando) return; // doble clic o Enter repetido mientras hay un envío en curso
     quitarError(); // cada reintento parte sin el aviso del intento anterior
     if (!form.reportValidity()) {
       var inv = form.querySelector(':invalid');
@@ -1505,6 +1594,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
 
     var btn = form.querySelector('button[type="submit"]');
     var btnTexto = btn.textContent;
+    enviando = true;
     btn.disabled = true; btn.textContent = 'Enviando…';
 
     var servicios = Array.prototype.map.call(
@@ -1529,19 +1619,22 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       fuente: 'Sitio Web'
     };
 
-    // Señales anti-bot que valida /api/lead: honeypot (clave 'website' del contrato), timestamp y firma
-    payload.website = (document.getElementById('f-hp')||{value:''}).value;
-    payload.ts = t0;
+    // Señales anti-bot que valida /api/lead: honeypot, token HMAC y Turnstile (si está activo)
+    payload.website_url_2 = (document.getElementById('f-hp')||{value:''}).value;
 
-    sha256hex(t0 + ':' + 'rl-diag-2026').then(function (sig) {
-      payload.sig = sig;
+    asegurarToken().then(tokenTurnstile).then(function (tokenTs) {
+      payload.form_token = tk.valor || '';
+      if (tokenTs) payload.turnstile_token = tokenTs;
       return fetch('/api/lead', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'X-Form-Token': 'rl1' },
         body: JSON.stringify(payload)
       }).catch(function (e) { e.tipo = 'network_error'; throw e; }); // sin respuesta HTTP
     }).then(function (r) { return r.json(); }).then(function (data) {
-      if (!data.success) { var e = new Error(data.message || 'error'); e.delServidor = !!data.message; throw e; }
+      if (!data.success) {
+        if (data.code === 'form_expired') { tk.obtenido = false; pedirToken(); }
+        var e = new Error(data.message || 'error'); e.delServidor = !!data.message; throw e;
+      }
 
       function mostrarExito() {
         form.classList.add('sent');
@@ -1563,20 +1656,24 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
           seguimiento = RL.buildLeadSubmit({
             email: payload.email, phoneRaw: payload.telefono,
             hasCompany: !!payload.empresa, sizeBucket: tamano || null,
-            servicesCount: servicios.length, honeypotFilled: !!payload.website,
+            servicesCount: servicios.length, honeypotFilled: !!payload.website_url_2,
             pilar: payload.interes_pilar, t0: t0
           }).then(function (p) { RL.pushEvent('rl_lead_submit', p); }).catch(function () {});
         } catch (e) { seguimiento = Promise.resolve(); }
       }
       seguimiento.then(mostrarExito, mostrarExito);
     }).catch(function (err) {
+      enviando = false;
+      reiniciarTurnstile();
       btn.disabled = false; btn.textContent = btnTexto;
       quitarError();
-      try { if (window.RL) RL.pushFormError((err && err.tipo) || 'server_error'); } catch (e) {}
+      var tipoCliente = err && MENSAJES_CLIENTE[err.tipo];
+      try { if (window.RL) RL.pushFormError(tipoCliente ? 'network_error' : ((err && err.tipo) || 'server_error')); } catch (e) {}
       var aviso = document.createElement('div');
       aviso.className = 'form-error';
       aviso.setAttribute('role', 'alert');
-      aviso.textContent = (err && err.delServidor) ? err.message
+      aviso.textContent = tipoCliente ? MENSAJES_CLIENTE[err.tipo]
+        : (err && err.delServidor) ? err.message
         : 'No pudimos enviar el formulario. Inténtalo de nuevo o escríbenos a contacto@riselanding.com o por WhatsApp.';
       form.appendChild(aviso);
     });

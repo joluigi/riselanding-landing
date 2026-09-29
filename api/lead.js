@@ -2,32 +2,34 @@
 // CommonJS, cero dependencias: solo built-ins de Node.
 //
 // Capas, en orden:
-//   1. Señales bot-ciertas (honeypot, firma, envío < 2.5 s) → "fake success":
-//      200 {"success":true} SIN reenviar a n8n, para que el bot no aprenda. Cada
-//      descarte queda logueado completo ([spam-blocked]) por si hay que rescatar
-//      un falso positivo desde los logs de Vercel.
+//   1. Señales bot-ciertas (honeypot, token HMAC ausente/inválido, envío < 4 s
+//      desde la emisión del token) → "fake success": 200 {"success":true} SIN
+//      reenviar a n8n, para que el bot no aprenda. Cada descarte queda en el log
+//      como JSON sin PII (correo y teléfono hasheados).
 //   2. Validación de campos → 422 con mensaje claro (esto sí lo ve el usuario real).
 //   3. Rate limit en memoria (best-effort: bajo Fluid Compute las instancias se
-//      reutilizan pero no es durable; la capa firme es el WAF de Vercel).
-//   4. Scoring suave: NUNCA bloquea. Solo etiqueta (spam_score, prefijo ⚠️ en el
+//      reutilizan pero no es durable ni compartido; la capa firme es el WAF de Vercel).
+//   4. Turnstile: solo si existen TURNSTILE_SITE_KEY y TURNSTILE_SECRET_KEY. Fallo →
+//      fake success; Cloudflare caído → sigue (turnstile_unavailable). Va después de
+//      validar para no consumir el token de un solo uso en un envío que devuelve 422.
+//   5. Scoring suave: NUNCA bloquea. Solo etiqueta (spam_score, prefijo ⚠️ en el
 //      mensaje) y reenvía; el humano decide en Notion.
-//   5. Turnstile dormido: solo actúa si existe TURNSTILE_SECRET_KEY.
 'use strict';
 
-const crypto = require('crypto');
+const formToken = require('./_lib/form-token');
+const turnstile = require('./_lib/turnstile');
+const log = require('./_lib/log');
 
-// --- Constantes compartidas con index.html (deben coincidir EXACTO) ---
-const SALT = 'rl-diag-2026';
+// --- Constante compartida con index.html (debe coincidir EXACTO) ---
 const FORM_TOKEN = 'rl1';
 
 const N8N_URL_DEFECTO = 'https://n8n-production-417ba.up.railway.app/webhook/lead-capture';
 const LIMITE_BODY = 50 * 1024; // 50 KB
 const TIMEOUT_N8N_MS = 10000;
-const MIN_ENVIO_MS = 2500; // por debajo de esto, el envío es imposiblemente rápido para un humano
 
 // Rate limit en memoria
 const VENTANA_RATE_MS = 10 * 60 * 1000;
-const MAX_ENVIOS_VENTANA = 4;
+const MAX_ENVIOS_VENTANA = 5;
 const MAX_IPS_MAPA = 500;
 const mapaRate = new Map(); // ip → [timestamps de envíos aceptados]
 
@@ -78,8 +80,13 @@ function send(res, status, obj) {
 }
 
 // Rechazo duro con "fake success": el bot recibe un 200 idéntico al de un envío real.
-function descartar(res, motivo, ip, body) {
-  console.log('[spam-blocked]', motivo, ip, JSON.stringify(body).slice(0, 1500));
+// El log no lleva el body: solo el motivo y los hashes de correo y teléfono.
+function descartar(res, motivo, body) {
+  log.registrar('lead_blocked', {
+    reason: motivo,
+    email_sha256: log.sha256(body.email),
+    phone_sha256: log.sha256Telefono(body.telefono)
+  });
   return send(res, 200, { success: true });
 }
 
@@ -205,41 +212,12 @@ function puntuarSpam(datos) {
 
   if (nombreSospechoso(datos.nombre)) { score += 1; flags.push('nombre sospechoso'); }
 
-  if (datos.elapsed !== null) {
-    if (datos.elapsed >= MIN_ENVIO_MS && datos.elapsed < 8000) { score += 1; flags.push('envío en menos de 8 s'); }
-    if (datos.elapsed > 24 * 3600 * 1000) { score += 2; flags.push('formulario abierto más de 24 h'); }
-    if (datos.elapsed < -(10 * 60 * 1000)) { score += 1; flags.push('reloj del cliente desfasado'); }
-  }
-
-  if (datos.sig === 'nocrypto') { score += 3; flags.push('navegador sin Web Crypto'); }
+  // Edad del token (reloj del servidor); menos de 4 s ya se descartó como too_fast
+  if (datos.edadMs !== null && datos.edadMs < 8000) { score += 1; flags.push('envío en menos de 8 s'); }
 
   if (datos.sinToken) { score += 2; flags.push('sin header de formulario'); }
 
   return { score: score, flags: flags };
-}
-
-// Verificación Cloudflare Turnstile (solo se llama si TURNSTILE_SECRET_KEY existe).
-async function verificarTurnstile(token, ip) {
-  const controlador = new AbortController();
-  const temporizador = setTimeout(function () { controlador.abort(); }, 8000);
-  try {
-    const params = new URLSearchParams();
-    params.append('secret', process.env.TURNSTILE_SECRET_KEY);
-    params.append('response', token);
-    if (ip) params.append('remoteip', ip);
-    const resp = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: params.toString(),
-      signal: controlador.signal
-    });
-    const data = await resp.json();
-    return !!(data && data.success);
-  } catch (e) {
-    return false; // con Turnstile activado, un fallo de verificación no deja pasar
-  } finally {
-    clearTimeout(temporizador);
-  }
 }
 
 async function procesar(req, res) {
@@ -291,40 +269,29 @@ async function procesar(req, res) {
     return send(res, 413, { success: false, message: 'La solicitud es demasiado grande.' });
   }
 
-  // 3) Señales bot-ciertas → fake success (nunca reenvían)
-  if (body.website || body.b_comments) {
-    return descartar(res, 'honeypot', ip, body);
+  // 3) Señales bot-ciertas → fake success (nunca reenvían).
+  // website_url_2 es el honeypot actual; website/b_comments, el de páginas viejas aún abiertas.
+  if (body.website_url_2 || body.website || body.b_comments) {
+    return descartar(res, 'honeypot', body);
   }
   // El header X-Form-Token NO es rechazo duro: una extensión de privacidad que lo
-  // recorte no debe costar un lead real; su ausencia solo suma al score (los bots
-  // que omiten headers casi siempre fallan también la firma).
+  // recorte no debe costar un lead real; su ausencia solo suma al score.
   const sinToken = (headers['x-form-token'] || '') !== FORM_TOKEN;
 
-  const sig = typeof body.sig === 'string' ? body.sig.toLowerCase() : '';
-  if (!sig) {
-    return descartar(res, 'sig-ausente', ip, body);
-  }
-  if (sig !== 'nocrypto') {
-    const esperada = crypto.createHash('sha256').update(String(body.ts) + ':' + SALT).digest('hex');
-    if (sig !== esperada) {
-      return descartar(res, 'sig-invalida', ip, body);
-    }
-  }
-
   const ahora = Date.now();
-  const ts = Number(body.ts);
-  const elapsed = isFinite(ts) ? ahora - ts : null;
-  // Envío imposiblemente rápido → bot. Elapsed negativo (reloj adelantado) NO rechaza.
-  if (elapsed !== null && elapsed >= 0 && elapsed < MIN_ENVIO_MS) {
-    return descartar(res, 'envio-rapido', ip, body);
+  const tk = formToken.verificar(body.form_token, ahora);
+  if (tk.estado === 'ausente' && body.sig) {
+    // Pestaña abierta antes del despliegue (firma ts+sig anterior): pedir reenvío, no spam
+    return send(res, 409, { success: false, code: 'form_expired', message: 'Actualizamos el formulario. Recarga la página y vuelve a enviarlo.' });
   }
-
-  // Turnstile dormido: sin TURNSTILE_SECRET_KEY este bloque no hace nada
-  if (process.env.TURNSTILE_SECRET_KEY) {
-    const tokenValido = body.turnstile_token && await verificarTurnstile(String(body.turnstile_token), ip);
-    if (!tokenValido) {
-      return descartar(res, 'turnstile', ip, body);
-    }
+  if (tk.estado === 'ausente' || tk.estado === 'invalido') {
+    return descartar(res, 'bad_form_token', body);
+  }
+  if (tk.estado === 'rapido') {
+    return descartar(res, 'too_fast', body);
+  }
+  if (tk.estado === 'expirado') {
+    return send(res, 409, { success: false, code: 'form_expired', message: 'El formulario expiró por seguridad. Vuelve a enviarlo; si el aviso se repite, recarga la página.' });
   }
 
   // 4) Validación de campos → 422 (esto SÍ lo ve el usuario real en el aviso inline)
@@ -368,17 +335,32 @@ async function procesar(req, res) {
     return send(res, 429, { success: false, message: 'Ya recibimos tu solicitud. Si necesitas agregar algo, escríbenos a contacto@riselanding.com.' });
   }
 
-  // 6) Scoring suave: etiqueta sin bloquear
+  // 6) Turnstile: fallo → fake success; Cloudflare caído → fail-open con señal
+  const cfgTurnstile = turnstile.config();
+  let turnstileNoDisponible = false;
+  if (cfgTurnstile.activo) {
+    const resultado = await turnstile.verificar(body.turnstile_token, ip, cfgTurnstile.secret);
+    if (resultado === 'fallido') {
+      return descartar(res, 'turnstile_failed', body);
+    }
+    if (resultado === 'no_disponible') {
+      turnstileNoDisponible = true;
+      log.registrar('turnstile_unavailable', { email_sha256: log.sha256(email) });
+    }
+  }
+
+  // 7) Scoring suave: etiqueta sin bloquear
   const puntuacion = puntuarSpam({
     nombre: nombre,
     empresa: empresa,
     email: email,
     telefono: telefono,
     mensaje: mensaje,
-    sig: sig,
-    elapsed: elapsed,
+    edadMs: tk.edadMs,
     sinToken: sinToken
   });
+  // Señal de auditoría sin puntos: el envío no pasó por la verificación de Cloudflare
+  if (turnstileNoDisponible) puntuacion.flags.push('turnstile_unavailable');
 
   let mensajeFinal = mensaje;
   if (puntuacion.score >= 3) {
@@ -389,7 +371,7 @@ async function procesar(req, res) {
   const interesCliente = campo(body.interes_pilar);
   const interesPilar = PILARES_VALIDOS.indexOf(interesCliente) !== -1 ? interesCliente : 'Bundle Completo';
 
-  // 7) Reenvío a n8n con el contrato de siempre + campos extra (n8n ignora los que no mapea)
+  // 8) Reenvío a n8n con el contrato de siempre + campos extra (n8n ignora los que no mapea)
   const reenvio = {
     nombre: nombre,
     empresa: empresa,

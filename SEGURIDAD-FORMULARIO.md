@@ -10,18 +10,23 @@ sospechoso se etiqueta y SIEMPRE llega a Notion para que un humano decida.
 
 | # | Capa | Qué hace | Si dispara |
 |---|------|----------|------------|
-| 1 | Honeypot | Campo oculto `b_comments` (viaja como `website`); un humano no lo ve, un bot lo rellena | Fake success* |
-| 2 | Header `X-Form-Token` | Lo añade el JS del form; un bot que postea directo no lo manda. Su ausencia NO bloquea (una extensión de privacidad podría recortarlo) | +2 al score |
-| 3 | Firma `ts` + `sig` | SHA-256 de `ts + ':' + salt`, calculada en el navegador; sin ejecutar nuestro JS no hay firma válida | Fake success* |
-| 4 | Tiempo mínimo | Envío a < 2.5 s de cargar la página: imposible para un humano | Fake success* |
-| 5 | Validación de campos | Email/teléfono/longitudes; mensajes en español | 422 visible en el form |
-| 6 | Rate limit en memoria | Máx 4 envíos / 10 min por IP. Best-effort (la instancia serverless se recicla); la capa firme es el WAF, paso 4 de la escalación | 429 visible |
-| 7 | Scoring suave | URLs en campos, email desechable, keywords spam, cirílico/CJK… **Nunca bloquea**: solo etiqueta | Llega a Notion con ⚠️ |
-| 8 | Turnstile (dormido) | Solo actúa si existe `TURNSTILE_SECRET_KEY` (paso 3 de la escalación) | Fake success* |
+| 1 | Honeypot | Campo oculto `website_url_2` (fuera de pantalla, `tabindex=-1`, `autocomplete=off`, `aria-hidden`). También se aceptan `website`/`b_comments` de pestañas abiertas antes del deploy | Fake success* (`honeypot`) |
+| 2 | Token HMAC | `GET /api/form-token` emite un token firmado con `FORM_TOKEN_SECRET` que lleva el instante de emisión. Sin token o con firma inválida → bot | Fake success* (`bad_form_token`) |
+| 3 | Tiempo mínimo | Envío a < 4 s de emitido el token (reloj del servidor) | Fake success* (`too_fast`) |
+| 4 | Token vencido | Token de más de 2 h. El cliente lo renueva solo cada 90 min, así que un humano casi nunca lo ve | 409 `form_expired`: pide reenviar, **no** es spam |
+| 5 | Header `X-Form-Token` | Lo añade el JS del form. Su ausencia NO bloquea | +2 al score |
+| 6 | Validación de campos | Email/teléfono/longitudes; mensajes en español | 422 visible en el form |
+| 7 | Rate limit en memoria | Máx 5 envíos / 10 min por IP. **Parcial**: cada instancia serverless tiene su propia memoria y se recicla; la capa firme es el WAF (paso 4 de la escalación) | 429 visible |
+| 8 | Turnstile (Managed) | Solo si existen `TURNSTILE_SITE_KEY` **y** `TURNSTILE_SECRET_KEY`. Va después de validar para no gastar el token de un solo uso en un 422 | Fallo o sin token → fake success* (`turnstile_failed`). Cloudflare con timeout de 3 s, 5xx o error de configuración → **sigue** con la señal `turnstile_unavailable` |
+| 9 | Scoring suave | URLs en campos, email desechable, keywords spam, cirílico/CJK… **Nunca bloquea**: solo etiqueta | Llega a Notion con ⚠️ |
 
 \* **Fake success** = respondemos `200 {"success":true}` sin reenviar nada a n8n; el bot cree que funcionó
 y no muta su ataque. Consecuencia: **un 200 no garantiza que el lead llegó** — la prueba real es la fila
 en Notion o los logs de Vercel.
+
+Del lado del cliente (`index.html`): si al enviar no hay token (falló `/api/form-token`) o el script de
+Turnstile no cargó (bloqueador, red), el formulario **no envía** y muestra un error con contacto alterno,
+para que un humano nunca caiga en un fake success.
 
 ## Qué significan `spam_score` y el prefijo ⚠️ en Notion
 
@@ -32,9 +37,11 @@ en Notion o los logs de Vercel.
   quieres una columna "Spam score" en Notion, ya viajan — solo hay que mapearlos en el workflow.
 - Términos legítimos del negocio (SEO, SEM, CRM, ads, marketing, automatización, dashboards…) NO puntúan.
 
-### Rescatar un falso positivo (rechazo duro)
-Cada fake success se loguea completo: Vercel → proyecto → **Logs** → buscar `[spam-blocked]`.
-Ahí están el motivo, la IP y el body (hasta 1500 chars) para recuperar el contacto a mano.
+### Auditar un rechazo duro
+Cada fake success deja una línea JSON en Vercel → proyecto → **Logs**: buscar `"evento":"lead_blocked"`.
+Trae el motivo (`reason`) y los SHA-256 del correo y del teléfono, **sin datos en claro** (el body ya no se
+loguea). Para confirmar si una persona concreta fue bloqueada, calcula el hash de su correo en minúsculas
+(`printf '%s' 'correo@dominio.mx' | shasum -a 256`) y búscalo en los logs.
 
 ## Variables de entorno (Vercel → Settings → Environment Variables)
 
@@ -42,7 +49,10 @@ Ahí están el motivo, la IP y el body (hasta 1500 chars) para recuperar el cont
 |----------|--------|--------------|
 | `N8N_WEBHOOK_URL` | Destino del reenvío | URL de Railway quemada en `api/lead.js` |
 | `FORM_SHARED_SECRET` | Valor del header `x-form-secret` que se envía a n8n | `riselanding-form-v1` |
-| `TURNSTILE_SECRET_KEY` | Al existir, ENCIENDE la verificación Turnstile | Turnstile apagado |
+| `FORM_TOKEN_SECRET` | Firma HMAC del token de formulario (capas 2–4) | Capas 2–4 apagadas + warning en el log |
+| `TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` | Con las DOS, se enciende Turnstile (widget + verificación) | Con una sola o ninguna: Turnstile apagado + warning |
+
+Valores de ejemplo en `.env.example`.
 
 Todo cambio de env var requiere **Redeploy** para aplicarse.
 
@@ -66,31 +76,14 @@ La función ya envía `x-form-secret` en cada reenvío; solo falta que n8n lo ex
    **Name** = `x-form-secret` y **Value** = el mismo secreto → Save.
 3. El orden importa: si activas n8n antes de desplegar Vercel, los leads reales verán 502 hasta sincronizar.
 
-### 3) Activar Cloudflare Turnstile (CAPTCHA invisible)
-1. dash.cloudflare.com → **Turnstile** → **Add widget** → hostname `riselanding.com` → modo **Managed**
-   → copia el **Site Key** (público) y el **Secret Key** (privado).
-2. Pega en `index.html` (snippet listo):
-
-```html
-<!-- (a) antes de </head> -->
-<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-
-<!-- (b) dentro de #lead-form, justo antes del <div class="field full"> del botón de envío -->
-<div class="field full cf-turnstile" data-sitekey="TU_SITE_KEY" data-theme="dark"></div>
-```
-
-```js
-// (c) en el handler de submit, junto a payload.website y payload.ts:
-// el widget inyecta un input oculto con el token dentro del form
-var tsEl = document.querySelector('[name="cf-turnstile-response"]');
-payload.turnstile_token = tsEl ? tsEl.value : '';
-```
-
-3. Deploy y comprueba en producción que el widget carga y el form sigue enviando.
-4. SOLO ENTONCES: Vercel → `TURNSTILE_SECRET_KEY` = Secret Key → **Redeploy**.
-   ⚠️ Si defines la env var antes de desplegar el cliente, TODOS los leads reales caerán en fake success
-   (pérdida silenciosa). Cliente primero, secreto después.
-5. Para apagarlo: borra la env var y redeploy (el widget puede quedarse en el HTML sin efecto en el server).
+### 3) Activar Cloudflare Turnstile (CAPTCHA casi invisible)
+El widget ya está en el código y se pinta solo cuando `/api/form-token` entrega una site key.
+1. dash.cloudflare.com → **Turnstile** → **Add widget** → hostnames `riselanding.com` y `www.riselanding.com`
+   (y el dominio de previews si quieres probar ahí) → modo **Managed** → copia **Site Key** y **Secret Key**.
+2. Vercel → Environment Variables: `TURNSTILE_SITE_KEY` y `TURNSTILE_SECRET_KEY`, **las dos a la vez** → **Redeploy**.
+   Con una sola, la capa queda apagada (no hay riesgo de "secreto sin widget").
+3. Comprueba en producción que el widget aparece sobre el botón de envío y que el form sigue enviando.
+4. Para apagarlo: borra las dos variables y redeploy.
 
 ### 4) Rate limiting en Vercel WAF (capa firme; disponible en plan Hobby)
 1. vercel.com → proyecto → pestaña **Firewall** → **Rules** → **+ New Rule**.
@@ -106,23 +99,24 @@ payload.turnstile_token = tsEl ? tsEl.value : '';
 
 ```bash
 # — Envío VÁLIDO (crea una fila real en Notion; bórrala después) —
-TS=$(node -e 'console.log(Date.now()-15000)')
-SIG=$(node -e "console.log(require('crypto').createHash('sha256').update(process.argv[1]+':rl-diag-2026').digest('hex'))" "$TS")
+# Solo funciona con Turnstile apagado; con Turnstile, prueba desde el navegador.
+TOKEN=$(curl -s https://riselanding.com/api/form-token | node -pe 'JSON.parse(require("fs").readFileSync(0)).form_token')
+sleep 5   # el servidor descarta envíos a menos de 4 s de emitido el token
 curl -s https://riselanding.com/api/lead \
   -H 'Content-Type: application/json' -H 'X-Form-Token: rl1' \
   -d "{\"nombre\":\"Prueba Curl\",\"empresa\":\"Rise\",\"email\":\"prueba@riselanding.com\",
-      \"telefono\":\"+52 55 1234 5678\",\"mensaje\":\"Prueba de humo\",
-      \"interes_pilar\":\"Bundle Completo\",\"ts\":$TS,\"sig\":\"$SIG\",\"website\":\"\"}"
+      \"telefono\":\"+52 55 0000 0000\",\"mensaje\":\"Prueba de humo\",
+      \"interes_pilar\":\"CRM + Automatización\",\"form_token\":\"$TOKEN\",\"website_url_2\":\"\"}"
 # Esperado: {"success":true} Y una fila nueva en Notion.
 ```
 
 ```bash
-# — BOT (honeypot lleno): éxito falso, no reenvía —
+# — BOT (sin token): éxito falso, no reenvía —
 curl -s https://riselanding.com/api/lead \
   -H 'Content-Type: application/json' -H 'X-Form-Token: rl1' \
-  -d '{"nombre":"Bot","email":"bot@spam.xyz","telefono":"1234567","website":"http://spam.xyz"}'
+  -d '{"nombre":"Bot","email":"bot@spam.invalid","telefono":"5500000000"}'
 # Esperado: {"success":true} pero CERO filas en Notion
-# y una línea "[spam-blocked] honeypot …" en Vercel → Logs.
+# y una línea {"evento":"lead_blocked","reason":"bad_form_token",…} en Vercel → Logs.
 ```
 
 Para no ensuciar producción, ambos curl funcionan igual contra la URL de un preview deploy.
