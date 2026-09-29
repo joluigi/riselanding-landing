@@ -1633,7 +1633,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     }).then(function (r) { return r.json(); }).then(function (data) {
       if (!data.success) {
         if (data.code === 'form_expired') { tk.obtenido = false; pedirToken(); }
-        var e = new Error(data.message || 'error'); e.delServidor = !!data.message; throw e;
+        var e = new Error(data.message || 'error'); e.delServidor = !!data.message; e.code = data.code; throw e;
       }
 
       function mostrarExito() {
@@ -1668,7 +1668,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       btn.disabled = false; btn.textContent = btnTexto;
       quitarError();
       var tipoCliente = err && MENSAJES_CLIENTE[err.tipo];
-      try { if (window.RL) RL.pushFormError(tipoCliente ? 'network_error' : ((err && err.tipo) || 'server_error')); } catch (e) {}
+      try { if (window.RL) { var fe = RL.classifySubmitError(err); RL.pushFormError(fe[0], fe[1]); } } catch (e) {}
       var aviso = document.createElement('div');
       aviso.className = 'form-error';
       aviso.setAttribute('role', 'alert');

@@ -17,12 +17,18 @@ sospechoso se etiqueta y SIEMPRE llega a Notion para que un humano decida.
 | 5 | Header `X-Form-Token` | Lo añade el JS del form. Su ausencia NO bloquea | +2 al score |
 | 6 | Validación de campos | Email/teléfono/longitudes; mensajes en español | 422 visible en el form |
 | 7 | Rate limit en memoria | Máx 5 envíos / 10 min por IP. **Parcial**: cada instancia serverless tiene su propia memoria y se recicla; la capa firme es el WAF (paso 4 de la escalación) | 429 visible |
-| 8 | Turnstile (Managed) | Solo si existen `TURNSTILE_SITE_KEY` **y** `TURNSTILE_SECRET_KEY`. Va después de validar para no gastar el token de un solo uso en un 422 | Fallo o sin token → fake success* (`turnstile_failed`). Cloudflare con timeout de 3 s, 5xx o error de configuración → **sigue** con la señal `turnstile_unavailable` |
+| 8 | Turnstile (Managed) | Solo si existen `TURNSTILE_SITE_KEY` **y** `TURNSTILE_SECRET_KEY`. Va después de validar para no gastar el token de un solo uso en un 422 | Fallo o sin token → fake success* (`turnstile_failed`). Cloudflare con timeout de 3 s, 5xx, red o `internal-error` → **sigue** con `turnstile_unavailable` (log nivel info). Secreto ausente/inválido u otro error de configuración → **sigue** con `turnstile_misconfigured` (log nivel **error**: hay que corregir las variables) |
 | 9 | Scoring suave | URLs en campos, email desechable, keywords spam, cirílico/CJK… **Nunca bloquea**: solo etiqueta | Llega a Notion con ⚠️ |
 
 \* **Fake success** = respondemos `200 {"success":true}` sin reenviar nada a n8n; el bot cree que funcionó
 y no muta su ataque. Consecuencia: **un 200 no garantiza que el lead llegó** — la prueba real es la fila
 en Notion o los logs de Vercel.
+
+### Rechazos duros vs. modo del gate (`LEAD_GATE_MODE`)
+Los rechazos duros —honeypot, token ausente/inválido, envío a < 4 s de emitido el token y Turnstile
+fallido— **nunca se reenvían a n8n, en ningún modo**. `LEAD_GATE_MODE` (`shadow` / `enforce`, Fases 3–4)
+gobierna **solo** el veredicto del motor de calidad (spam por puntos, student, job_seeker, competitor…),
+no estas capas. Así el modo shadow no vuelve a meter en Notion el spam que hoy ya se bloquea.
 
 Del lado del cliente (`index.html`): si al enviar no hay token (falló `/api/form-token`) o el script de
 Turnstile no cargó (bloqueador, red), el formulario **no envía** y muestra un error con contacto alterno,
@@ -42,6 +48,29 @@ Cada fake success deja una línea JSON en Vercel → proyecto → **Logs**: busc
 Trae el motivo (`reason`) y los SHA-256 del correo y del teléfono, **sin datos en claro** (el body ya no se
 loguea). Para confirmar si una persona concreta fue bloqueada, calcula el hash de su correo en minúsculas
 (`printf '%s' 'correo@dominio.mx' | shasum -a 256`) y búscalo en los logs.
+
+- **No se guarda PII ni en claro ni cifrada**: un falso positivo de rechazo duro no se puede recuperar
+  desde los logs; solo se puede confirmar que ocurrió.
+- **Retención**: los logs de runtime viven lo que marque el plan de Vercel del proyecto (en Hobby son
+  pocas horas/días; revísalo en Vercel → Logs antes de depender de ellos). Para auditoría de más largo
+  plazo hace falta un log drain (acción fuera del repo).
+- **Rastro persistente durante shadow**: el sufijo ` · Calidad: {flag}/{tier} {score}` que el servidor
+  agrega a "Notas iniciales" en Notion (Fase 8). Es lo que sobrevive a la retención de los logs.
+- Cómo se registran los envíos que el motor bloquee en `enforce` se decide en la Fase 4.
+
+### Telemetría de fricción (`rl_form_error`)
+El cliente publica `rl_form_error` con un código, nunca con valores del formulario:
+
+| Situación | `error_type` | `error_field` |
+|---|---|---|
+| Turnstile no cargó y se bloqueó el envío | `network_error` | `turnstile_unavailable` |
+| Sin respuesta de `/api/lead` o sin token de `/api/form-token` | `network_error` | `network` |
+| 429 (rate limit) | `server_error` | `rate_limited` |
+| 409 (token vencido / formulario anterior) | `server_error` | `form_expired` |
+| Otro `success:false` o respuesta no JSON (p. ej. 502 de n8n) | `server_error` | — |
+| Validación del navegador | `client_validation` | id del campo |
+
+Las respuestas 429 y 409 muestran un mensaje en español con contacto alterno (correo y WhatsApp).
 
 ## Variables de entorno (Vercel → Settings → Environment Variables)
 

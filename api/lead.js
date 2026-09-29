@@ -10,8 +10,11 @@
 //   3. Rate limit en memoria (best-effort: bajo Fluid Compute las instancias se
 //      reutilizan pero no es durable ni compartido; la capa firme es el WAF de Vercel).
 //   4. Turnstile: solo si existen TURNSTILE_SITE_KEY y TURNSTILE_SECRET_KEY. Fallo →
-//      fake success; Cloudflare caído → sigue (turnstile_unavailable). Va después de
+//      fake success; Cloudflare caído → sigue (turnstile_unavailable); secreto
+//      inválido → sigue con log de error (turnstile_misconfigured). Va después de
 //      validar para no consumir el token de un solo uso en un envío que devuelve 422.
+//   Las capas 1 y 4 (honeypot, token, Turnstile fallido) NUNCA reenvían, sea cual sea
+//   LEAD_GATE_MODE: ese modo solo gobierna el veredicto del motor de calidad.
 //   5. Scoring suave: NUNCA bloquea. Solo etiqueta (spam_score, prefijo ⚠️ en el
 //      mensaje) y reenvía; el humano decide en Notion.
 'use strict';
@@ -282,7 +285,7 @@ async function procesar(req, res) {
   const tk = formToken.verificar(body.form_token, ahora);
   if (tk.estado === 'ausente' && body.sig) {
     // Pestaña abierta antes del despliegue (firma ts+sig anterior): pedir reenvío, no spam
-    return send(res, 409, { success: false, code: 'form_expired', message: 'Actualizamos el formulario. Recarga la página y vuelve a enviarlo.' });
+    return send(res, 409, { success: false, code: 'form_expired', message: 'Actualizamos el formulario. Recarga la página y vuelve a enviarlo; si no funciona, escríbenos a contacto@riselanding.com o por WhatsApp.' });
   }
   if (tk.estado === 'ausente' || tk.estado === 'invalido') {
     return descartar(res, 'bad_form_token', body);
@@ -291,7 +294,7 @@ async function procesar(req, res) {
     return descartar(res, 'too_fast', body);
   }
   if (tk.estado === 'expirado') {
-    return send(res, 409, { success: false, code: 'form_expired', message: 'El formulario expiró por seguridad. Vuelve a enviarlo; si el aviso se repite, recarga la página.' });
+    return send(res, 409, { success: false, code: 'form_expired', message: 'El formulario expiró por seguridad. Vuelve a enviarlo; si el aviso se repite, recarga la página o escríbenos a contacto@riselanding.com o por WhatsApp.' });
   }
 
   // 4) Validación de campos → 422 (esto SÍ lo ve el usuario real en el aviso inline)
@@ -332,20 +335,23 @@ async function procesar(req, res) {
   // 5) Rate limit por IP
   if (superaRateLimit(ip, ahora)) {
     res.setHeader('Retry-After', '600');
-    return send(res, 429, { success: false, message: 'Ya recibimos tu solicitud. Si necesitas agregar algo, escríbenos a contacto@riselanding.com.' });
+    return send(res, 429, { success: false, code: 'rate_limited', message: 'Recibimos varios envíos seguidos desde tu conexión. Espera unos minutos para volver a intentarlo, o escríbenos a contacto@riselanding.com o por WhatsApp.' });
   }
 
-  // 6) Turnstile: fallo → fake success; Cloudflare caído → fail-open con señal
+  // 6) Turnstile: fallo → fake success; Cloudflare caído o mal configurado → fail-open con señal
   const cfgTurnstile = turnstile.config();
-  let turnstileNoDisponible = false;
+  let senalTurnstile = '';
   if (cfgTurnstile.activo) {
     const resultado = await turnstile.verificar(body.turnstile_token, ip, cfgTurnstile.secret);
-    if (resultado === 'fallido') {
+    if (resultado.estado === 'fallido') {
       return descartar(res, 'turnstile_failed', body);
     }
-    if (resultado === 'no_disponible') {
-      turnstileNoDisponible = true;
-      log.registrar('turnstile_unavailable', { email_sha256: log.sha256(email) });
+    if (resultado.estado === 'no_disponible') {
+      senalTurnstile = 'turnstile_unavailable';
+      log.registrar(senalTurnstile, { codes: resultado.codigos, email_sha256: log.sha256(email) });
+    } else if (resultado.estado === 'mal_configurado') {
+      senalTurnstile = 'turnstile_misconfigured';
+      log.registrarError(senalTurnstile, { codes: resultado.codigos, email_sha256: log.sha256(email) });
     }
   }
 
@@ -360,7 +366,7 @@ async function procesar(req, res) {
     sinToken: sinToken
   });
   // Señal de auditoría sin puntos: el envío no pasó por la verificación de Cloudflare
-  if (turnstileNoDisponible) puntuacion.flags.push('turnstile_unavailable');
+  if (senalTurnstile) puntuacion.flags.push(senalTurnstile);
 
   let mensajeFinal = mensaje;
   if (puntuacion.score >= 3) {

@@ -14,7 +14,7 @@ const URL_CF = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const LLAVES_CONTRATO = ['nombre', 'empresa', 'email', 'telefono', 'mensaje', 'interes_pilar',
   'fuente', 'spam_score', 'spam_flags', 'ip', 'user_agent'].sort();
 
-let reenvios, llamadasCf, respuestaCf, logs, warns, fetchOriginal, ipSeq = 0;
+let reenvios, llamadasCf, respuestaCf, logs, warns, errores, fetchOriginal, ipSeq = 0;
 const logOriginal = console.log, warnOriginal = console.warn, errorOriginal = console.error;
 
 beforeEach(function () {
@@ -23,7 +23,7 @@ beforeEach(function () {
   process.env.FORM_SHARED_SECRET = 'secreto-compartido-de-prueba';
   delete process.env.TURNSTILE_SITE_KEY;
   delete process.env.TURNSTILE_SECRET_KEY;
-  reenvios = []; llamadasCf = 0; logs = []; warns = [];
+  reenvios = []; llamadasCf = 0; logs = []; warns = []; errores = [];
   respuestaCf = function () { return { ok: true, status: 200, json: async function () { return { success: true }; } }; };
   fetchOriginal = global.fetch;
   global.fetch = async function (url, opts) {
@@ -33,7 +33,7 @@ beforeEach(function () {
   };
   console.log = function () { logs.push(Array.prototype.join.call(arguments, ' ')); };
   console.warn = function () { warns.push(Array.prototype.join.call(arguments, ' ')); };
-  console.error = function () {};
+  console.error = function () { errores.push(Array.prototype.join.call(arguments, ' ')); };
 });
 
 afterEach(function () {
@@ -77,9 +77,10 @@ function cuerpoValido(extra) {
   }, extra || {});
 }
 
-function ultimoLog(evento) {
-  for (let i = logs.length - 1; i >= 0; i--) {
-    try { const l = JSON.parse(logs[i]); if (l.evento === evento) return l; } catch (e) { /* línea no JSON */ }
+function ultimoLog(evento, fuente) {
+  const lineas = fuente || logs;
+  for (let i = lineas.length - 1; i >= 0; i--) {
+    try { const l = JSON.parse(lineas[i]); if (l.evento === evento) return l; } catch (e) { /* línea no JSON */ }
   }
   return null;
 }
@@ -187,6 +188,7 @@ test('token de más de 2 h → 409 form_expired (pide reenvío), no es spam ni s
   assert.strictEqual(r.status, 409);
   assert.strictEqual(r.data.code, 'form_expired');
   assert.strictEqual(r.data.success, false);
+  assert.match(r.data.message, /contacto@riselanding\.com/);
   assert.strictEqual(reenvios.length, 0);
   assert.strictEqual(ultimoLog('lead_blocked'), null);
 });
@@ -235,12 +237,12 @@ test('Turnstile fallido o sin token → turnstile_failed, éxito genérico sin r
   assert.strictEqual(reenvios.length, 0);
 });
 
-test('Cloudflare con 5xx, error de red o error de configuración → fail-open con turnstile_unavailable', async function () {
+test('Cloudflare con 5xx, error de red o internal-error → fail-open con turnstile_unavailable (nivel info)', async function () {
   activarTurnstile();
   const escenarios = [
     function () { return { ok: false, status: 503, json: async function () { return {}; } }; },
     function () { throw new Error('ECONNRESET'); },
-    function () { return { ok: true, status: 200, json: async function () { return { success: false, 'error-codes': ['invalid-input-secret'] }; } }; }
+    function () { return { ok: true, status: 200, json: async function () { return { success: false, 'error-codes': ['internal-error'] }; } }; }
   ];
   for (let i = 0; i < escenarios.length; i++) {
     respuestaCf = escenarios[i];
@@ -248,8 +250,27 @@ test('Cloudflare con 5xx, error de red o error de configuración → fail-open c
     assert.strictEqual(r.status, 200);
     assert.strictEqual(reenvios.length, i + 1, 'escenario ' + i + ' debió reenviarse');
     assert.ok(reenvios[i].spam_flags.indexOf('turnstile_unavailable') !== -1);
-    assert.ok(ultimoLog('turnstile_unavailable'));
+    assert.strictEqual(ultimoLog('turnstile_unavailable').level, 'info');
   }
+  assert.strictEqual(ultimoLog('turnstile_misconfigured', errores), null);
+});
+
+test('siteverify rechaza nuestro secreto → fail-open con turnstile_misconfigured en nivel error, distinto de unavailable', async function () {
+  activarTurnstile();
+  const codigos = ['invalid-input-secret', 'missing-input-secret'];
+  for (let i = 0; i < codigos.length; i++) {
+    respuestaCf = function () { return { ok: true, status: 200, json: async function () { return { success: false, 'error-codes': [codigos[i]] }; } }; };
+    const r = await enviar(cuerpoValido({ turnstile_token: 'tok' }));
+    assert.strictEqual(r.status, 200);
+    assert.strictEqual(reenvios.length, i + 1, codigos[i] + ' debió reenviarse');
+    assert.ok(reenvios[i].spam_flags.indexOf('turnstile_misconfigured') !== -1);
+    assert.ok(reenvios[i].spam_flags.indexOf('turnstile_unavailable') === -1);
+    const l = ultimoLog('turnstile_misconfigured', errores);
+    assert.strictEqual(l.level, 'error');
+    assert.deepStrictEqual(l.codes, [codigos[i]]);
+  }
+  assert.strictEqual(ultimoLog('turnstile_unavailable'), null);
+  assert.strictEqual(ultimoLog('lead_blocked'), null);
 });
 
 test('Cloudflare sin responder: la verificación aborta a los 3 s y el envío sigue (fail-open)', async function () {
@@ -292,5 +313,7 @@ test('rate limit: 5 envíos por IP en 10 min pasan, el 6.º recibe 429', async f
   }
   const r6 = await enviar(cuerpoValido(), { ip: ip });
   assert.strictEqual(r6.status, 429);
+  assert.strictEqual(r6.data.code, 'rate_limited');
+  assert.match(r6.data.message, /contacto@riselanding\.com/);
   assert.strictEqual(reenvios.length, 5);
 });

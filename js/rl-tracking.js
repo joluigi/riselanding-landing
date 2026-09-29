@@ -62,11 +62,24 @@
     return payload;
   }
 
-  // error_type: 'client_validation' | 'server_error' | 'network_error'; error_field solo en validación
+  // error_type: 'client_validation' | 'server_error' | 'network_error'.
+  // error_field: id del campo en validación, o código de fricción (ver classifySubmitError).
+  // Nunca lleva valores del formulario.
   function pushFormError(errorType, errorField) {
     return pushEvent('rl_form_error', {
       form_id: 'agenda_diagnostico', error_type: errorType, error_field: errorField
     });
+  }
+
+  // Traduce un fallo del envío a [error_type, error_field] para medir fricción.
+  // err.tipo lo pone el cliente (sin_token, turnstile, network_error); err.code, /api/lead.
+  function classifySubmitError(err) {
+    var tipo = err && err.tipo, code = err && err.code;
+    if (tipo === 'turnstile') return ['network_error', 'turnstile_unavailable'];
+    if (tipo === 'sin_token' || tipo === 'network_error') return ['network_error', 'network'];
+    if (code === 'rate_limited') return ['server_error', 'rate_limited'];
+    if (code === 'form_expired') return ['server_error', 'form_expired'];
+    return ['server_error', undefined];
   }
 
   function emailDomainType(email) {
@@ -173,7 +186,8 @@
   }
 
   var RL = {
-    uuid: uuid, pushEvent: pushEvent, pushFormError: pushFormError, emailDomainType: emailDomainType,
+    uuid: uuid, pushEvent: pushEvent, pushFormError: pushFormError, classifySubmitError: classifySubmitError,
+    emailDomainType: emailDomainType,
     phoneE164MX: phoneE164MX, leadScore: leadScore,
     serviceLineFromPilar: serviceLineFromPilar, prefilledRef: prefilledRef,
     sha256hex: sha256hex, buildLeadSubmit: buildLeadSubmit,

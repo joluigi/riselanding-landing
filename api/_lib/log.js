@@ -15,8 +15,14 @@ function sha256Telefono(valor) {
 }
 
 function registrar(evento, datos) {
-  const linea = Object.assign({ timestamp: new Date().toISOString(), evento: evento }, datos || {});
+  const linea = Object.assign({ timestamp: new Date().toISOString(), level: 'info', evento: evento }, datos || {});
   console.log(JSON.stringify(linea));
 }
 
-module.exports = { sha256: sha256, sha256Telefono: sha256Telefono, registrar: registrar };
+// Mismo formato, pero por console.error: Vercel lo marca como error y se puede filtrar/alertar
+function registrarError(evento, datos) {
+  const linea = Object.assign({ timestamp: new Date().toISOString(), level: 'error', evento: evento }, datos || {});
+  console.error(JSON.stringify(linea));
+}
+
+module.exports = { sha256: sha256, sha256Telefono: sha256Telefono, registrar: registrar, registrarError: registrarError };

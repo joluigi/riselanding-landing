@@ -125,6 +125,21 @@ test('pushFormError: reset previo, error_type del contrato y error_field solo si
   delete globalThis.dataLayer;
 });
 
+test('classifySubmitError: códigos de fricción sin valores del formulario', function () {
+  assert.deepStrictEqual(RL.classifySubmitError({ tipo: 'turnstile' }), ['network_error', 'turnstile_unavailable']);
+  assert.deepStrictEqual(RL.classifySubmitError({ tipo: 'sin_token' }), ['network_error', 'network']);
+  assert.deepStrictEqual(RL.classifySubmitError({ tipo: 'network_error' }), ['network_error', 'network']);
+  assert.deepStrictEqual(RL.classifySubmitError({ code: 'rate_limited', message: 'x' }), ['server_error', 'rate_limited']);
+  assert.deepStrictEqual(RL.classifySubmitError({ code: 'form_expired' }), ['server_error', 'form_expired']);
+  assert.deepStrictEqual(RL.classifySubmitError({ delServidor: true }), ['server_error', undefined]);
+  assert.deepStrictEqual(RL.classifySubmitError(null), ['server_error', undefined]);
+  globalThis.dataLayer = [];
+  const fe = RL.classifySubmitError({ code: 'rate_limited' });
+  RL.pushFormError(fe[0], fe[1]);
+  assert.deepStrictEqual(Object.keys(globalThis.dataLayer[1].rl_event_data).sort(), ['error_field', 'error_type', 'event_id', 'form_id']);
+  delete globalThis.dataLayer;
+});
+
 test('rl_lead_submit en el dataLayer: ningún valor contiene PII en claro', async function () {
   globalThis.dataLayer = [];
   globalThis.__rl = { leadId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', touchCount: 1, daysSinceFirstTouch: 0 };
