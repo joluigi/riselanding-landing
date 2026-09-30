@@ -188,3 +188,73 @@ test('rl_lead_submit y rl_non_commercial_submit usan el event_id / lead_id que c
   delete globalThis.dataLayer;
   assert.deepStrictEqual(RL.classifySubmitError({ code: 'destination_error' }), ['server_error', 'destination_error']);
 });
+
+test('user_data: SHA-256 de nombre y apellido normalizados (minúsculas, sin acentos, sin espacios extremos) en address', async function () {
+  delete globalThis.__rl;
+  const p = await RL.buildLeadSubmit({
+    email: 'ana@empresa.mx', phoneRaw: '5558788983', firstName: '  María   José ', lastName: 'NÚÑEZ ',
+    verdict: VEREDICTO_A
+  });
+  assert.strictEqual(RL.normalizeName('  María   José '), 'maria jose');
+  assert.strictEqual(RL.normalizeName('NÚÑEZ '), 'nunez');
+  assert.deepStrictEqual(p.user_data.address, { sha256_first_name: sha('maria jose'), sha256_last_name: sha('nunez') });
+  // Mismo hash con o sin acentos / mayúsculas
+  const q = await RL.buildLeadSubmit({ email: 'ana@empresa.mx', firstName: 'maria jose', lastName: 'Nunez', verdict: VEREDICTO_A });
+  assert.deepStrictEqual(q.user_data.address, p.user_data.address);
+  // Sin nombre no hay address
+  const r = await RL.buildLeadSubmit({ email: 'ana@empresa.mx', verdict: VEREDICTO_A });
+  assert.ok(!('address' in r.user_data));
+});
+
+test('user_data: teléfono E.164 de otro país (lo arma el formulario) y fallback a la regla de México', async function () {
+  delete globalThis.__rl;
+  const us = await RL.buildLeadSubmit({ email: 'a@empresa.mx', phoneRaw: '202 555 0123', phoneE164: '+12025550123', verdict: VEREDICTO_A });
+  assert.strictEqual(us.user_data.sha256_phone_number, sha('+12025550123'));
+  const mx = await RL.buildLeadSubmit({ email: 'a@empresa.mx', phoneRaw: '+52 1 55 5878 8983', phoneE164: 'no-es-e164', verdict: VEREDICTO_A });
+  assert.strictEqual(mx.user_data.sha256_phone_number, sha('+525558788983'));
+});
+
+test('dataLayer completo del flujo: ningún valor contiene PII en claro y user_data solo trae hashes', async function () {
+  // Datos sintéticos con valores fáciles de rastrear
+  const pii = {
+    nombre: 'Anacleta', apellido: 'Zubizarreta', email: 'anacleta.zubi@empresa-qa.example',
+    telefono: '55 9876 5432', empresa: 'Maquiladora Rastreable QA', sitio: 'maquiladora-rastreable.example',
+    necesidad: 'Necesitamos rastrear que esta frase jamás aparezca en el dataLayer'
+  };
+  const agujas = [pii.nombre, pii.apellido, pii.email, 'anacleta.zubi', '9876', '5598765432', pii.empresa,
+    'Rastreable', pii.sitio, 'jamás aparezca'].map(function (x) { return x.toLowerCase(); });
+  globalThis.__rl = { leadId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', touchCount: 1, daysSinceFirstTouch: 0 };
+  globalThis.document = { cookie: 'rl_attr=' + encodeURIComponent(JSON.stringify({ gclid: 'gclid-sintetico', ft: { source: 'google', medium: 'cpc' } })) };
+  globalThis.dataLayer = [];
+  try {
+    RL.pushEvent('rl_form_start', { form_id: 'agenda_diagnostico', form_location: 'contacto' });
+    RL.pushEvent('rl_form_submit_attempt', { form_id: 'agenda_diagnostico', form_location: 'contacto' });
+    RL.pushFormError('client_validation', 'telefono');
+    const fe = RL.classifySubmitError({ code: 'validation', campo: 'empresa' });
+    RL.pushFormError(fe[0], fe[1]);
+    RL.pushNonCommercialSubmit('student', '11111111-2222-4333-8444-555555555555');
+    const p = await RL.buildLeadSubmit({
+      email: pii.email, phoneRaw: pii.telefono, phoneE164: '+525598765432', firstName: pii.nombre, lastName: pii.apellido,
+      sizeBucket: '11_50', pilar: 'CRM + Automatización', t0: Date.now() - 60000, eventId: '11111111-2222-4333-8444-555555555555',
+      verdict: { lead_quality_flag: 'clean', lead_score: 83, lead_tier: 'A', email_domain_type: 'corporate' }
+    });
+    RL.pushEvent('rl_lead_submit', p);
+
+    const eventos = globalThis.dataLayer.filter(function (e) { return e.event; }).map(function (e) { return e.event; });
+    assert.deepStrictEqual(eventos, ['rl_form_start', 'rl_form_submit_attempt', 'rl_form_error', 'rl_form_error', 'rl_non_commercial_submit', 'rl_lead_submit']);
+    (function recorrer(v, ruta) {
+      if (v && typeof v === 'object') { Object.keys(v).forEach(function (k) { recorrer(v[k], ruta + '.' + k); }); return; }
+      if (typeof v === 'string' || typeof v === 'number') {
+        const t = String(v).toLowerCase();
+        agujas.forEach(function (a) { assert.ok(t.indexOf(a) === -1, 'PII "' + a + '" en ' + ruta); });
+        assert.ok(t.indexOf('@') === -1, 'valor con @ en ' + ruta);
+      }
+    })(globalThis.dataLayer, 'dataLayer');
+    const ud = p.user_data;
+    [ud.sha256_email_address, ud.sha256_phone_number, ud.address.sha256_first_name, ud.address.sha256_last_name]
+      .forEach(function (h) { assert.match(h, /^[0-9a-f]{64}$/); });
+    assert.strictEqual(ud.sha256_phone_number, sha('+525598765432'));
+  } finally {
+    delete globalThis.__rl; delete globalThis.document; delete globalThis.dataLayer;
+  }
+});

@@ -1828,6 +1828,16 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     return envio.id;
   }
 
+  // E.164 para hashear en user_data: México por la regla del esquema; otros países con su código
+  // (o el "+código" que escribió la persona). El servidor ya validó el número con libphonenumber.
+  function e164Cliente(d) {
+    if (d.telefonoE164) return d.telefonoE164;
+    var digitos = String(d.telefono || '').replace(/\D/g, '');
+    if (String(d.telefono || '').trim().charAt(0) === '+') return '+' + digitos;
+    var codigo = S.codigoPais(d.telefonoPais);
+    return codigo ? '+' + codigo + digitos : '';
+  }
+
   function pushEvento(nombre, datos) {
     try { if (window.RL) RL.pushEvent(nombre, datos); } catch (e) {}
   }
@@ -1938,7 +1948,8 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         try {
           // Veredicto del servidor; un fake success (rechazo duro) no lo trae y no se publica nada
           seguimiento = RL.buildLeadSubmit({
-            email: raw.email, phoneRaw: raw.telefono, sizeBucket: v.datos.tamano || null,
+            email: raw.email, phoneRaw: raw.telefono, phoneE164: e164Cliente(v.datos),
+            firstName: v.datos.nombre, lastName: v.datos.apellido, sizeBucket: v.datos.tamano || null,
             pilar: S.pilar(v.datos.servicios), t0: t0, eventId: data.event_id, leadId: data.lead_id,
             verdict: {
               lead_quality_flag: data.lead_quality_flag, lead_score: data.lead_score,

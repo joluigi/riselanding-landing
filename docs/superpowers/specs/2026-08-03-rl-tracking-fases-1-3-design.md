@@ -21,7 +21,7 @@ Implementar la Capa 1 (sitio) del esquema de tracking: publicar los eventos `rl_
 
 **Se implementa:** `rl_context_ready`, `rl_scroll_depth` (25/50/75/90), `rl_engaged_session`, `rl_service_view`, `rl_case_study_view`, `rl_form_start`, `rl_form_error`, `rl_lead_submit`, `rl_phone_click`, `rl_whatsapp_click` (dormido).
 
-**Fuera de alcance (no existe la feature en el sitio):** `rl_pricing_view`, `rl_content_download`, `rl_form_step`, `rl_meeting_booked`, y todos los eventos Nivel D (CRM/server-side, Fase 6 de la guía). `api/lead.js` no se modifica.
+**Fuera de alcance (no existe la feature en el sitio):** `rl_pricing_view`, `rl_content_download`, `rl_form_step` (el formulario es de un solo paso; el embudo se mide con `rl_form_start` → `rl_form_submit_attempt` → `rl_lead_submit`), `rl_meeting_booked`, y todos los eventos Nivel D (CRM/server-side, Fase 6 de la guía). `api/lead.js` no se modifica.
 
 ## Arquitectura
 
@@ -89,13 +89,13 @@ Select opcional "Tamaño de tu empresa": `1_10`, `11_50`, `51_200`, `200_plus` (
 
 `rl_lead_submit` se emite cuando el gateway responde `success: true` (incluye el fake success que reciben los bots: llegan etiquetados, ver flag). Se emite antes de reemplazar el form por el mensaje de éxito. Payload §2.4 adaptado:
 
-- Identidad: `event_id` (UUIDv4 nuevo), `transaction_id = lead_id`, `lead_id`.
+- Identidad: `event_id` (UUIDv4 del envío, confirmado por `/api/lead`; el mismo que usa la idempotencia y el header `x-rl-event-id` hacia n8n), `transaction_id = lead_id`, `lead_id` (cookie `rl_lid`, confirmado por el servidor). *(Actualizado 2026-09-29, lead quality gate.)*
 - Origen: `form_id 'agenda_diagnostico'`, `form_location 'contacto'`, `lead_source_channel 'form'`.
 - Interés: `service_line` derivado de `pilar()` existente — mapa: Bundle Completo → `paquete_integral`, Google Ads → `publicidad_digital`, Sitio Web + SEO → `web_seo`, CRM + Automatización → `crm_automatizacion`; `assigned_partner 'ambos'`.
 - Cualificación: `company_size_bucket` (o `null`), `prospect_segment null`, `prospect_geo null`, `operation_volume_bucket null`, `current_marketing_maturity null` (el form no los captura; claves presentes con `null` para mantener el contrato).
 - Calidad: `email_domain_type`, `lead_quality_flag`, `lead_score`, `lead_tier` — vienen del veredicto del servidor (ver sección siguiente). Las listas viven en `lib/lead-quality/data/*.json`.
 - Alineación: `vertical_fit 'horizontal'`, `segment_match null` (no hay `prospect_segment` que comparar).
-- `user_data`: `sha256_email_address` (correo en minúsculas, sin espacios) y `sha256_phone_number` (E.164: dígitos, con `+52` antepuesto a los 10 dígitos nacionales) vía `crypto.subtle` (ya hay un helper `sha256hex` en el sitio; se reutiliza/mueve a rl-tracking). Sin Web Crypto → claves omitidas, jamás texto plano.
+- `user_data` (formato de enhanced conversions de Google): `sha256_email_address` (correo en minúsculas, sin espacios), `sha256_phone_number` (E.164 de cualquier país: México por la regla de 10 dígitos, otros con su código) y `address.sha256_first_name` / `address.sha256_last_name` (minúsculas, sin acentos —la ñ queda como n—, sin espacios extremos ni dobles) vía `crypto.subtle`. Sin Web Crypto → claves omitidas, jamás texto plano. *(Nombre y apellido agregados 2026-09-29; su mapeo a variables de GTM es acción externa.)*
 - Contexto: `time_to_convert_sec` (desde `t0` existente), `touch_count`, `days_since_first_touch`.
 
 ### `lead_quality_flag`, `lead_score`, `lead_tier` y `email_domain_type`

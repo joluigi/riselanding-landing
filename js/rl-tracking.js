@@ -96,6 +96,13 @@
     });
   }
 
+  // Nombre para hashear (user_data): minúsculas, sin acentos, sin espacios extremos ni dobles
+  function normalizeName(v) {
+    var s = String(v || '');
+    if (typeof s.normalize === 'function') s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return s.toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
   function phoneE164MX(raw) {
     var d = String(raw || '').replace(/\D/g, '');
     if (d.length === 13 && d.slice(0, 3) === '521') d = d.slice(3); // formato legado +52 1
@@ -141,7 +148,9 @@
     if (!validVerdict(f && f.verdict)) return Promise.resolve(null);
     var ctx = global.__rl || {};
     var emailNorm = String(f.email || '').trim().toLowerCase();
-    var e164 = phoneE164MX(f.phoneRaw);
+    // E.164 del cliente para cualquier país (lo arma index.html); si no viene, la regla de México
+    var e164 = /^\+\d{7,15}$/.test(String(f.phoneE164 || '')) ? f.phoneE164 : phoneE164MX(f.phoneRaw);
+    var nombre = normalizeName(f.firstName), apellido = normalizeName(f.lastName);
     var v = f.verdict;
     // event_id y lead_id los confirma el servidor (idempotencia); transaction_id === lead_id
     var leadId = f.leadId || ctx.leadId || uuid();
@@ -161,14 +170,22 @@
       touch_count: ctx.touchCount,
       days_since_first_touch: ctx.daysSinceFirstTouch
     });
+    // user_data con el formato de Google (enhanced conversions): correo, teléfono E.164 y, dentro
+    // de address, nombre y apellido. Solo hashes SHA-256; sin Web Crypto se omiten, nunca en claro.
     return Promise.all([
-      sha256hex(emailNorm),
-      e164 ? sha256hex(e164) : Promise.resolve(null)
+      emailNorm ? sha256hex(emailNorm) : Promise.resolve(null),
+      e164 ? sha256hex(e164) : Promise.resolve(null),
+      nombre ? sha256hex(nombre) : Promise.resolve(null),
+      apellido ? sha256hex(apellido) : Promise.resolve(null)
     ]).then(function (hs) {
       var ud = {};
       if (hs[0]) ud.sha256_email_address = hs[0];
       if (hs[1]) ud.sha256_phone_number = hs[1];
-      if (ud.sha256_email_address || ud.sha256_phone_number) payload.user_data = ud;
+      var address = {};
+      if (hs[2]) address.sha256_first_name = hs[2];
+      if (hs[3]) address.sha256_last_name = hs[3];
+      if (address.sha256_first_name || address.sha256_last_name) ud.address = address;
+      if (Object.keys(ud).length) payload.user_data = ud;
       return payload;
     });
   }
@@ -176,7 +193,7 @@
   var RL = {
     uuid: uuid, pushEvent: pushEvent, pushFormError: pushFormError, classifySubmitError: classifySubmitError,
     attributionFromCookie: attributionFromCookie, pushNonCommercialSubmit: pushNonCommercialSubmit,
-    phoneE164MX: phoneE164MX,
+    phoneE164MX: phoneE164MX, normalizeName: normalizeName,
     serviceLineFromPilar: serviceLineFromPilar, prefilledRef: prefilledRef,
     sha256hex: sha256hex, buildLeadSubmit: buildLeadSubmit,
     _crossedThresholds: crossedThresholds, _engagedReady: engagedReady
