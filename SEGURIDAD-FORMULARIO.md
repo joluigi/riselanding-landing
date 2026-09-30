@@ -41,14 +41,29 @@ en Notion o los logs de Vercel.
 En `shadow` cada nota lleva al final ` · Calidad: {flag}/{tier} {score}` (p. ej. `· Calidad: suspect/C 40`).
 En `enforce` no se agrega.
 
-### Cómo pasar de shadow a enforce
-1. Revisa en Notion las notas con "Calidad:" de las últimas 2 semanas: ¿algún `spam` era un lead real?
-   Si lo hubo, ajusta el motor o las listas antes de seguir.
-2. Vercel → Settings → Environment Variables → `LEAD_GATE_MODE = enforce` (Production) → **Redeploy**.
-3. Para volver: `LEAD_GATE_MODE = shadow` (o borra la variable) → Redeploy. Un valor inválido cae en
+### Criterio para pasar a enforce (los tres, no uno)
+
+`enforce` **no se activa** hasta cumplir todo esto:
+
+1. **Tiempo en shadow: mínimo 2 semanas, idealmente 4.** Hace falta volumen suficiente para ver
+   casos raros (empresas con nombres poco comunes, correos gratuitos legítimos, envíos desde otros países).
+2. **Revisión de falsos positivos en Notion con el sufijo "Calidad".** Filtra "Notas iniciales" por
+   `Calidad: spam` y `Calidad: competitor` y revisa uno por uno: ¿alguno era un prospecto real?
+   - Si hay falsos positivos, se corrige el motor o las listas (`lib/lead-quality/data/*.json`,
+     `api/_data/agency-denylist.json`), se despliega y **vuelve a contar el periodo en shadow**.
+   - Revisa también una muestra de `Calidad: suspect` y `clean` para detectar spam que se esté colando.
+3. **Destino de descartados funcionando** (acción fuera del repo): una base de Notion o un flujo de n8n
+   de "descartados" que reciba lo que `enforce` no reenvía. Sin él, lo bloqueado solo queda en los logs
+   de Vercel (en Hobby, del orden de una hora) y un falso positivo sería irrecuperable. Recomendado
+   también antes de producción: que n8n deduplique por el header `x-rl-event-id` (la idempotencia en
+   memoria de la función no alcanza entre instancias serverless).
+
+### Cómo pasar de shadow a enforce (cuando se cumpla el criterio)
+1. Vercel → Settings → Environment Variables → `LEAD_GATE_MODE = enforce` (Production) → **Redeploy**.
+2. Para volver: `LEAD_GATE_MODE = shadow` (o borra la variable) → Redeploy. Un valor inválido cae en
    `shadow` con un warning en el log.
-4. En `enforce` lo bloqueado solo queda en el log (`lead_evaluated` con `forwarded:false`,
-   `destination_status:"blocked_by_enforce"`), que en Hobby dura poco: mide antes de cambiar.
+3. En `enforce` lo bloqueado queda en el log como `lead_evaluated` con `forwarded:false` y
+   `destination_status:"blocked_by_enforce"`, y (una vez exista) en el destino de descartados.
 
 ### Rechazos duros vs. modo del gate (`LEAD_GATE_MODE`)
 Los rechazos duros —honeypot, token ausente/inválido, envío a < 4 s de emitido el token y Turnstile

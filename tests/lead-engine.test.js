@@ -278,3 +278,26 @@ test('mensaje legítimo con todo el vocabulario de servicios → 0 puntos de con
   assert.strictEqual(r.lead_quality_flag, 'clean');
 });
 
+
+test('URLs .mx y .com.mx: se detectan en el mensaje y como propias; "S.A. de C.V." no es URL', function () {
+  function pts(necesidad, extra) { return evaluar(Object.assign({ necesidad: necesidad }, extra || {})); }
+  assert.strictEqual(pts('Queremos algo parecido a ejemplo-qa-uno.mx para vender más').spam_points, 1);
+  assert.strictEqual(pts('Referencias: ejemplo-qa-uno.com.mx y www.ejemplo-qa-dos.mx/tienda para comparar').spam_points, 2);
+  assert.strictEqual(pts('Nuestro sitio anterior era sub.ejemplo-qa-uno.org.mx y ya no funciona').spam_points, 1);
+  // Propia (.com.mx del sitio o del correo corporativo) no suma
+  const propio = pts('Catálogo en ejemplo-qa-uno.com.mx, queremos más cotizaciones', { sitio_web: 'https://ejemplo-qa-uno.com.mx' });
+  assert.deepStrictEqual([propio.spam_points, propio.signals], [0, ['own_url_in_message']]);
+  assert.strictEqual(pts('Pedidos en ventas.ejemplo-qa-uno.mx y más', { email: 'ana@ejemplo-qa-uno.mx' }).spam_points, 0);
+  // Razones sociales mexicanas: no son URL, ni en el mensaje ni en la empresa
+  ['Somos Comercializadora Sintética S.A. de C.V. y queremos vender más en línea',
+    'Grupo QA S.A.P.I. de C.V., S. de R.L. de C.V. y S.C. buscan más clientes en México',
+    'Operamos en Méx. y Mty. desde hace años, queremos crecer con campañas'].forEach(function (m) {
+    const r = pts(m);
+    assert.ok(r.signals.indexOf('url_in_message') === -1, m);
+  });
+  ['Comercializadora Sintética S.A. de C.V.', 'Servicios QA S. de R.L. de C.V.'].forEach(function (e) {
+    assert.ok(evaluar({ empresa: e }).signals.indexOf('url_in_company') === -1, e);
+  });
+  // Pero un dominio .mx como nombre de empresa sí es URL en empresa
+  assert.ok(evaluar({ empresa: 'ejemplo-qa-uno.com.mx' }).signals.indexOf('url_in_company') !== -1);
+});
