@@ -17,11 +17,16 @@
 //      validar para no consumir el token de un solo uso en un envío que devuelve 422.
 //   5. Solicitantes no comerciales (proyecto personal, empleo, proveedor): mensaje propio,
 //      log con su lead_quality_flag y SIN reenvío a n8n.
-//   6. Motor de calidad (lib/lead-quality/engine.js): lead_quality_flag, lead_score,
-//      lead_tier, spam_points y signals. Hoy solo etiqueta (spam_score = spam_points,
-//      spam_flags = signals, prefijo ⚠️ si el flag es spam) y reenvía; el humano decide.
-//   Las capas 1 y 4 (honeypot, token, Turnstile fallido) NUNCA reenvían, sea cual sea
-//   LEAD_GATE_MODE: ese modo solo gobierna el veredicto del motor de calidad.
+//   6. Idempotencia por event_id (10 min, en memoria de la instancia: parcial).
+//   7. Motor de calidad (lib/lead-quality/engine.js) + LEAD_GATE_MODE:
+//      - shadow (por defecto): reenvía todo lo que evalúa el motor y agrega
+//        " · Calidad: flag/tier score" al mensaje.
+//      - enforce: no reenvía spam ni competitor (agency-denylist); suspect y clean sí.
+//      spam_score = spam_points, spam_flags = signals, prefijo ⚠️ si el flag es spam.
+//   8. Reenvío a n8n con un reintento (backoff 1 s). Si falla dos veces → 502 con contacto
+//      alterno: nunca se muestra éxito a un lead que debía llegar y no llegó.
+//   Las capas 1 y 4 (honeypot, token, Turnstile fallido) y los no comerciales autodeclarados
+//   NUNCA se reenvían, sea cual sea LEAD_GATE_MODE.
 'use strict';
 
 const formToken = require('./_lib/form-token');
@@ -30,6 +35,8 @@ const contrato = require('./_lib/contrato-n8n');
 const schema = require('../lib/lead-quality/schema.js');
 const turnstile = require('./_lib/turnstile');
 const calidad = require('./_lib/calidad');
+const idempotencia = require('./_lib/idempotencia');
+const crypto = require('crypto');
 const log = require('./_lib/log');
 
 // --- Constante compartida con index.html (debe coincidir EXACTO) ---
@@ -37,7 +44,23 @@ const FORM_TOKEN = 'rl1';
 
 const N8N_URL_DEFECTO = 'https://n8n-production-417ba.up.railway.app/webhook/lead-capture';
 const LIMITE_BODY = 50 * 1024; // 50 KB
-const TIMEOUT_N8N_MS = 10000;
+const TIMEOUT_N8N_MS = 8000;     // por intento
+const INTENTOS_N8N = 2;          // intento + 1 reintento
+const BACKOFF_N8N_MS = 1000;
+
+// LEAD_GATE_MODE: 'shadow' (por defecto) reenvía todo lo que evalúa el motor; 'enforce' no reenvía
+// estos veredictos. Los rechazos duros y los no comerciales autodeclarados nunca se reenvían.
+const BLOQUEADOS_EN_ENFORCE = ['spam', 'competitor', 'student', 'job_seeker'];
+let modoAvisado = '';
+function modoGate() {
+  const m = String(process.env.LEAD_GATE_MODE || '').trim().toLowerCase();
+  if (m === 'enforce' || m === 'shadow') return m;
+  if (m && modoAvisado !== m) {
+    modoAvisado = m;
+    console.warn('[lead] LEAD_GATE_MODE="' + m + '" no es válido (shadow | enforce): se usa shadow.');
+  }
+  return 'shadow';
+}
 
 // Rate limit en memoria
 const VENTANA_RATE_MS = 10 * 60 * 1000;
@@ -71,12 +94,16 @@ function send(res, status, obj) {
 
 // Rechazo duro con "fake success": el bot recibe un 200 idéntico al de un envío real.
 // El log no lleva el body: solo el motivo y los hashes de correo y teléfono.
-function descartar(res, motivo, body) {
+function registrarDescarte(motivo, body) {
   log.registrar('lead_blocked', {
     reason: motivo,
     email_sha256: log.sha256(body.email),
     phone_sha256: log.sha256Telefono(body.telefono)
   });
+}
+
+function descartar(res, motivo, body) {
+  registrarDescarte(motivo, body);
   return send(res, 200, { success: true });
 }
 
@@ -238,24 +265,60 @@ async function procesar(req, res) {
     return send(res, 422, { success: false, code: 'validation', errors: errores, message: validacion.errores[0].mensaje });
   }
   const datos = validacion.datos;
+
+  // 5) Idempotencia: el mismo event_id en 10 min devuelve la misma respuesta sin reenviar
+  const eventId = idempotencia.esUuid(body.event_id) ? body.event_id.toLowerCase() : crypto.randomUUID();
+  const leadId = idempotencia.esUuid(body.lead_id) ? body.lead_id.toLowerCase() : crypto.randomUUID();
+  let reserva = null;
+  if (idempotencia.esUuid(body.event_id)) {
+    // Mientras haya un envío previo con este id, se espera su resultado; si terminó en fallo
+    // (liberado → null), este envío toma el relevo y se procesa.
+    for (;;) {
+      const t = idempotencia.tomar(eventId, ahora);
+      if (t.reserva) { reserva = t.reserva; break; }
+      const anterior = await t.previo;
+      if (anterior) {
+        log.registrar('lead_duplicate', { event_id: eventId, status: anterior.status });
+        return send(res, anterior.status, anterior.cuerpo);
+      }
+    }
+  }
+  let r;
+  try {
+    r = await decidir({ body: body, datos: datos, ip: ip, headers: headers, ahora: ahora, tk: tk, sinToken: sinToken, eventId: eventId, leadId: leadId });
+  } catch (e) {
+    if (reserva) reserva.liberar();
+    throw e;
+  }
+  // Solo se recuerda lo resuelto (200); un 429 o un fallo de n8n deben poder reintentarse
+  if (reserva) { if (r.status === 200) reserva.completar(r); else reserva.liberar(); }
+  if (r.retryAfter) res.setHeader('Retry-After', r.retryAfter);
+  return send(res, r.status, r.cuerpo);
+}
+
+// Pasos 6–10: rate limit, Turnstile, solicitantes no comerciales, motor de calidad, modo del
+// gate y reenvío. Devuelve { status, cuerpo } para que la idempotencia pueda recordarlo.
+async function decidir(c) {
+  const body = c.body, datos = c.datos, ip = c.ip, ahora = c.ahora;
   const nombre = contrato.nombreSaliente(body);
   const empresa = campo(body.empresa);
   const email = campo(body.email);
   const telefono = contrato.telefonoSaliente(body, datos);
+  const ids = { event_id: c.eventId, lead_id: c.leadId };
 
-  // 5) Rate limit por IP
+  // 6) Rate limit por IP
   if (superaRateLimit(ip, ahora)) {
-    res.setHeader('Retry-After', '600');
-    return send(res, 429, { success: false, code: 'rate_limited', message: 'Recibimos varios envíos seguidos desde tu conexión. Espera unos minutos para volver a intentarlo, o escríbenos a contacto@riselanding.com o por WhatsApp.' });
+    return { status: 429, retryAfter: '600', cuerpo: { success: false, code: 'rate_limited', message: 'Recibimos varios envíos seguidos desde tu conexión. Espera unos minutos para volver a intentarlo, o escríbenos a contacto@riselanding.com o por WhatsApp.' } };
   }
 
-  // 6) Turnstile: fallo → fake success; Cloudflare caído o mal configurado → fail-open con señal
+  // 7) Turnstile: fallo → fake success; Cloudflare caído o mal configurado → fail-open con señal
   const cfgTurnstile = turnstile.config();
   let senalTurnstile = '';
   if (cfgTurnstile.activo) {
     const resultado = await turnstile.verificar(body.turnstile_token, ip, cfgTurnstile.secret);
     if (resultado.estado === 'fallido') {
-      return descartar(res, 'turnstile_failed', body);
+      registrarDescarte('turnstile_failed', body);
+      return { status: 200, cuerpo: { success: true } };
     }
     if (resultado.estado === 'no_disponible') {
       senalTurnstile = 'turnstile_unavailable';
@@ -266,78 +329,51 @@ async function procesar(req, res) {
     }
   }
 
-  // 7) Solicitantes que no son prospecto comercial: no se crea lead en n8n (en ningún modo).
+  // 8) Solicitantes que se declararon no comerciales: nunca se crea lead en n8n, en ningún modo.
   // Se responde con su mensaje específico y queda en el log con su lead_quality_flag.
   if (!datos.comercial) {
     log.registrar('lead_not_forwarded', {
+      event_id: c.eventId,
       lead_quality_flag: datos.flagSolicitante,
       email_sha256: log.sha256(datos.email),
       phone_sha256: log.sha256Telefono(datos.telefonoE164 || datos.telefono)
     });
-    return send(res, 200, {
-      success: true,
-      outcome: 'no_comercial',
-      lead_quality_flag: datos.flagSolicitante,
-      message: mensajeNoComercial(datos.flagSolicitante)
-    });
+    return {
+      status: 200,
+      cuerpo: Object.assign({
+        success: true,
+        outcome: 'no_comercial',
+        lead_quality_flag: datos.flagSolicitante,
+        message: mensajeNoComercial(datos.flagSolicitante)
+      }, ids)
+    };
   }
 
-  // 8) Motor de calidad (lib/lead-quality/engine.js). Por ahora solo etiqueta: el reenvío no
-  // depende del veredicto (LEAD_GATE_MODE llega en la Fase 4). Las señales de la ruta van como
+  // 9) Motor de calidad (lib/lead-quality/engine.js). Las señales de la ruta van como
   // auditoría sin puntos.
   const extras = [];
   if (senalTurnstile) extras.push(senalTurnstile);
-  if (tk.edadMs !== null && tk.edadMs < 8000) extras.push('fast_submit_lt_8s');
-  if (sinToken) extras.push('missing_form_header');
+  if (c.tk.edadMs !== null && c.tk.edadMs < 8000) extras.push('fast_submit_lt_8s');
+  if (c.sinToken) extras.push('missing_form_header');
   const veredicto = calidad.evaluar(datos, extras);
+  const modo = modoGate();
+  const reenviar = modo === 'shadow' || BLOQUEADOS_EN_ENFORCE.indexOf(veredicto.lead_quality_flag) === -1;
 
-  const mensaje = contrato.mensajeBase(datos, body);
-  let mensajeFinal = mensaje;
-  if (veredicto.lead_quality_flag === 'spam') {
-    // Prefijo visible en Notion sin tocar n8n: el humano decide
-    mensajeFinal = '⚠️ Posible spam (score ' + veredicto.spam_points + ': ' + veredicto.signals.join(', ') + ') · ' + mensaje;
-  }
-
-  // Siempre hay al menos un servicio (validación): el pilar sale de los servicios marcados
-  const interesPilar = schema.pilar(datos.servicios);
-
-  // 9) Reenvío a n8n con el contrato de siempre + campos extra (n8n ignora los que no mapea)
-  const reenvio = {
-    nombre: nombre,
-    empresa: empresa,
-    email: email,
-    telefono: telefono,
-    mensaje: mensajeFinal,
-    interes_pilar: interesPilar,
-    fuente: 'Sitio Web', // forzado server-side: el cliente no decide la fuente
-    spam_score: veredicto.spam_points,
-    spam_flags: veredicto.signals,
-    ip: ip,
-    user_agent: String(headers['user-agent'] || '')
+  // Respuesta con el veredicto del servidor: el cliente lo publica en rl_lead_submit. Un envío
+  // que enforce no reenvía recibe el mismo éxito que un lead real (no se le enseña qué lo delató).
+  const exito = {
+    status: 200,
+    cuerpo: Object.assign({
+      success: true,
+      lead_quality_flag: veredicto.lead_quality_flag,
+      lead_score: veredicto.lead_score,
+      lead_tier: veredicto.lead_tier,
+      email_domain_type: veredicto.email_domain_type
+    }, ids)
   };
-
-  const destino = process.env.N8N_WEBHOOK_URL || N8N_URL_DEFECTO;
-  const controlador = new AbortController();
-  const temporizador = setTimeout(function () { controlador.abort(); }, TIMEOUT_N8N_MS);
-  let respuestaN8n = null;
-  try {
-    respuestaN8n = await fetch(destino, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-form-secret': process.env.FORM_SHARED_SECRET || 'riselanding-form-v1'
-      },
-      body: JSON.stringify(reenvio),
-      signal: controlador.signal
-    });
-  } catch (e) {
-    respuestaN8n = null;
-  } finally {
-    clearTimeout(temporizador);
-  }
-
-  const reenviado = !!(respuestaN8n && respuestaN8n.ok);
-  log.registrar('lead_evaluated', {
+  const baseLog = {
+    event_id: c.eventId,
+    mode: modo,
     lead_quality_flag: veredicto.lead_quality_flag,
     lead_score: veredicto.lead_score,
     lead_tier: veredicto.lead_tier,
@@ -345,26 +381,89 @@ async function procesar(req, res) {
     signals: veredicto.signals,
     email_domain_type: veredicto.email_domain_type,
     email_sha256: log.sha256(datos.email),
-    phone_sha256: log.sha256Telefono(datos.telefonoE164 || datos.telefono),
-    forwarded: reenviado,
-    destination_status: respuestaN8n ? respuestaN8n.status : 'sin_respuesta'
-  });
+    phone_sha256: log.sha256Telefono(datos.telefonoE164 || datos.telefono)
+  };
 
-  if (reenviado) {
-    // El cliente publica rl_lead_submit con este veredicto (el del servidor, nunca uno propio)
-    return send(res, 200, {
-      success: true,
-      lead_quality_flag: veredicto.lead_quality_flag,
-      lead_score: veredicto.lead_score,
-      lead_tier: veredicto.lead_tier,
-      email_domain_type: veredicto.email_domain_type
-    });
+  if (!reenviar) {
+    log.registrar('lead_evaluated', Object.assign({}, baseLog, { forwarded: false, destination_status: 'blocked_by_enforce' }));
+    return exito;
   }
 
-  // Un lead real nunca se pierde en silencio: ve el error y tiene fallback de contacto
+  const mensaje = contrato.mensajeBase(datos, body);
+  let mensajeFinal = mensaje;
+  if (veredicto.lead_quality_flag === 'spam') {
+    // Prefijo visible en Notion sin tocar n8n: el humano decide
+    mensajeFinal = '⚠️ Posible spam (score ' + veredicto.spam_points + ': ' + veredicto.signals.join(', ') + ') · ' + mensaje;
+  }
+  if (modo === 'shadow') {
+    // Rastro persistente del veredicto en "Notas iniciales" mientras el gate solo observa
+    mensajeFinal += ' · Calidad: ' + veredicto.lead_quality_flag + '/' + veredicto.lead_tier + ' ' + veredicto.lead_score;
+  }
+
+  // 10) Reenvío a n8n con el contrato de siempre (mismas 11 llaves), con un reintento
+  const reenvio = {
+    nombre: nombre,
+    empresa: empresa,
+    email: email,
+    telefono: telefono,
+    mensaje: mensajeFinal,
+    interes_pilar: schema.pilar(datos.servicios), // siempre hay al menos un servicio
+    fuente: 'Sitio Web', // forzado server-side: el cliente no decide la fuente
+    spam_score: veredicto.spam_points,
+    spam_flags: veredicto.signals,
+    ip: ip,
+    user_agent: String(c.headers['user-agent'] || '')
+  };
+  const envio = await reenviarAN8n(reenvio, c.eventId);
+  log.registrar('lead_evaluated', Object.assign({}, baseLog, {
+    forwarded: envio.ok, destination_status: envio.status, attempts: envio.intentos
+  }));
+  if (envio.ok) return exito;
+
+  // Nunca se muestra éxito si un lead que debía llegar no llegó: error visible + contacto alterno
   liberarSlotRate(ip, ahora);
-  console.error('[lead] n8n no respondió ok:', respuestaN8n ? respuestaN8n.status : 'sin respuesta/timeout');
-  return send(res, 502, { success: false, message: 'No pudimos registrar tu solicitud. Escríbenos a contacto@riselanding.com o por WhatsApp.' });
+  log.registrarError('destination_failed', {
+    event_id: c.eventId, attempts: envio.intentos, destination_status: envio.status,
+    email_sha256: baseLog.email_sha256, phone_sha256: baseLog.phone_sha256
+  });
+  return {
+    status: 502,
+    cuerpo: { success: false, code: 'destination_error', message: 'No pudimos registrar tu solicitud. Inténtalo de nuevo en unos minutos o escríbenos por WhatsApp o a contacto@riselanding.com.' }
+  };
+}
+
+function esperar(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+
+// POST a n8n con un reintento tras BACKOFF_N8N_MS. { ok, status, intentos }; status es el código
+// HTTP de la última respuesta o 'sin_respuesta' (timeout / red).
+async function reenviarAN8n(payload, eventId) {
+  const destino = process.env.N8N_WEBHOOK_URL || N8N_URL_DEFECTO;
+  let status = 'sin_respuesta';
+  for (let intento = 1; intento <= INTENTOS_N8N; intento++) {
+    if (intento > 1) await esperar(BACKOFF_N8N_MS);
+    const controlador = new AbortController();
+    const temporizador = setTimeout(function () { controlador.abort(); }, TIMEOUT_N8N_MS);
+    try {
+      const resp = await fetch(destino, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-form-secret': process.env.FORM_SHARED_SECRET || 'riselanding-form-v1',
+          // Para que n8n pueda deduplicar si un intento llegó pero su respuesta se perdió
+          'x-rl-event-id': eventId
+        },
+        body: JSON.stringify(payload),
+        signal: controlador.signal
+      });
+      status = resp.status;
+      if (resp.ok) return { ok: true, status: status, intentos: intento };
+    } catch (e) {
+      status = 'sin_respuesta';
+    } finally {
+      clearTimeout(temporizador);
+    }
+  }
+  return { ok: false, status: status, intentos: INTENTOS_N8N };
 }
 
 module.exports = async function handler(req, res) {

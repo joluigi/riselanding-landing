@@ -19,11 +19,36 @@ sospechoso se etiqueta y SIEMPRE llega a Notion para que un humano decida.
 | 6b | Solicitante no comercial | "Proyecto personal / escolar", "Busco empleo" o "Proveedor o agencia" → mensaje propio, log `lead_not_forwarded` con `student` / `job_seeker` / `competitor` | **No** se reenvía a n8n, en ningún modo |
 | 7 | Rate limit en memoria | Máx 5 envíos / 10 min por IP. **Parcial**: cada instancia serverless tiene su propia memoria y se recicla; la capa firme es el WAF (paso 4 de la escalación) | 429 visible |
 | 8 | Turnstile (Managed) | Solo si existen `TURNSTILE_SITE_KEY` **y** `TURNSTILE_SECRET_KEY`. Va después de validar para no gastar el token de un solo uso en un 422 | Fallo o sin token → fake success* (`turnstile_failed`). Cloudflare con timeout de 3 s, 5xx, red o `internal-error` → **sigue** con `turnstile_unavailable` (log nivel info). Secreto ausente/inválido u otro error de configuración → **sigue** con `turnstile_misconfigured` (log nivel **error**: hay que corregir las variables) |
-| 9 | Motor de calidad | `lib/lead-quality/engine.js`: `spam_points` (≥ 3 → `spam`), `lead_score` 0–100, `lead_tier` A/B/C, `lead_quality_flag` y `signals[]` auditables. Hoy **solo etiqueta** (el modo `enforce` llega en la Fase 4) | Llega a Notion; con ⚠️ si el flag es `spam` |
+| 9 | Motor de calidad | `lib/lead-quality/engine.js`: `spam_points` (≥ 3 → `spam`), `lead_score` 0–100, `lead_tier` A/B/C, `lead_quality_flag` y `signals[]` auditables | Según `LEAD_GATE_MODE` (ver abajo) |
+| 10 | Idempotencia | `event_id` (UUIDv4 del cliente, se conserva mientras los datos no cambien). Mismo id en 10 min → misma respuesta, sin reenviar. **Parcial**: memoria de la instancia | Respuesta previa |
+| 11 | Reenvío a n8n | 2 intentos de 8 s con 1 s entre ellos; header `x-rl-event-id` para que n8n pueda deduplicar | Si ambos fallan: 502 con contacto alterno, log `destination_failed` (nivel error). **Nunca** éxito |
 
 \* **Fake success** = respondemos `200 {"success":true}` sin reenviar nada a n8n; el bot cree que funcionó
 y no muta su ataque. Consecuencia: **un 200 no garantiza que el lead llegó** — la prueba real es la fila
 en Notion o los logs de Vercel.
+
+### Qué se reenvía a n8n en cada modo
+
+| Veredicto | `shadow` (por defecto) | `enforce` | Respuesta al navegador |
+|---|---|---|---|
+| `clean` | ✅ se reenvía | ✅ se reenvía | Gracias + veredicto |
+| `suspect` | ✅ | ✅ | Gracias + veredicto |
+| `spam` (motor, `spam_points` ≥ 3) | ✅ (con ⚠️ y "Calidad:") | ❌ | Gracias + veredicto (mismo éxito que un lead real) |
+| `competitor` por `agency-denylist` | ✅ | ❌ | Gracias + veredicto |
+| `student` / `job_seeker` / `competitor` **autodeclarados** | ❌ nunca | ❌ nunca | Mensaje propio + `rl_non_commercial_submit` |
+| Rechazo duro (honeypot, token ausente/inválido, < 4 s, Turnstile fallido) | ❌ nunca | ❌ nunca | Solo `{success:true}` (sin veredicto) |
+
+En `shadow` cada nota lleva al final ` · Calidad: {flag}/{tier} {score}` (p. ej. `· Calidad: suspect/C 40`).
+En `enforce` no se agrega.
+
+### Cómo pasar de shadow a enforce
+1. Revisa en Notion las notas con "Calidad:" de las últimas 2 semanas: ¿algún `spam` era un lead real?
+   Si lo hubo, ajusta el motor o las listas antes de seguir.
+2. Vercel → Settings → Environment Variables → `LEAD_GATE_MODE = enforce` (Production) → **Redeploy**.
+3. Para volver: `LEAD_GATE_MODE = shadow` (o borra la variable) → Redeploy. Un valor inválido cae en
+   `shadow` con un warning en el log.
+4. En `enforce` lo bloqueado solo queda en el log (`lead_evaluated` con `forwarded:false`,
+   `destination_status:"blocked_by_enforce"`), que en Hobby dura poco: mide antes de cambiar.
 
 ### Rechazos duros vs. modo del gate (`LEAD_GATE_MODE`)
 Los rechazos duros —honeypot, token ausente/inválido, envío a < 4 s de emitido el token y Turnstile
@@ -92,6 +117,7 @@ Las respuestas 429 y 409 muestran un mensaje en español con contacto alterno (c
 |----------|--------|--------------|
 | `N8N_WEBHOOK_URL` | Destino del reenvío | URL de Railway quemada en `api/lead.js` |
 | `FORM_SHARED_SECRET` | Valor del header `x-form-secret` que se envía a n8n | `riselanding-form-v1` |
+| `LEAD_GATE_MODE` | `shadow` o `enforce` (ver tabla de reenvío) | `shadow` |
 | `VENDOR_CONTACT_EMAIL` | Correo que ven proveedores/agencias al enviar | El mensaje no incluye correo |
 | `FORM_TOKEN_SECRET` | Firma HMAC del token de formulario (capas 2–4) | Capas 2–4 apagadas + warning en el log |
 | `TURNSTILE_SITE_KEY` + `TURNSTILE_SECRET_KEY` | Con las DOS, se enciende Turnstile (widget + verificación) | Con una sola o ninguna: Turnstile apagado + warning |

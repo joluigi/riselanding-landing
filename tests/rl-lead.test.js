@@ -176,3 +176,15 @@ test('attributionFromCookie: sin cookie o con cookie corrupta devuelve solo lo q
   assert.deepStrictEqual(RL.attributionFromCookie(''), {});
   assert.deepStrictEqual(RL.attributionFromCookie('rl_attr=%7Bnope'), {});
 });
+
+test('rl_lead_submit y rl_non_commercial_submit usan el event_id / lead_id que confirmó el servidor', async function () {
+  delete globalThis.__rl;
+  const ev = '11111111-2222-4333-8444-555555555555', lid = '66666666-7777-4888-9999-aaaaaaaaaaaa';
+  const p = await RL.buildLeadSubmit({ email: 'a@empresa.mx', phoneRaw: '5558788983', eventId: ev, leadId: lid, verdict: VEREDICTO_A });
+  assert.deepStrictEqual([p.event_id, p.lead_id, p.transaction_id], [ev, lid, lid]);
+  globalThis.dataLayer = [];
+  RL.pushNonCommercialSubmit('student', ev);
+  assert.strictEqual(globalThis.dataLayer[1].rl_event_data.event_id, ev);
+  delete globalThis.dataLayer;
+  assert.deepStrictEqual(RL.classifySubmitError({ code: 'destination_error' }), ['server_error', 'destination_error']);
+});

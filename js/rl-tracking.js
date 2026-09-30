@@ -64,6 +64,7 @@
     if (code === 'rate_limited') return ['server_error', 'rate_limited'];
     if (code === 'form_expired') return ['server_error', 'form_expired'];
     if (code === 'validation') return ['server_error', err.campo]; // 422: código del primer campo
+    if (code === 'destination_error') return ['server_error', 'destination_error']; // n8n falló 2 veces
     return ['server_error', undefined];
   }
 
@@ -88,9 +89,9 @@
 
   // Solicitante que se declaró no comercial (student / job_seeker / competitor). Evento propio,
   // NUNCA rl_lead_submit: ninguna etiqueta de conversión escucha este nombre.
-  function pushNonCommercialSubmit(applicantType) {
+  function pushNonCommercialSubmit(applicantType, eventId) {
     return pushEvent('rl_non_commercial_submit', {
-      applicant_type: applicantType, form_id: 'agenda_diagnostico', form_location: 'contacto',
+      event_id: eventId, applicant_type: applicantType, form_id: 'agenda_diagnostico', form_location: 'contacto',
       attribution: attribution()
     });
   }
@@ -142,11 +143,12 @@
     var emailNorm = String(f.email || '').trim().toLowerCase();
     var e164 = phoneE164MX(f.phoneRaw);
     var v = f.verdict;
-    var leadId = ctx.leadId || uuid(); // transaction_id === lead_id aunque falte el bootstrap
+    // event_id y lead_id los confirma el servidor (idempotencia); transaction_id === lead_id
+    var leadId = f.leadId || ctx.leadId || uuid();
     // prospect_segment, prospect_geo, operation_volume_bucket, current_marketing_maturity y
     // segment_match se omiten: el formulario no los captura.
     var payload = compact({
-      event_id: uuid(),
+      event_id: f.eventId || uuid(),
       transaction_id: leadId,
       lead_id: leadId,
       form_id: 'agenda_diagnostico', form_location: 'contacto', lead_source_channel: 'form',

@@ -9,13 +9,15 @@ const formTokenHandler = require('../api/form-token.js');
 const formToken = require('../api/_lib/form-token.js');
 const turnstile = require('../api/_lib/turnstile.js');
 const validarLead = require('../api/_lib/validar-lead.js');
+const idempotencia = require('../api/_lib/idempotencia.js');
+const calidad = require('../api/_lib/calidad.js');
 
 const URL_N8N = 'https://n8n.test.invalid/webhook/lead';
 const URL_CF = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const LLAVES_CONTRATO = ['nombre', 'empresa', 'email', 'telefono', 'mensaje', 'interes_pilar',
   'fuente', 'spam_score', 'spam_flags', 'ip', 'user_agent'].sort();
 
-let reenvios, llamadasCf, respuestaCf, logs, warns, errores, fetchOriginal, ipSeq = 0;
+let reenvios, cabecerasN8n, respuestasN8n, llamadasCf, respuestaCf, logs, warns, errores, fetchOriginal, ipSeq = 0;
 const logOriginal = console.log, warnOriginal = console.warn, errorOriginal = console.error;
 
 beforeEach(function () {
@@ -24,6 +26,10 @@ beforeEach(function () {
   process.env.FORM_SHARED_SECRET = 'secreto-compartido-de-prueba';
   delete process.env.TURNSTILE_SITE_KEY;
   delete process.env.TURNSTILE_SECRET_KEY;
+  delete process.env.LEAD_GATE_MODE;
+  idempotencia._vaciar();
+  // Cola de respuestas de n8n: vacía = 200. Un elemento 'red' simula error de red / timeout.
+  respuestasN8n = []; cabecerasN8n = [];
   reenvios = []; llamadasCf = 0; logs = []; warns = []; errores = [];
   respuestaCf = function () { return { ok: true, status: 200, json: async function () { return { success: true }; } }; };
   // DNS simulado: ningún test sale a la red; cada dominio tiene MX salvo que la prueba diga otra cosa
@@ -31,7 +37,13 @@ beforeEach(function () {
   fetchOriginal = global.fetch;
   global.fetch = async function (url, opts) {
     if (url === URL_CF) { llamadasCf++; return respuestaCf(opts); }
-    if (url === URL_N8N) { reenvios.push(JSON.parse(opts.body)); return { ok: true, status: 200 }; }
+    if (url === URL_N8N) {
+      reenvios.push(JSON.parse(opts.body));
+      cabecerasN8n.push(opts.headers);
+      const r = respuestasN8n.length ? respuestasN8n.shift() : 200;
+      if (r === 'red') throw new Error('ECONNRESET');
+      return { ok: r >= 200 && r < 300, status: r };
+    }
     throw new Error('URL inesperada en la prueba: ' + url);
   };
   console.log = function () { logs.push(Array.prototype.join.call(arguments, ' ')); };
@@ -137,7 +149,9 @@ test('envío válido: 200, se reenvía una vez y el payload conserva exactamente
   const r = await enviar(cuerpoValido());
   assert.strictEqual(r.status, 200);
   // Respuesta con el veredicto del servidor (el cliente lo publica en rl_lead_submit)
-  assert.deepStrictEqual(r.data, { success: true, lead_quality_flag: 'clean', lead_score: 83, lead_tier: 'A', email_domain_type: 'corporate' });
+  const sinIds = Object.assign({}, r.data); delete sinIds.event_id; delete sinIds.lead_id;
+  assert.deepStrictEqual(sinIds, { success: true, lead_quality_flag: 'clean', lead_score: 83, lead_tier: 'A', email_domain_type: 'corporate' });
+  assert.ok(idempotencia.esUuid(r.data.event_id) && idempotencia.esUuid(r.data.lead_id));
   assert.strictEqual(reenvios.length, 1);
   assert.deepStrictEqual(Object.keys(reenvios[0]).sort(), LLAVES_CONTRATO);
   assert.strictEqual(typeof reenvios[0].spam_score, 'number');
@@ -368,7 +382,10 @@ test('contrato: nombre, empresa, email, teléfono, mensaje, interes_pilar y fuen
   for (let i = 0; i < casos.length; i++) {
     const c = cuerpoValido(casos[i]);
     await enviar(c);
-    const saliente = reenvios[i];
+    const saliente = Object.assign({}, reenvios[i]);
+    // Única diferencia permitida en modo shadow (por defecto): el sufijo " · Calidad: flag/tier score"
+    assert.match(saliente.mensaje, / · Calidad: [a-z_]+\/[ABC] \d+$/);
+    saliente.mensaje = saliente.mensaje.replace(/ · Calidad: [a-z_]+\/[ABC] \d+$/, '');
     const esperado = payloadClienteAnterior(c);
     Object.keys(esperado).forEach(function (k) { assert.strictEqual(saliente[k], esperado[k], 'caso ' + i + ', llave ' + k); });
     assert.deepStrictEqual(Object.keys(saliente).sort(), LLAVES_CONTRATO);
@@ -488,14 +505,14 @@ test('motor: spam_score = spam_points, spam_flags = signals; prefijo ⚠️ solo
   let s = reenvios[0];
   assert.strictEqual(s.spam_score, 3);
   assert.deepStrictEqual(s.spam_flags, ['company_numeric']);
-  assert.strictEqual(s.mensaje, '⚠️ Posible spam (score 3: company_numeric) · Servicios: Implementación de CRM · Tamaño: 11–50 personas');
+  assert.strictEqual(s.mensaje, '⚠️ Posible spam (score 3: company_numeric) · Servicios: Implementación de CRM · Tamaño: 11–50 personas · Calidad: spam/B 63');
 
   // Par repetido en empresa: +1, suspect, se reenvía SIN prefijo
   r = await enviar(cuerpoValido({ empresa: 'Papelería Papalote' }));
   assert.strictEqual(r.data.lead_quality_flag, 'suspect');
   s = reenvios[1];
   assert.deepStrictEqual([s.spam_score, s.spam_flags], [1, ['company_pair_repeat']]);
-  assert.strictEqual(s.mensaje, 'Servicios: Implementación de CRM · Tamaño: 11–50 personas');
+  assert.strictEqual(s.mensaje, 'Servicios: Implementación de CRM · Tamaño: 11–50 personas · Calidad: suspect/A 83');
   assert.deepStrictEqual(Object.keys(s).sort(), LLAVES_CONTRATO);
 });
 
@@ -511,6 +528,160 @@ test('motor: señales de auditoría de la ruta (sin puntos) y log lead_evaluated
 });
 
 test('rechazos duros siguen respondiendo solo {success:true}, sin veredicto', async function () {
-  const r = await enviar(cuerpoValido({ website_url_2: 'x' }));
+  let r = await enviar(cuerpoValido({ website_url_2: 'x' }));
   assert.deepStrictEqual(r.data, { success: true });
+  activarTurnstile();
+  respuestaCf = function () { return { ok: true, status: 200, json: async function () { return { success: false }; } }; };
+  r = await enviar(cuerpoValido({ turnstile_token: 'malo' }));
+  assert.deepStrictEqual(r.data, { success: true });
+});
+
+// --- Fase 4: modos shadow/enforce, idempotencia y reintento hacia n8n ---
+
+const UUID_A = '11111111-2222-4333-8444-555555555555';
+const UUID_B = '66666666-7777-4888-9999-aaaaaaaaaaaa';
+
+// Un envío por tipo de veredicto. "competitor inferido" usa la agency-denylist (dominio del correo).
+const CASOS_VEREDICTO = [
+  { tipo: 'clean', cuerpo: {} },
+  { tipo: 'suspect', cuerpo: { empresa: 'Papelería Papalote' } },
+  { tipo: 'spam (motor)', cuerpo: { empresa: '12345' }, flag: 'spam' },
+  { tipo: 'competitor (agency-denylist)', cuerpo: { email: 'ana@agencia-rival.example' }, flag: 'competitor', denylist: true },
+  { tipo: 'student (autodeclarado)', cuerpo: { solicitante: 'personal' }, flag: 'student' },
+  { tipo: 'job_seeker (autodeclarado)', cuerpo: { solicitante: 'empleo' }, flag: 'job_seeker' },
+  { tipo: 'competitor (autodeclarado)', cuerpo: { solicitante: 'proveedor' }, flag: 'competitor' },
+  { tipo: 'rechazo duro (honeypot)', cuerpo: { website_url_2: 'x' } },
+  { tipo: 'rechazo duro (too_fast)', cuerpo: { form_token: 'se-reemplaza' }, tooFast: true }
+];
+// ¿Se reenvía a n8n? [shadow, enforce]
+const TABLA_REENVIO = {
+  'clean': [true, true],
+  'suspect': [true, true],
+  'spam (motor)': [true, false],
+  'competitor (agency-denylist)': [true, false],
+  'student (autodeclarado)': [false, false],
+  'job_seeker (autodeclarado)': [false, false],
+  'competitor (autodeclarado)': [false, false],
+  'rechazo duro (honeypot)': [false, false],
+  'rechazo duro (too_fast)': [false, false]
+};
+
+test('tabla de reenvío por modo y veredicto (y todos responden 200 al navegador)', async function () {
+  const modos = ['shadow', 'enforce'];
+  for (let m = 0; m < modos.length; m++) {
+    process.env.LEAD_GATE_MODE = modos[m];
+    for (const caso of CASOS_VEREDICTO) {
+      reenvios = [];
+      if (caso.denylist) calidad.LISTAS_MOTOR.agencyDenylist.push('agencia-rival.example');
+      const extra = Object.assign({}, caso.cuerpo);
+      if (caso.tooFast) extra.form_token = tokenDeHace(1000);
+      try {
+        const r = await enviar(cuerpoValido(extra));
+        assert.strictEqual(r.status, 200, caso.tipo);
+        assert.strictEqual(reenvios.length > 0, TABLA_REENVIO[caso.tipo][m], caso.tipo + ' en ' + modos[m]);
+        if (caso.flag) assert.strictEqual(r.data.lead_quality_flag, caso.flag, caso.tipo);
+      } finally {
+        if (caso.denylist) calidad.LISTAS_MOTOR.agencyDenylist.pop();
+      }
+    }
+  }
+});
+
+test('enforce: lo que no se reenvía recibe el mismo éxito que un lead real, con su veredicto, y queda en el log', async function () {
+  process.env.LEAD_GATE_MODE = 'enforce';
+  const r = await enviar(cuerpoValido({ empresa: '12345', event_id: UUID_A }));
+  assert.strictEqual(reenvios.length, 0);
+  assert.deepStrictEqual(Object.keys(r.data).sort(), ['email_domain_type', 'event_id', 'lead_id', 'lead_quality_flag', 'lead_score', 'lead_tier', 'success']);
+  assert.deepStrictEqual([r.data.success, r.data.lead_quality_flag, r.data.event_id], [true, 'spam', UUID_A]);
+  const l = ultimoLog('lead_evaluated');
+  assert.deepStrictEqual([l.mode, l.forwarded, l.destination_status, l.event_id], ['enforce', false, 'blocked_by_enforce', UUID_A]);
+});
+
+test('sufijo " · Calidad: flag/tier score" solo en shadow; en enforce el mensaje va como siempre', async function () {
+  await enviar(cuerpoValido());
+  assert.strictEqual(reenvios[0].mensaje, 'Servicios: Implementación de CRM · Tamaño: 11–50 personas · Calidad: clean/A 83');
+  process.env.LEAD_GATE_MODE = 'enforce';
+  await enviar(cuerpoValido());
+  assert.strictEqual(reenvios[1].mensaje, 'Servicios: Implementación de CRM · Tamaño: 11–50 personas');
+  assert.strictEqual(ultimoLog('lead_evaluated').mode, 'enforce');
+});
+
+test('LEAD_GATE_MODE inválido → shadow con warning', async function () {
+  process.env.LEAD_GATE_MODE = 'bloquear-todo';
+  await enviar(cuerpoValido({ empresa: '12345' }));
+  assert.strictEqual(reenvios.length, 1);
+  assert.strictEqual(ultimoLog('lead_evaluated').mode, 'shadow');
+  assert.ok(warns.some(function (w) { return /LEAD_GATE_MODE="bloquear-todo"/.test(w); }));
+});
+
+test('la respuesta devuelve event_id y lead_id del cliente; si faltan o no son UUID, el servidor los genera', async function () {
+  let r = await enviar(cuerpoValido({ event_id: UUID_A, lead_id: UUID_B }));
+  assert.deepStrictEqual([r.data.event_id, r.data.lead_id], [UUID_A, UUID_B]);
+  assert.strictEqual(cabecerasN8n[0]['x-rl-event-id'], UUID_A);
+  r = await enviar(cuerpoValido({ event_id: 'no-es-uuid' }));
+  assert.ok(idempotencia.esUuid(r.data.event_id) && r.data.event_id !== 'no-es-uuid');
+  r = await enviar(cuerpoValido({ solicitante: 'empleo', event_id: UUID_B }));
+  assert.strictEqual(r.data.event_id, UUID_B);
+});
+
+test('idempotencia: el mismo event_id no se reenvía dos veces y recibe la misma respuesta', async function () {
+  const a = await enviar(cuerpoValido({ event_id: UUID_A }));
+  const b = await enviar(cuerpoValido({ event_id: UUID_A }));
+  assert.strictEqual(reenvios.length, 1);
+  assert.deepStrictEqual(b.data, a.data);
+  assert.ok(ultimoLog('lead_duplicate'));
+  // Otro event_id sí se reenvía
+  await enviar(cuerpoValido({ event_id: UUID_B }));
+  assert.strictEqual(reenvios.length, 2);
+});
+
+test('idempotencia: dos envíos simultáneos con el mismo event_id → un solo reenvío', async function () {
+  const r = await Promise.all([enviar(cuerpoValido({ event_id: UUID_A })), enviar(cuerpoValido({ event_id: UUID_A }))]);
+  assert.strictEqual(reenvios.length, 1);
+  assert.deepStrictEqual(r[0].data, r[1].data);
+});
+
+test('idempotencia: tras un fallo de n8n el mismo event_id se puede reintentar', async function () {
+  respuestasN8n = [500, 500];
+  const falla = await enviar(cuerpoValido({ event_id: UUID_A }));
+  assert.strictEqual(falla.status, 502);
+  const ok = await enviar(cuerpoValido({ event_id: UUID_A }));
+  assert.strictEqual(ok.status, 200);
+  assert.strictEqual(reenvios.length, 3); // 2 intentos fallidos + 1 bueno
+});
+
+test('reintento: n8n falla una vez y responde al segundo intento (tras ~1 s) → éxito', async function () {
+  respuestasN8n = [503];
+  const inicio = Date.now();
+  const r = await enviar(cuerpoValido());
+  assert.strictEqual(r.status, 200);
+  assert.strictEqual(reenvios.length, 2);
+  assert.ok(Date.now() - inicio >= 950, 'backoff de 1 s');
+  assert.deepStrictEqual(reenvios[0], reenvios[1], 'el reintento manda el mismo payload');
+  assert.strictEqual(ultimoLog('lead_evaluated').attempts, 2);
+});
+
+test('reintento: si n8n falla dos veces (HTTP o red) → 502 con contacto alterno, NUNCA éxito', async function () {
+  const escenarios = [[500, 502], ['red', 'red'], [401, 'red']];
+  for (const esc of escenarios) {
+    reenvios = [];
+    respuestasN8n = esc.slice();
+    const r = await enviar(cuerpoValido());
+    assert.strictEqual(r.status, 502, JSON.stringify(esc));
+    assert.strictEqual(r.data.success, false);
+    assert.strictEqual(r.data.code, 'destination_error');
+    assert.match(r.data.message, /Inténtalo de nuevo/);
+    assert.match(r.data.message, /WhatsApp/);
+    assert.strictEqual(reenvios.length, 2);
+    const e = ultimoLog('destination_failed', errores);
+    assert.strictEqual(e.level, 'error');
+    assert.strictEqual(e.attempts, 2);
+  }
+  // El 502 libera el cupo del rate limit: el reintento del usuario no se topa con un 429
+});
+
+test('spam del motor en shadow: si n8n falla también recibe 502 (en shadow sí debía llegar)', async function () {
+  respuestasN8n = [500, 500];
+  const r = await enviar(cuerpoValido({ empresa: '12345' }));
+  assert.strictEqual(r.status, 502);
 });

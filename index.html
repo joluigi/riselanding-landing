@@ -1812,6 +1812,22 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     $('f-tel').placeholder = PLACEHOLDER_TEL[this.value] || 'Número con lada';
   });
 
+  // event_id del envío (idempotencia en /api/lead): se conserva mientras los datos no cambien, así
+  // un reintento tras un error de red no crea un lead duplicado; datos distintos → id nuevo.
+  var envio = { id: '', huella: '' };
+  function nuevoUuid() {
+    if (window.RL && RL.uuid) return RL.uuid();
+    if (window.crypto && crypto.randomUUID) return crypto.randomUUID();
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (ch) {
+      var r = Math.random() * 16 | 0; return (ch === 'x' ? r : (r & 3 | 8)).toString(16);
+    });
+  }
+  function eventIdPara(raw) {
+    var huella = JSON.stringify(raw);
+    if (!envio.id || envio.huella !== huella) { envio.id = nuevoUuid(); envio.huella = huella; }
+    return envio.id;
+  }
+
   function pushEvento(nombre, datos) {
     try { if (window.RL) RL.pushEvent(nombre, datos); } catch (e) {}
   }
@@ -1869,6 +1885,8 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     ['utm_source', 'utm_medium', 'utm_campaign'].forEach(function (id) { if (valor(id)) payload[id] = valor(id); });
     // Señales anti-bot que valida /api/lead: honeypot, token HMAC y Turnstile (si está activo)
     payload.website_url_2 = valor('f-hp');
+    payload.event_id = eventIdPara(raw);
+    if (window.__rl && window.__rl.leadId) payload.lead_id = window.__rl.leadId;
 
     asegurarToken().then(tokenTurnstile).then(function (tokenTs) {
       payload.form_token = tk.valor || '';
@@ -1892,7 +1910,8 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
 
       if (data.outcome === 'no_comercial') {
         // No es lead: evento propio (nunca rl_lead_submit) y el formulario queda listo por si eligió mal
-        try { if (window.RL) RL.pushNonCommercialSubmit(data.lead_quality_flag); } catch (e) {}
+        try { if (window.RL) RL.pushNonCommercialSubmit(data.lead_quality_flag, data.event_id); } catch (e) {}
+        envio.id = ''; // si cambia la opción y vuelve a enviar, es otro envío
         enviando = false;
         reiniciarTurnstile();
         btn.disabled = false; btn.textContent = btnTexto;
@@ -1920,7 +1939,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
           // Veredicto del servidor; un fake success (rechazo duro) no lo trae y no se publica nada
           seguimiento = RL.buildLeadSubmit({
             email: raw.email, phoneRaw: raw.telefono, sizeBucket: v.datos.tamano || null,
-            pilar: S.pilar(v.datos.servicios), t0: t0,
+            pilar: S.pilar(v.datos.servicios), t0: t0, eventId: data.event_id, leadId: data.lead_id,
             verdict: {
               lead_quality_flag: data.lead_quality_flag, lead_score: data.lead_score,
               lead_tier: data.lead_tier, email_domain_type: data.email_domain_type
