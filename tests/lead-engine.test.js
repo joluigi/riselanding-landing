@@ -50,14 +50,16 @@ test('F2 · "Xkxkxkxlxlx 4prtqrk", empresa = teléfono de 11 dígitos, 6 servici
   assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier], [10, 'spam', 30, 'C']);
 });
 
-test('F3 · "Laura Méndez", empresa "Qwqwerty", lm4821@gmail.com → suspect (antes spam; regla del par ajustada)', function () {
-  // spam_points: company_pair_repeat +1 ("qwqw" es la ÚNICA señal aleatoria) · email_name_mismatch +1
-  //   ("lm" no contiene "laura" ni "mendez") = 2 < 3 → no es spam
-  // flag: la repetición de par fuerza como mínimo suspect
-  // lead_score: empresa 20 · empresa válida 10 · 1–10 3 · 1 servicio 5 · mensaje 10 · teléfono 5 = 53 → B
+test('F3 · "Laura Méndez", empresa "Qwqwerty", lm4821@gmail.com → spam (secuencia de teclado)', function () {
+  // spam_points: empresa aleatoria +2 por keyboard_sequence ("qwert"/"werty", 5+ teclas de la fila
+  //   superior) · company_pair_repeat +0 (ya viene con otra señal aleatoria de la empresa: no suma
+  //   encima) · email_name_mismatch +1 ("lm" no contiene "laura" ni "mendez") = 3 ≥ 3 → spam
+  //   (Sin la regla de teclado eran 2 → suspect.)
+  // lead_score: empresa 20 · empresa válida 10 (no está en la lista basura) · 1–10 3 · 1 servicio 5
+  //   · mensaje 10 · teléfono 5 = 53 → B
   const r = evaluar({ nombre: 'Laura', apellido: 'Méndez', empresa: 'Qwqwerty', email: 'lm4821@gmail.com' });
-  assert.deepStrictEqual(r.signals, ['company_pair_repeat', 'email_name_mismatch']);
-  assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier], [2, 'suspect', 53, 'B']);
+  assert.deepStrictEqual(r.signals, ['keyboard_sequence', 'company_pair_repeat', 'email_name_mismatch']);
+  assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier], [3, 'spam', 53, 'B']);
 });
 
 test('F4 · "Diana Ruiz", empresa "Bro", tel de 8 dígitos, zorro991@gmail.com, 51–200 → spam', function () {
@@ -209,3 +211,70 @@ test('ninguna salida trae PII: solo códigos legibles', function () {
   ['diana', 'ruiz', 'zorro', '55000000'].forEach(function (x) { assert.ok(txt.toLowerCase().indexOf(x) === -1, x); });
   r.signals.forEach(function (s) { assert.match(s, /^[a-z0-9_]+$/); });
 });
+
+// --- Ajustes de la Fase 3 aprobada: teclado, URLs propias, vocabulario del negocio ---
+
+test('keyboard_sequence: 5+ teclas seguidas de una fila, en cualquier dirección, en nombre y empresa', function () {
+  const casos = [['empresa', 'Asdfg Consultores'], ['empresa', 'Poiuy Studio'], ['empresa', 'Ñlkjh'], ['empresa', 'Zxcvb'], ['nombre', 'Qwerty']];
+  casos.forEach(function (c) {
+    const extra = {}; extra[c[0]] = c[1];
+    const r = evaluar(extra);
+    assert.ok(r.signals.indexOf('keyboard_sequence') !== -1, c[1]);
+    assert.strictEqual(r.spam_points, c[0] === 'nombre' ? 3 : 2, c[1]);
+  });
+  // Nombre con ambas reglas (palabra aleatoria y teclado): +3 una sola vez
+  const doble = evaluar({ nombre: 'Qwertyqwerty', apellido: 'Sdfghjk' });
+  assert.strictEqual(doble.spam_points, 3);
+});
+
+test('keyboard_sequence: empresas reales NO la activan (con 4 teclas sí caían Liberty, Property, Wertheimer)', function () {
+  ['Grupo Asdrúbal', 'Tertulia Café', 'Poiesis', 'Liberty Seguros', 'Property Solutions', 'Wertheimer Abogados',
+    'Transportes Norte', 'Agencia Aduanal Vega', 'Querétaro Logística', 'Superiores Asociados'].forEach(function (e) {
+    const r = evaluar({ empresa: e });
+    assert.ok(r.signals.indexOf('keyboard_sequence') === -1, e);
+    assert.strictEqual(r.spam_points, 0, e);
+  });
+});
+
+test('URLs en el mensaje: la primera no suma si es del sitio o del correo corporativo; el resto +1 c/u hasta +3', function () {
+  // La regex de URL heredada solo reconoce TLDs de una lista cerrada (.com, .net, .io…), a propósito,
+  // para no confundir "S.A. de C.V."; por eso aquí se usan dominios .com inventados (y no .example/.mx).
+  const conSitio = { sitio_web: 'https://sintetica-qa-uno.com', email: 'ana@sintetica-qa-uno.com' };
+  function pts(necesidad, extra) { return evaluar(Object.assign({ necesidad: necesidad }, extra || {})); }
+  const propio = pts('Pueden ver nuestro catálogo en sintetica-qa-uno.com para cotizar', conSitio);
+  assert.deepStrictEqual([propio.spam_points, propio.signals], [0, ['own_url_in_message']]);
+  // Dominio del correo corporativo aunque no haya sitio
+  assert.strictEqual(pts('Catálogo en www.sintetica-qa-uno.com/productos, queremos más ventas', { email: 'ana@sintetica-qa-uno.com' }).spam_points, 0);
+  // Propia + ajena: solo cuenta la ajena
+  assert.strictEqual(pts('Catálogo en sintetica-qa-uno.com y referencia ajena-qa-dos.com para comparar', conSitio).spam_points, 1);
+  // Ajenas: 1 → +1, 2 → +2, 4 → +3
+  assert.strictEqual(pts('Queremos algo como ajena-qa-dos.com para vender más en línea').spam_points, 1);
+  assert.strictEqual(pts('Queremos algo como ajena-qa-dos.com y ajena-qa-tres.com para vender').spam_points, 2);
+  assert.strictEqual(pts('Ver a-qa.com b-qa.com c-qa.com d-qa.com para inspirarnos en el diseño nuevo').spam_points, 3);
+  // Con correo gratuito, el dominio del correo NO cuenta como propio
+  const gratis = pts('Nuestro correo es de gmail.com y todavía no tenemos sitio propio', { email: 'ana.prueba@gmail.com' });
+  assert.deepStrictEqual(gratis.signals, ['email_name_match', 'url_in_message']); // −1 (coincide con "ana") +1 (URL)
+  // Solo se perdona la PRIMERA URL: ajena primero y propia después → cuentan las dos
+  assert.strictEqual(pts('Referencia ajena-qa-dos.com y catálogo en sintetica-qa-uno.com', conSitio).spam_points, 2);
+  // URL en empresa sigue en +2
+  assert.ok(evaluar({ empresa: 'www.sintetica-qa-uno.com' }).signals.indexOf('url_in_company') !== -1);
+});
+
+test('palabras spam: la lista no incluye vocabulario de nuestros servicios', function () {
+  const servicios = ['seo', 'posicionamiento', 'google ads', 'ads', 'publicidad', 'marketing', 'crm', 'automatización',
+    'automatizacion', 'landing', 'sitio web', 'leads', 'lead', 'campañas', 'campaña', 'sem', 'dashboards', 'web', 'ventas', 'whatsapp'];
+  E.KEYWORDS_SPAM.forEach(function (k) {
+    servicios.forEach(function (sv) { assert.ok(k.indexOf(sv) === -1 && sv.indexOf(k) === -1, k + ' choca con ' + sv); });
+  });
+});
+
+test('mensaje legítimo con todo el vocabulario de servicios → 0 puntos de contenido', function () {
+  const r = evaluar({
+    necesidad: 'Necesitamos SEO y posicionamiento, campañas en Google Ads y Meta Ads, publicidad y marketing digital, ' +
+      'un CRM con automatización, una landing y un sitio web nuevo para captar más leads y dar seguimiento por WhatsApp; ' +
+      'también dashboards de ventas.'
+  });
+  assert.deepStrictEqual([r.spam_points, r.signals], [0, []]);
+  assert.strictEqual(r.lead_quality_flag, 'clean');
+});
+
