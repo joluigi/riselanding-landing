@@ -23,8 +23,10 @@
 //        " · Calidad: flag/tier score" al mensaje.
 //      - enforce: no reenvía spam ni competitor (agency-denylist); suspect y clean sí.
 //      spam_score = spam_points, spam_flags = signals, prefijo ⚠️ si el flag es spam.
-//   8. Reenvío a n8n con un reintento (backoff 1 s). Si falla dos veces → 502 con contacto
-//      alterno: nunca se muestra éxito a un lead que debía llegar y no llegó.
+//   8. Reenvío a n8n (N8N_WEBHOOK_URL + header x-form-secret = FORM_SHARED_SECRET, ambas
+//      obligatorias y sin valor de respaldo) con un reintento (backoff 1 s). Si faltan → 503;
+//      si falla dos veces → 502; ambos con contacto alterno: nunca se muestra éxito a un lead
+//      que debía llegar y no llegó.
 //   Las capas 1 y 4 (honeypot, token, Turnstile fallido) y los no comerciales autodeclarados
 //   NUNCA se reenvían, sea cual sea LEAD_GATE_MODE.
 'use strict';
@@ -42,11 +44,21 @@ const log = require('./_lib/log');
 // --- Constante compartida con index.html (debe coincidir EXACTO) ---
 const FORM_TOKEN = 'rl1';
 
-const N8N_URL_DEFECTO = 'https://n8n-production-417ba.up.railway.app/webhook/lead-capture';
 const LIMITE_BODY = 50 * 1024; // 50 KB
 const TIMEOUT_N8N_MS = 8000;     // por intento
 const INTENTOS_N8N = 2;          // intento + 1 reintento
 const BACKOFF_N8N_MS = 1000;
+
+// Destino: SOLO por variables de entorno, sin valores de respaldo en el código (los anteriores
+// quedaron inservibles tras la rotación del webhook). Devuelve { url, secreto } o { faltan: [...] }.
+function configDestino() {
+  const url = String(process.env.N8N_WEBHOOK_URL || '').trim();
+  const secreto = String(process.env.FORM_SHARED_SECRET || '').trim();
+  const faltan = [];
+  if (!/^https:\/\/[^\s/]+\/\S*$/i.test(url)) faltan.push('N8N_WEBHOOK_URL');
+  if (!secreto) faltan.push('FORM_SHARED_SECRET');
+  return faltan.length ? { faltan: faltan } : { url: url, secreto: secreto };
+}
 
 // LEAD_GATE_MODE: 'shadow' (por defecto) reenvía todo lo que evalúa el motor; 'enforce' no reenvía
 // estos veredictos. Los rechazos duros y los no comerciales autodeclarados nunca se reenvían.
@@ -414,7 +426,22 @@ async function decidir(c) {
     ip: ip,
     user_agent: String(c.headers['user-agent'] || '')
   };
-  const envio = await reenviarAN8n(reenvio, c.eventId);
+  // Sin destino configurado no hay a dónde mandar el lead: error visible, nunca éxito falso
+  const destino = configDestino();
+  if (destino.faltan) {
+    liberarSlotRate(ip, ahora);
+    log.registrarError('destination_misconfigured', {
+      event_id: c.eventId, missing: destino.faltan,
+      detail: 'Faltan o son inválidas variables de entorno del destino del lead; el envío NO llegó a n8n.',
+      email_sha256: baseLog.email_sha256, phone_sha256: baseLog.phone_sha256
+    });
+    return {
+      status: 503,
+      cuerpo: { success: false, code: 'destination_error', message: 'No pudimos registrar tu solicitud. Inténtalo de nuevo en unos minutos o escríbenos por WhatsApp o a contacto@riselanding.com.' }
+    };
+  }
+
+  const envio = await reenviarAN8n(reenvio, c.eventId, destino);
   log.registrar('lead_evaluated', Object.assign({}, baseLog, {
     forwarded: envio.ok, destination_status: envio.status, attempts: envio.intentos
   }));
@@ -436,19 +463,18 @@ function esperar(ms) { return new Promise(function (r) { setTimeout(r, ms); }); 
 
 // POST a n8n con un reintento tras BACKOFF_N8N_MS. { ok, status, intentos }; status es el código
 // HTTP de la última respuesta o 'sin_respuesta' (timeout / red).
-async function reenviarAN8n(payload, eventId) {
-  const destino = process.env.N8N_WEBHOOK_URL || N8N_URL_DEFECTO;
+async function reenviarAN8n(payload, eventId, destino) {
   let status = 'sin_respuesta';
   for (let intento = 1; intento <= INTENTOS_N8N; intento++) {
     if (intento > 1) await esperar(BACKOFF_N8N_MS);
     const controlador = new AbortController();
     const temporizador = setTimeout(function () { controlador.abort(); }, TIMEOUT_N8N_MS);
     try {
-      const resp = await fetch(destino, {
+      const resp = await fetch(destino.url, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-form-secret': process.env.FORM_SHARED_SECRET || 'riselanding-form-v1',
+          'x-form-secret': destino.secreto, // n8n v5 lo exige (Header Auth); sin él responde 403
           // Para que n8n pueda deduplicar si un intento llegó pero su respuesta se perdió
           'x-rl-event-id': eventId
         },

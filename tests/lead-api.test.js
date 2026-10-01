@@ -685,3 +685,44 @@ test('spam del motor en shadow: si n8n falla también recibe 502 (en shadow sí 
   const r = await enviar(cuerpoValido({ empresa: '12345' }));
   assert.strictEqual(r.status, 502);
 });
+
+// --- Destino sin valores de respaldo (tras la rotación del webhook) ---
+
+test('el header x-form-secret lleva exactamente FORM_SHARED_SECRET', async function () {
+  await enviar(cuerpoValido());
+  assert.strictEqual(cabecerasN8n[0]['x-form-secret'], 'secreto-compartido-de-prueba');
+});
+
+test('sin N8N_WEBHOOK_URL / FORM_SHARED_SECRET (o URL no https): 503 con contacto, log de error y NUNCA éxito', async function () {
+  const escenarios = [
+    ['N8N_WEBHOOK_URL', undefined, ['N8N_WEBHOOK_URL']],
+    ['FORM_SHARED_SECRET', undefined, ['FORM_SHARED_SECRET']],
+    ['N8N_WEBHOOK_URL', 'http://n8n.test.invalid/webhook/lead', ['N8N_WEBHOOK_URL']],
+    ['FORM_SHARED_SECRET', '   ', ['FORM_SHARED_SECRET']]
+  ];
+  for (const [variable, valor, faltan] of escenarios) {
+    const previo = process.env[variable];
+    if (valor === undefined) delete process.env[variable]; else process.env[variable] = valor;
+    try {
+      reenvios = [];
+      const r = await enviar(cuerpoValido());
+      assert.strictEqual(r.status, 503, variable);
+      assert.deepStrictEqual([r.data.success, r.data.code], [false, 'destination_error']);
+      assert.match(r.data.message, /contacto@riselanding\.com/);
+      assert.strictEqual(reenvios.length, 0, 'no se intenta ningún reenvío');
+      const e = ultimoLog('destination_misconfigured', errores);
+      assert.deepStrictEqual([e.level, e.missing], ['error', faltan]);
+    } finally {
+      process.env[variable] = previo;
+    }
+  }
+});
+
+test('sin destino configurado, lo que nunca se reenvía sigue respondiendo igual (no depende del destino)', async function () {
+  delete process.env.N8N_WEBHOOK_URL;
+  assert.deepStrictEqual((await enviar(cuerpoValido({ website_url_2: 'x' }))).data, { success: true });
+  assert.strictEqual((await enviar(cuerpoValido({ solicitante: 'empleo' }))).data.outcome, 'no_comercial');
+  process.env.LEAD_GATE_MODE = 'enforce';
+  assert.strictEqual((await enviar(cuerpoValido({ empresa: '12345' }))).status, 200);
+  assert.strictEqual(reenvios.length, 0);
+});

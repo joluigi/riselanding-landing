@@ -130,8 +130,8 @@ Las respuestas 429 y 409 muestran un mensaje en español con contacto alterno (c
 
 | Variable | Efecto | Si no existe |
 |----------|--------|--------------|
-| `N8N_WEBHOOK_URL` | Destino del reenvío | URL de Railway quemada en `api/lead.js` |
-| `FORM_SHARED_SECRET` | Valor del header `x-form-secret` que se envía a n8n | `riselanding-form-v1` |
+| `N8N_WEBHOOK_URL` | Destino del reenvío (https, flujo n8n v5) | **Obligatoria, sin respaldo**: los leads reciben 503 con contacto alterno y queda un log `destination_misconfigured` (nivel error) |
+| `FORM_SHARED_SECRET` | Valor del header `x-form-secret` que exige n8n v5 (Header Auth) | **Obligatoria, sin respaldo**: igual que arriba |
 | `LEAD_GATE_MODE` | `shadow` o `enforce` (ver tabla de reenvío) | `shadow` |
 | `VENDOR_CONTACT_EMAIL` | Correo que ven proveedores/agencias al enviar | El mensaje no incluye correo |
 | `FORM_TOKEN_SECRET` | Firma HMAC del token de formulario (capas 2–4) | Capas 2–4 apagadas + warning en el log |
@@ -145,21 +145,15 @@ Todo cambio de env var requiere **Redeploy** para aplicarse.
 
 Aplica en orden; cada paso es más fuerte que el anterior.
 
-### 1) Rotar el path del webhook de n8n (+ moverlo a env var)
-La URL vieja (`…/webhook/lead-capture`) estuvo quemada en este repo público de GitHub: cualquiera la conoce.
-1. n8n (Railway) → workflow del lead → nodo **Webhook** → campo **Path**: pon algo impredecible
-   (p. ej. `lead-capture-8f3k2q9x`) → **Save**, con el workflow **Active**.
-2. Vercel → Environment Variables → `N8N_WEBHOOK_URL = https://n8n-production-417ba.up.railway.app/webhook/<nuevo-path>`
-   (entorno Production) → **Redeploy**.
-3. Haz (1) y (2) seguidos: en el hueco entre ambos, un lead real vería el error 502 con datos de contacto
-   de fallback (molesto, pero sin pérdida silenciosa).
-
-### 2) Header Auth en el nodo Webhook de n8n
-La función ya envía `x-form-secret` en cada reenvío; solo falta que n8n lo exija.
-1. PRIMERO en Vercel: define `FORM_SHARED_SECRET` con un secreto fuerte → **Redeploy**.
-2. DESPUÉS en n8n: nodo Webhook → **Authentication: Header Auth** → crea la credencial con
-   **Name** = `x-form-secret` y **Value** = el mismo secreto → Save.
-3. El orden importa: si activas n8n antes de desplegar Vercel, los leads reales verán 502 hasta sincronizar.
+### 1) y 2) Rotar el webhook de n8n y exigir Header Auth — ✅ HECHO (30-sep / 1-oct-2026)
+- Flujo n8n "v5 (Webhook protegido)": ruta nueva y Header Auth con el header `x-form-secret`; sin el
+  secreto responde 403. El flujo v4 está despublicado (la ruta vieja responde 404).
+- `N8N_WEBHOOK_URL` y `FORM_SHARED_SECRET` definidas en Vercel (Production y Preview). El código ya no
+  tiene valores de respaldo y `tests/no-secrets.test.js` falla si vuelve a aparecer una URL del hosting de
+  n8n (Railway) o un secreto escrito en el código.
+- Si hay que rotar otra vez: (a) cambia la ruta/credencial en n8n y (b) las variables en Vercel →
+  **Redeploy**, seguidos. En el hueco, los leads ven el 502/503 con contacto alterno (sin pérdida
+  silenciosa). El historial de git conserva la URL anterior, pero ya responde 404.
 
 ### 3) Activar Cloudflare Turnstile (CAPTCHA casi invisible)
 El widget ya está en el código y se pinta solo cuando `/api/form-token` entrega una site key.
