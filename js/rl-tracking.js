@@ -168,7 +168,8 @@
       vertical_fit: 'horizontal',
       time_to_convert_sec: f.t0 ? Math.max(0, Math.round((Date.now() - f.t0) / 1000)) : null,
       touch_count: ctx.touchCount,
-      days_since_first_touch: ctx.daysSinceFirstTouch
+      days_since_first_touch: ctx.daysSinceFirstTouch,
+      attribution: attribution() // click IDs + first/last touch de rl_attr, sin PII
     });
     // user_data con el formato de Google (enhanced conversions): correo, teléfono E.164 y, dentro
     // de address, nombre y apellido. Solo hashes SHA-256; sin Web Crypto se omiten, nunca en claro.

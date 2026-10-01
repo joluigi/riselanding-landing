@@ -38,6 +38,7 @@ const schema = require('../lib/lead-quality/schema.js');
 const turnstile = require('./_lib/turnstile');
 const calidad = require('./_lib/calidad');
 const idempotencia = require('./_lib/idempotencia');
+const atribucion = require('./_lib/atribucion');
 const crypto = require('crypto');
 const log = require('./_lib/log');
 
@@ -317,6 +318,8 @@ async function decidir(c) {
   const email = campo(body.email);
   const telefono = contrato.telefonoSaliente(body, datos);
   const ids = { event_id: c.eventId, lead_id: c.leadId };
+  // Atribución (cookie rl_attr, filtrada) solo para el log: nunca viaja a n8n
+  const attribution = atribucion.desdeCookie(c.headers.cookie);
 
   // 6) Rate limit por IP
   if (superaRateLimit(ip, ahora)) {
@@ -347,6 +350,7 @@ async function decidir(c) {
     log.registrar('lead_not_forwarded', {
       event_id: c.eventId,
       lead_quality_flag: datos.flagSolicitante,
+      attribution: attribution,
       email_sha256: log.sha256(datos.email),
       phone_sha256: log.sha256Telefono(datos.telefonoE164 || datos.telefono)
     });
@@ -392,6 +396,7 @@ async function decidir(c) {
     spam_points: veredicto.spam_points,
     signals: veredicto.signals,
     email_domain_type: veredicto.email_domain_type,
+    attribution: attribution,
     email_sha256: log.sha256(datos.email),
     phone_sha256: log.sha256Telefono(datos.telefonoE164 || datos.telefono)
   };

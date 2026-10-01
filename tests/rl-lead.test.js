@@ -258,3 +258,13 @@ test('dataLayer completo del flujo: ningún valor contiene PII en claro y user_d
     delete globalThis.__rl; delete globalThis.document; delete globalThis.dataLayer;
   }
 });
+
+test('Fase 6: rl_lead_submit incluye la atribución de rl_attr (sin PII)', async function () {
+  const attr = { gclid: 'gclid-sintetico', ft: { source: 'google', medium: 'cpc', utm_id: '123', referrer: 'https://www.google.com', landing_page: '/' }, lt: { source: '(direct)', medium: '(none)' }, tc: 3 };
+  globalThis.document = { cookie: 'rl_attr=' + encodeURIComponent(JSON.stringify(attr)) };
+  globalThis.__rl = { leadId: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', touchCount: 3, daysSinceFirstTouch: 5 };
+  try {
+    const p = await RL.buildLeadSubmit({ email: 'a@empresa.mx', verdict: VEREDICTO_A });
+    assert.deepStrictEqual(p.attribution, { gclid: 'gclid-sintetico', first_touch: attr.ft, last_touch: attr.lt, touch_count: 3, days_since_first_touch: 5 });
+  } finally { delete globalThis.document; delete globalThis.__rl; }
+});

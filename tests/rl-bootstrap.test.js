@@ -169,3 +169,35 @@ test('site.environment: production solo en el dominio real (guarda G5)', functio
   assert.strictEqual(env('127.0.0.1'), 'development');
   assert.strictEqual(env(''), 'development');
 });
+
+test('Fase 6: utm_id y referrer (solo origen) se agregan al toque sin romper las llaves existentes', function () {
+  const r = run({
+    search: '?utm_source=google&utm_medium=cpc&utm_campaign=marca&utm_id=1234567',
+    referrer: 'https://www.google.com/search?q=correo%40ejemplo.mx&x=1'
+  });
+  const ctx = ctxEvent(r.dl);
+  const lt = ctx.traffic.last_touch;
+  ['source', 'medium', 'campaign', 'content', 'term', 'timestamp', 'landing_page'].forEach(function (k) {
+    assert.ok(k in lt, 'se conserva la llave ' + k);
+  });
+  assert.strictEqual(lt.utm_id, '1234567');
+  assert.strictEqual(lt.referrer, 'https://www.google.com', 'solo el origen, sin ruta ni query');
+  assert.deepStrictEqual(ctx.traffic.first_touch, lt);
+  const cookie = JSON.parse(decodeURIComponent(r.jar.rl_attr));
+  assert.strictEqual(cookie.lt.utm_id, '1234567');
+  assert.ok(decodeURIComponent(r.jar.rl_attr).indexOf('correo') === -1, 'el query del referrer no se guarda');
+});
+
+test('Fase 6: referrer interno o ausente → null; un first_touch viejo (sin las llaves nuevas) no se reescribe', function () {
+  const interno = ctxEvent(run({ referrer: 'https://riselanding.com/aviso-de-privacidad' }).dl);
+  assert.strictEqual(interno.traffic.last_touch.referrer, null);
+  assert.strictEqual(interno.traffic.last_touch.utm_id, null);
+  const viejo = { source: 'google', medium: 'cpc', campaign: 'x', content: null, term: null, timestamp: '2026-08-01T00:00:00.000Z', landing_page: '/' };
+  const r = run({
+    cookies: { rl_lid: seed({ id: '3f8a91c2-6d4e-4b17-9a05-2ce8f1b74d30', fs: '2026-08-01T00:00:00.000Z', sc: 1 }), rl_attr: seed({ ft: viejo, lt: viejo, tc: 1 }) },
+    search: '?utm_source=meta&utm_medium=paid_social&utm_id=99'
+  });
+  const ctx = ctxEvent(r.dl);
+  assert.deepStrictEqual(ctx.traffic.first_touch, viejo, 'first_touch intacto');
+  assert.strictEqual(ctx.traffic.last_touch.utm_id, '99');
+});

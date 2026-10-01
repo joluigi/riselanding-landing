@@ -63,6 +63,10 @@
   var ref = document.referrer || '';
   var refExterno = !!ref && ref.indexOf(location.hostname) === -1;
   var identificable = !!(qs.get('utm_source') || qs.get('utm_medium') || hasClickId || refExterno);
+  // Del referrer externo solo se guarda el origen (esquema + dominio): la ruta o el query de un
+  // sitio ajeno podrían traer datos personales
+  var refOrigen = null;
+  if (refExterno) { try { refOrigen = new URL(ref).origin; } catch (e) { refOrigen = null; } }
   function touchActual() {
     var src = qs.get('utm_source'), med = qs.get('utm_medium');
     if (!src) {
@@ -77,7 +81,9 @@
     return {
       source: src || '(direct)', medium: med || '(none)',
       campaign: qs.get('utm_campaign') || null, content: qs.get('utm_content') || null,
-      term: qs.get('utm_term') || null, timestamp: now.toISOString(), landing_page: location.pathname
+      term: qs.get('utm_term') || null, timestamp: now.toISOString(), landing_page: location.pathname,
+      // Aditivos (Fase 6 del lead quality gate): no cambian las llaves anteriores
+      utm_id: qs.get('utm_id') || null, referrer: refOrigen
     };
   }
   if (newSession) {

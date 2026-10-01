@@ -70,7 +70,8 @@ async function enviar(body, opciones) {
   const res = respuestaFalsa();
   await lead({
     method: 'POST',
-    headers: { 'x-form-token': 'rl1', 'x-forwarded-for': o.ip || ('203.0.113.' + (++ipSeq % 250)), 'user-agent': 'node-test' },
+    headers: Object.assign({ 'x-form-token': 'rl1', 'x-forwarded-for': o.ip || ('203.0.113.' + (++ipSeq % 250)), 'user-agent': 'node-test' },
+      o.cookie ? { cookie: o.cookie } : {}),
     body: body
   }, res);
   return { status: res.statusCode, data: JSON.parse(res.cuerpo), headers: res.headers };
@@ -725,4 +726,40 @@ test('sin destino configurado, lo que nunca se reenvía sigue respondiendo igual
   process.env.LEAD_GATE_MODE = 'enforce';
   assert.strictEqual((await enviar(cuerpoValido({ empresa: '12345' }))).status, 200);
   assert.strictEqual(reenvios.length, 0);
+});
+
+// --- Fase 6: atribución en el log del servidor, nunca en el payload de n8n ---
+
+function cookieAttr(obj) { return 'rl_lid=x; rl_attr=' + encodeURIComponent(JSON.stringify(obj)) + '; otra=1'; }
+
+test('Fase 6: lead_evaluated y lead_not_forwarded llevan la atribución filtrada; n8n no la recibe', async function () {
+  const attr = {
+    gclid: 'gclid-sintetico', fbclid: 'x'.repeat(500), basura: 'no-debe-pasar',
+    ft: { source: 'google', medium: 'cpc', campaign: 'marca', utm_id: '123', referrer: 'https://www.google.com/search?q=ana%40example.mx', landing_page: '/', extra: 'fuera' },
+    lt: { source: 'meta', medium: 'paid_social', referrer: 'javascript:alert(1)' },
+    tc: 3
+  };
+  await enviar(cuerpoValido(), { cookie: cookieAttr(attr) });
+  const l = ultimoLog('lead_evaluated');
+  assert.deepStrictEqual(l.attribution, {
+    gclid: 'gclid-sintetico', fbclid: 'x'.repeat(200),
+    first_touch: { source: 'google', medium: 'cpc', campaign: 'marca', utm_id: '123', referrer: 'https://www.google.com', landing_page: '/' },
+    last_touch: { source: 'meta', medium: 'paid_social' },
+    touch_count: 3
+  });
+  assert.deepStrictEqual(Object.keys(reenvios[0]).sort(), LLAVES_CONTRATO);
+  assert.ok(JSON.stringify(reenvios[0]).indexOf('gclid-sintetico') === -1, 'la atribución no viaja a n8n');
+  assert.ok(logs.join('\n').indexOf('ana%40example') === -1 && logs.join('\n').indexOf('ana@example') === -1);
+
+  await enviar(cuerpoValido({ solicitante: 'personal' }), { cookie: cookieAttr(attr) });
+  assert.strictEqual(ultimoLog('lead_not_forwarded').attribution.gclid, 'gclid-sintetico');
+});
+
+test('Fase 6: sin cookie o con cookie corrupta, attribution = {} y el envío sigue', async function () {
+  let r = await enviar(cuerpoValido());
+  assert.strictEqual(r.status, 200);
+  assert.deepStrictEqual(ultimoLog('lead_evaluated').attribution, {});
+  r = await enviar(cuerpoValido(), { cookie: 'rl_attr=%7Bnope' });
+  assert.strictEqual(r.status, 200);
+  assert.deepStrictEqual(ultimoLog('lead_evaluated').attribution, {});
 });
