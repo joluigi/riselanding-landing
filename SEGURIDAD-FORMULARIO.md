@@ -176,26 +176,32 @@ El widget ya está en el código y se pinta solo cuando `/api/form-token` entreg
 
 ## Probar con curl
 
+Envíos reales que llegan a n8n: **siempre** con nombre "Prueba Riselanding" y el correo
+`jose.vazquez@riselanding.com` (buzón real: n8n manda correo de bienvenida y un buzón inexistente
+rebota y daña la reputación de envío del dominio). Borra la fila de Notion después.
+
 ```bash
-# — Envío VÁLIDO (crea una fila real en Notion; bórrala después) —
+# — Envío VÁLIDO (crea una fila real en Notion y dispara el correo de bienvenida) —
 # Solo funciona con Turnstile apagado; con Turnstile, prueba desde el navegador.
-TOKEN=$(curl -s https://riselanding.com/api/form-token | node -pe 'JSON.parse(require("fs").readFileSync(0)).form_token')
+BASE=https://riselanding.com
+TOKEN=$(curl -s $BASE/api/form-token | node -pe 'JSON.parse(require("fs").readFileSync(0)).form_token')
 sleep 5   # el servidor descarta envíos a menos de 4 s de emitido el token
-curl -s https://riselanding.com/api/lead \
-  -H 'Content-Type: application/json' -H 'X-Form-Token: rl1' \
-  -d "{\"nombre\":\"Prueba Curl\",\"empresa\":\"Rise\",\"email\":\"prueba@riselanding.com\",
-      \"telefono\":\"+52 55 0000 0000\",\"mensaje\":\"Prueba de humo\",
-      \"interes_pilar\":\"CRM + Automatización\",\"form_token\":\"$TOKEN\",\"website_url_2\":\"\"}"
-# Esperado: {"success":true} Y una fila nueva en Notion.
+curl -s $BASE/api/lead -H 'Content-Type: application/json' -H 'X-Form-Token: rl1' -d @- <<JSON
+{"solicitante":"empresa","nombre":"Prueba","apellido":"Riselanding","email":"jose.vazquez@riselanding.com",
+ "telefono":"55 0000 0000","telefono_pais":"MX","empresa":"Prueba Riselanding QA","sitio_web":"",
+ "tamano":"1_10","servicios":["Implementación de CRM"],"presupuesto":"sin_definir",
+ "necesidad":"Prueba Riselanding por curl, borrar esta fila.","consentimiento":true,
+ "form_token":"$TOKEN","website_url_2":""}
+JSON
+# Esperado: {"success":true,"lead_quality_flag":…,"event_id":…} y una fila nueva en Notion.
 ```
 
 ```bash
 # — BOT (sin token): éxito falso, no reenvía —
-curl -s https://riselanding.com/api/lead \
-  -H 'Content-Type: application/json' -H 'X-Form-Token: rl1' \
-  -d '{"nombre":"Bot","email":"bot@spam.invalid","telefono":"5500000000"}'
+curl -s https://riselanding.com/api/lead -H 'Content-Type: application/json' -d '{"nombre":"Bot"}'
 # Esperado: {"success":true} pero CERO filas en Notion
 # y una línea {"evento":"lead_blocked","reason":"bad_form_token",…} en Vercel → Logs.
 ```
 
-Para no ensuciar producción, ambos curl funcionan igual contra la URL de un preview deploy.
+Para no ensuciar producción, ambos curl funcionan igual contra la URL de un preview deploy
+(protegido: usa `vercel curl` o el token OIDC).
