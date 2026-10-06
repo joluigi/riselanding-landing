@@ -4,13 +4,13 @@ Rama: `feat/lead-quality-gate` → `main` (Vercel publica `main` en Production a
 Objetivo: publicar el gate en **shadow** para que empiece el periodo de observación. Las fases 6–9
 van en PRs posteriores.
 
-Última actualización: 1-oct-2026 (release sin Turnstile; Turnstile a las +48 h).
+Última actualización: 5-oct-2026 (aviso aprobado por legal; release sin Turnstile; Turnstile a las +48 h).
 
 ## 1. Estado de los bloqueantes
 
 | # | Bloqueante | Estado |
 |---|---|---|
-| 1 | Aprobación legal del aviso de privacidad (`b2e450a`) | ⛔ **Pendiente.** El formulario nuevo recaba datos (tipo de solicitante, sitio, presupuesto, necesidad) que el aviso publicado no menciona. Sin aprobación **no se publica**. |
+| 1 | Aprobación legal del aviso de privacidad | ✅ **Cumplido.** Aviso aprobado el 5-oct-2026 con los ajustes de `93b4756` (sobre `b2e450a` y `2efc019`). Solo falta poner la fecha real el día del release (paso 1). |
 | 2 | `FORM_TOKEN_SECRET` en Production | ⛔ **Pendiente.** Sin él, la capa de token y tiempo mínimo queda apagada (no rompe, pero no protege). |
 | 3 | `N8N_WEBHOOK_URL` y `FORM_SHARED_SECRET` en Production | ✅ Definidas (rotación del 30-sep/1-oct: n8n v5 con Header Auth; v4 despublicado). El código **ya no tiene valores de respaldo**: sin ellas, los leads reciben 503. |
 | 4 | Turnstile | **No entra al release.** Se publica sin `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` y se activa 48 h después si todo está estable (sección 5). |
@@ -30,7 +30,7 @@ Ninguna de las fases 6–9 es bloqueante:
 | `44334e9` | `turnstile_misconfigured` y telemetría de fricción | ✅ |
 | `f437146` | Fase 2: campos nuevos y validación compartida | ✅ |
 | `2561a58` | `phone_sha256` consistente en logs | ✅ |
-| `b2e450a` | Aviso de privacidad — **REQUIERE REVISIÓN LEGAL** | ✅ **solo con aprobación legal confirmada**; sin ella el release se bloquea |
+| `b2e450a` | Aviso de privacidad: datos nuevos, Turnstile, MX | ✅ (aprobado con los ajustes de `93b4756`) |
 | `73b1949` | `rl_non_commercial_submit` y "¿Elegiste mal? Cambia la opción" | ✅ |
 | `170f337` | Fase 3: motor de calidad | ✅ |
 | `604f760` | Motor: teclado, URLs propias, vocabulario del negocio | ✅ |
@@ -39,7 +39,8 @@ Ninguna de las fases 6–9 es bloqueante:
 | `aa373f7` | Fase 5: `user_data` con nombre/apellido y E.164 | ✅ |
 | `c23fd89` | Sin valores de respaldo del destino + check de secretos | ✅ (rotación confirmada) |
 | `d73f745`, `c0928d3` | Documentación (este checklist, correo de pruebas, auth de git) | ✅ |
-| `2efc019` | Aviso: conservación temporal de bloqueadas por el filtro — **REQUIERE REVISIÓN LEGAL** | ✅ **solo con aprobación legal** (junto con `b2e450a`) |
+| `2efc019` | Aviso: conservación temporal de bloqueadas (retirada después en `93b4756`) | ✅ (forma parte del historial aprobado) |
+| `93b4756` | Aviso: ajustes de revisión legal — **aprobado para release** (5-oct-2026) | ✅ |
 | `d92cb62` | Fase 6: `utm_id`/`referrer` en `rl_attr`; atribución en `rl_lead_submit` y en el log | ✅ (lista y probada) |
 | — | Baja de `/index-legacy` y `Form/` | ❌ No creado; va aparte |
 
@@ -49,7 +50,7 @@ Correo para envíos de prueba que llegan a n8n: **`jose.vazquez@riselanding.com`
 nombre "Prueba Riselanding" (n8n manda correo de bienvenida; un buzón inexistente rebota y daña la
 reputación de envío del dominio).
 
-1. **Aprobación legal** de `b2e450a` y `2efc019`. Si legal pide cambios, se aplican en un commit nuevo antes del merge.
+1. **Fecha del aviso.** En `aviso-de-privacidad.html` reemplaza `[FECHA DEL RELEASE]` por la fecha real del release (formato `6 DE OCTUBRE DE 2026`), commit en la rama, y ejecuta `npm run check:release`: debe responder "✔ Listo para release". El aviso ya está aprobado por legal (5-oct-2026); no cambies otro texto sin nueva revisión.
 2. **Variables en Vercel → Settings → Environment Variables → Production.** Aplican solo en el siguiente deploy:
    - `FORM_TOKEN_SECRET`: nuevo y **distinto** del de Preview:
      `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`
@@ -157,6 +158,17 @@ Sin crear un lead real ni una conversión:
 
 Ver el criterio en `SEGURIDAD-FORMULARIO.md`: mínimo 2–4 semanas en shadow, revisión de falsos positivos con el sufijo "Calidad" y destino de descartados funcionando. Prioritario fuera del repo: deduplicación en n8n por `x-rl-event-id`.
 
+**Requisito obligatorio adicional:** actualizar el aviso de privacidad para describir la conservación de hasta 30 días de los descartados en Google Workspace (Google LLC como encargado) y publicarlo antes o junto con la activación.
+
+Borrador de referencia (texto retirado del aviso en la revisión legal del 5-oct-2026; requiere nueva revisión antes de usarlo):
+
+- §02, después del párrafo de "Solicitudes que no se registran en nuestro CRM":
+  > Las solicitudes que nuestros filtros automáticos de calidad bloqueen tampoco se registran en el CRM, pero **podrán conservarse hasta 30 días**, solo con los datos mínimos de contacto (nombre, correo, teléfono y empresa) y el resultado de la evaluación, con la única finalidad de revisar y corregir errores del filtro. Al vencer ese plazo se eliminan. Este almacenamiento lo realiza Google LLC como encargado (ver sección 05).
+- §03, finalidad primaria 5, después de "…para distinguir solicitudes comerciales de envíos no válidos":
+  > , así como la revisión temporal de las solicitudes que esa evaluación bloquee para corregir sus errores
+- §05, antes del párrafo de Cloudflare:
+  > **Google LLC** (Estados Unidos), a través de Google Workspace, actúa como encargado del almacenamiento temporal de las solicitudes bloqueadas por nuestros filtros automáticos de calidad descrito en la sección 02: trata esos datos solo por cuenta y bajo las instrucciones del Responsable, durante un máximo de 30 días.
+
 ### Propuesta de contrato del webhook de descartados (n8n → Google Sheet)
 
 Solo para lo que enforce no reenvía (spam del motor y `competitor` por agency-denylist). Se enviaría a `N8N_DISCARD_WEBHOOK_URL` con los headers `x-form-secret` y `x-rl-event-id`:
@@ -180,4 +192,4 @@ Solo para lo que enforce no reenvía (spam del motor y `competitor` por agency-d
 
 - Solo los 4 datos de contacto mínimos para rescatar un falso positivo. Sin IP, sin user agent y sin el mensaje completo. Los rechazos duros (bots) no se envían.
 - Retención: borrado automático a los 30 días en la Sheet.
-- **Requisito legal:** cubierto por `2efc019` (en revisión legal): las bloqueadas por el filtro "podrán conservarse hasta 30 días" con datos mínimos, y Google LLC (Google Workspace) como encargado.
+- **Requisito legal:** el aviso aprobado (5-oct-2026) **no** describe este almacenamiento; hay que actualizarlo con el borrador de arriba (y nueva revisión legal) antes o junto con la activación.

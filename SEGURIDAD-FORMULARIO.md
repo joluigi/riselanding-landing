@@ -41,7 +41,7 @@ en Notion o los logs de Vercel.
 En `shadow` cada nota lleva al final ` · Calidad: {flag}/{tier} {score}` (p. ej. `· Calidad: suspect/C 40`).
 En `enforce` no se agrega.
 
-### Criterio para pasar a enforce (los tres, no uno)
+### Criterio para pasar a enforce (los cuatro, no uno)
 
 `enforce` **no se activa** hasta cumplir todo esto:
 
@@ -57,6 +57,9 @@ En `enforce` no se agrega.
    de Vercel (en Hobby, del orden de una hora) y un falso positivo sería irrecuperable. Recomendado
    también antes de producción: que n8n deduplique por el header `x-rl-event-id` (la idempotencia en
    memoria de la función no alcanza entre instancias serverless).
+4. **Aviso de privacidad actualizado y publicado** antes o junto con la activación: debe describir la
+   conservación de hasta 30 días de los descartados en Google Workspace (Google LLC como encargado).
+   El aviso aprobado el 5-oct-2026 no lo incluye; hay un borrador en `docs/RELEASE-SHADOW.md` §8.
 
 ### Cómo pasar de shadow a enforce (cuando se cumpla el criterio)
 1. Vercel → Settings → Environment Variables → `LEAD_GATE_MODE = enforce` (Production) → **Redeploy**.
