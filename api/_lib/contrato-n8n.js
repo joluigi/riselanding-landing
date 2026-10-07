@@ -21,8 +21,11 @@ function utmTexto(body) {
   }).filter(Boolean).join(' ');
 }
 
+// Nombre completo (un campo) → "primera palabra + ' ' + resto", igual que cuando el formulario
+// tenía Nombre y Apellido por separado. Si llega "apellido" aparte (clientes viejos), se une.
 function nombreSaliente(body) {
-  return (texto(body.nombre) + ' ' + texto(body.apellido)).trim();
+  const partes = schema.separarNombre(texto(body.nombre) + ' ' + texto(body.apellido));
+  return (partes.nombre + ' ' + partes.apellido).trim();
 }
 
 // México: tal cual lo tecleó la persona (como hoy). Otro país sin "+": se antepone su

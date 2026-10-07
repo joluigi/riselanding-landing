@@ -18,12 +18,18 @@ const TEL_OK = '55 0000 0000';
 const CRM = ['Implementación de CRM'];
 const MSG_OK = 'Queremos ordenar el seguimiento de prospectos en un CRM.';
 
+// Los fixtures usan el nombre completo (un solo campo, como el formulario de 2 pasos); se divide
+// igual que en el servidor: primera palabra = nombre, resto = apellido.
 function lead(extra) {
-  return Object.assign({
-    solicitante: 'empresa', nombre: 'Ana', apellido: 'Prueba', email: 'ana@empresa-sintetica.example',
+  const e = Object.assign({
+    solicitante: 'empresa', nombre_completo: 'Ana Prueba', email: 'ana@empresa-sintetica.example',
     telefono: TEL_OK, telefono_pais: 'MX', empresa: 'Empresa Sintética Uno', sitio_web: '',
     tamano: '1_10', servicios: CRM, presupuesto: 'sin_definir', necesidad: MSG_OK
   }, extra || {});
+  const partes = S.separarNombre(e.nombre_completo);
+  e.nombre = partes.nombre; e.apellido = partes.apellido;
+  delete e.nombre_completo;
+  return e;
 }
 function evaluar(extra) { return E.evaluateLead(lead(extra), { listas: LISTAS }); }
 
@@ -35,7 +41,7 @@ test('F1 · "Q Q", empresa "Q", tel 1234567890, correo sin relación, 200+ → s
   //   (el nombre no tiene palabras de 3+ letras) = 5 ≥ 3 → spam
   // lead_score: empresa 20 · empresa válida 0 ("Q" < 2 caracteres) · tamaño 0 (empresa no válida)
   //   · 1 servicio 5 · mensaje 10 · teléfono inválido 0 = 35 → C
-  const r = evaluar({ nombre: 'Q', apellido: 'Q', empresa: 'Q', telefono: '1234567890', email: 'zx9071@gmail.com', tamano: '200_plus' });
+  const r = evaluar({ nombre_completo: 'Q Q', empresa: 'Q', telefono: '1234567890', email: 'zx9071@gmail.com', tamano: '200_plus' });
   assert.deepStrictEqual(r.signals, ['name_single_letters', 'phone_invalid_prefix_1']);
   assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier], [5, 'spam', 35, 'C']);
 });
@@ -45,7 +51,7 @@ test('F2 · "Xkxkxkxlxlx 4prtqrk", empresa = teléfono de 11 dígitos, 6 servici
   //   · phone_invalid_len_11 +2 · all_services +1 · email_name_mismatch +1 (gratuito; "qq" no
   //   contiene "xkxkxkxlxlx" ni "prtqrk") = 10 → spam
   // lead_score: empresa 20 · 0 servicios en rango (6 marcados) · mensaje 10 = 30 → C
-  const r = evaluar({ nombre: 'Xkxkxkxlxlx', apellido: '4prtqrk', empresa: '55000000001', telefono: '55000000001', email: 'qq12@gmail.com', servicios: S.SERVICIOS.slice() });
+  const r = evaluar({ nombre_completo: 'Xkxkxkxlxlx 4prtqrk', empresa: '55000000001', telefono: '55000000001', email: 'qq12@gmail.com', servicios: S.SERVICIOS.slice() });
   assert.deepStrictEqual(r.signals, ['name_random', 'company_equals_phone', 'phone_invalid_len_11', 'all_services', 'email_name_mismatch']);
   assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier], [10, 'spam', 30, 'C']);
 });
@@ -57,7 +63,7 @@ test('F3 · "Laura Méndez", empresa "Qwqwerty", lm4821@gmail.com → spam (secu
   //   (Sin la regla de teclado eran 2 → suspect.)
   // lead_score: empresa 20 · empresa válida 10 (no está en la lista basura) · 1–10 3 · 1 servicio 5
   //   · mensaje 10 · teléfono 5 = 53 → B
-  const r = evaluar({ nombre: 'Laura', apellido: 'Méndez', empresa: 'Qwqwerty', email: 'lm4821@gmail.com' });
+  const r = evaluar({ nombre_completo: 'Laura Méndez', empresa: 'Qwqwerty', email: 'lm4821@gmail.com' });
   assert.deepStrictEqual(r.signals, ['keyboard_sequence', 'company_pair_repeat', 'email_name_mismatch']);
   assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier], [3, 'spam', 53, 'B']);
 });
@@ -66,7 +72,7 @@ test('F4 · "Diana Ruiz", empresa "Bro", tel de 8 dígitos, zorro991@gmail.com, 
   // spam_points: phone_invalid_len_8 +2 · company_junk +1 · company_junk_large_size +1
   //   · email_name_mismatch +1 ("zorro" no contiene "diana" ni "ruiz") = 5 → spam
   // lead_score: empresa 20 · 1 servicio 5 · mensaje 10 = 35 → C (además, forzado por empresa basura)
-  const r = evaluar({ nombre: 'Diana', apellido: 'Ruiz', empresa: 'Bro', telefono: '55000000', email: 'zorro991@gmail.com', tamano: '51_200' });
+  const r = evaluar({ nombre_completo: 'Diana Ruiz', empresa: 'Bro', telefono: '55000000', email: 'zorro991@gmail.com', tamano: '51_200' });
   assert.deepStrictEqual(r.signals, ['phone_invalid_len_8', 'company_junk', 'company_junk_large_size', 'email_name_mismatch']);
   assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier], [5, 'spam', 35, 'C']);
 });
@@ -76,7 +82,7 @@ test('F5 · "Marta Solís", empresa "Ama de casa", martasolis77@gmail.com, tel v
   // lead_score: empresa 20 · empresa no válida 0 · tamaño 0 · 1 servicio 5 · mensaje 10
   //   · teléfono 5 = 40 → B, pero la empresa basura FUERZA tier C
   // flag: correo gratuito sin sitio y tier C → suspect
-  const r = evaluar({ nombre: 'Marta', apellido: 'Solís', empresa: 'Ama de casa', email: 'martasolis77@gmail.com' });
+  const r = evaluar({ nombre_completo: 'Marta Solís', empresa: 'Ama de casa', email: 'martasolis77@gmail.com' });
   assert.deepStrictEqual(r.signals, ['company_junk', 'email_name_match', 'tier_forced_c_company_junk', 'free_email_no_site_tier_c']);
   assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier], [0, 'suspect', 40, 'C']);
 });
@@ -85,7 +91,7 @@ test('F6 · "Pablo Ríos", empresa "Nada", pabloriosx@gmail.com, tel válido, CR
   // spam_points: company_junk +1 · email_name_match −1 ("pabloriosx" contiene "pablo") = 0
   // lead_score: empresa 20 · empresa no válida 0 · 11–50 no suma (empresa no válida) · 1 servicio 5
   //   · mensaje 10 · teléfono 5 = 40 → B → forzado a C por empresa basura
-  const r = evaluar({ nombre: 'Pablo', apellido: 'Ríos', empresa: 'Nada', email: 'pabloriosx@gmail.com', tamano: '11_50' });
+  const r = evaluar({ nombre_completo: 'Pablo Ríos', empresa: 'Nada', email: 'pabloriosx@gmail.com', tamano: '11_50' });
   assert.deepStrictEqual(r.signals, ['company_junk', 'email_name_match', 'tier_forced_c_company_junk', 'free_email_no_site_tier_c']);
   assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier], [0, 'suspect', 40, 'C']);
 });
@@ -105,7 +111,7 @@ test('F8 · "Mi empresa", Transportes Norte, correo y sitio del mismo dominio, 1
   const mensaje = 'Queremos más cotizaciones de clientes del Bajío por WhatsApp';
   assert.strictEqual(mensaje.length, 60);
   const r = evaluar({
-    nombre: 'Ana', apellido: 'Robles', empresa: 'Transportes Norte', email: 'ana@transportesnorte.example',
+    nombre_completo: 'Ana Robles', empresa: 'Transportes Norte', email: 'ana@transportesnorte.example',
     sitio_web: S.normalizarSitio('transportesnorte.example').valor, tamano: '11_50', presupuesto: '10k_25k', necesidad: mensaje
   });
   assert.deepStrictEqual(r.signals, []);
@@ -116,7 +122,7 @@ test('F9 · "Mi empresa", Agencia Aduanal Vega, Gmail que coincide con el nombre
   // spam_points: email_name_match −1 ("sofiavegaaduanal" contiene "sofia" y "vega") = −1
   // lead_score: empresa 20 · empresa válida 10 · 1–10 3 · "Aún no lo defino" 0 · 1 servicio 5
   //   · mensaje 10 · teléfono 5 = 53 → B · gratuito sin sitio pero tier B → clean
-  const r = evaluar({ nombre: 'Sofía', apellido: 'Vega', empresa: 'Agencia Aduanal Vega', email: 'sofia.vega.aduanal@gmail.com' });
+  const r = evaluar({ nombre_completo: 'Sofía Vega', empresa: 'Agencia Aduanal Vega', email: 'sofia.vega.aduanal@gmail.com' });
   assert.deepStrictEqual(r.signals, ['email_name_match']);
   assert.deepStrictEqual([r.spam_points, r.lead_quality_flag, r.lead_score, r.lead_tier, r.email_domain_type], [-1, 'clean', 53, 'B', 'free']);
 });
@@ -127,7 +133,7 @@ test('par repetido en empresa: +1 solo (suspect, no spam); +2 con otra señal al
   const solo = evaluar({ empresa: 'Papelería Papalote' });
   assert.deepStrictEqual([solo.spam_points, solo.lead_quality_flag], [1, 'suspect']);
   assert.ok(solo.signals.indexOf('company_pair_repeat') !== -1);
-  const conNombre = evaluar({ empresa: 'Ufufijdic', nombre: 'Xkxkxk' }); // name_random +3 y par +2
+  const conNombre = evaluar({ empresa: 'Ufufijdic', nombre_completo: 'Xkxkxk Prueba' }); // name_random +3 y par +2
   assert.strictEqual(conNombre.spam_points, 5);
   const conAleatoria = evaluar({ empresa: 'Qwqw Xjkzt' }); // company_random +2; el par no suma encima
   assert.deepStrictEqual([conAleatoria.spam_points, conAleatoria.signals.slice(0, 2)], [2, ['company_random', 'company_pair_repeat']]);
@@ -158,7 +164,7 @@ test('agency-denylist: dominio del correo o del sitio → competitor', function 
 });
 
 test('precedencia: spam gana a solicitante no comercial; bot_signal → spam directo', function () {
-  assert.strictEqual(evaluar({ solicitante: 'personal', nombre: 'T', apellido: 'T', telefono: '55000000' }).lead_quality_flag, 'spam');
+  assert.strictEqual(evaluar({ solicitante: 'personal', nombre_completo: 'T T', telefono: '55000000' }).lead_quality_flag, 'spam');
   const b = evaluar({ bot_signal: 'honeypot' });
   assert.deepStrictEqual([b.lead_quality_flag, b.signals[0]], ['spam', 'bot_honeypot']);
 });
@@ -206,7 +212,7 @@ test('señales de auditoría externas se agregan sin puntos', function () {
 });
 
 test('ninguna salida trae PII: solo códigos legibles', function () {
-  const r = evaluar({ nombre: 'Diana', apellido: 'Ruiz', empresa: 'Bro', email: 'zorro991@gmail.com', telefono: '55000000' });
+  const r = evaluar({ nombre_completo: 'Diana Ruiz', empresa: 'Bro', email: 'zorro991@gmail.com', telefono: '55000000' });
   const txt = JSON.stringify(r);
   ['diana', 'ruiz', 'zorro', '55000000'].forEach(function (x) { assert.ok(txt.toLowerCase().indexOf(x) === -1, x); });
   r.signals.forEach(function (s) { assert.match(s, /^[a-z0-9_]+$/); });
@@ -215,15 +221,15 @@ test('ninguna salida trae PII: solo códigos legibles', function () {
 // --- Ajustes de la Fase 3 aprobada: teclado, URLs propias, vocabulario del negocio ---
 
 test('keyboard_sequence: 5+ teclas seguidas de una fila, en cualquier dirección, en nombre y empresa', function () {
-  const casos = [['empresa', 'Asdfg Consultores'], ['empresa', 'Poiuy Studio'], ['empresa', 'Ñlkjh'], ['empresa', 'Zxcvb'], ['nombre', 'Qwerty']];
+  const casos = [['empresa', 'Asdfg Consultores'], ['empresa', 'Poiuy Studio'], ['empresa', 'Ñlkjh'], ['empresa', 'Zxcvb'], ['nombre_completo', 'Qwerty Prueba']];
   casos.forEach(function (c) {
     const extra = {}; extra[c[0]] = c[1];
     const r = evaluar(extra);
     assert.ok(r.signals.indexOf('keyboard_sequence') !== -1, c[1]);
-    assert.strictEqual(r.spam_points, c[0] === 'nombre' ? 3 : 2, c[1]);
+    assert.strictEqual(r.spam_points, c[0] === 'nombre_completo' ? 3 : 2, c[1]);
   });
   // Nombre con ambas reglas (palabra aleatoria y teclado): +3 una sola vez
-  const doble = evaluar({ nombre: 'Qwertyqwerty', apellido: 'Sdfghjk' });
+  const doble = evaluar({ nombre_completo: 'Qwertyqwerty Sdfghjk' });
   assert.strictEqual(doble.spam_points, 3);
 });
 
@@ -300,4 +306,11 @@ test('URLs .mx y .com.mx: se detectan en el mensaje y como propias; "S.A. de C.V
   });
   // Pero un dominio .mx como nombre de empresa sí es URL en empresa
   assert.ok(evaluar({ empresa: 'ejemplo-qa-uno.com.mx' }).signals.indexOf('url_in_company') !== -1);
+});
+
+test('mensaje de 20+ caracteres sin tecleo al azar suma +10 (antes 30)', function () {
+  // Base sin mensaje: 20 + 10 + corporativo 15 + 1–10 3 + 1 servicio 5 + teléfono 5 = 58
+  assert.strictEqual(evaluar({ necesidad: 'Queremos más ventas' }).lead_score, 58);        // 19 caracteres
+  assert.strictEqual(evaluar({ necesidad: 'Queremos más ventas.' }).lead_score, 68);       // 20 caracteres
+  assert.strictEqual(evaluar({ necesidad: 'Queremos sdfghjk ventas' }).lead_score, 58);    // 20+ pero con tecleo al azar
 });

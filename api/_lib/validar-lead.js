@@ -56,6 +56,7 @@ function agregarError(v, campo, codigo) {
 async function validarLead(body) {
   const v = schema.validar(body, { listas: LISTAS });
   const d = v.datos;
+  if (!d.comercial) return v; // no comercial: sin datos de contacto que verificar
 
   // Teléfono fuera de México: libphonenumber (metadata mínima) decide y normaliza a E.164
   const errorTel = v.errores.some(function (e) { return e.campo === 'telefono'; });

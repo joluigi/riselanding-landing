@@ -15,8 +15,9 @@
 //      fake success; Cloudflare caído → sigue (turnstile_unavailable); secreto
 //      inválido → sigue con log de error (turnstile_misconfigured). Va después de
 //      validar para no consumir el token de un solo uso en un envío que devuelve 422.
-//   5. Solicitantes no comerciales (proyecto personal, empleo, proveedor): mensaje propio,
-//      log con su lead_quality_flag y SIN reenvío a n8n.
+//   5. Solicitantes no comerciales (proyecto personal, empleo, proveedor): se resuelven antes
+//      de validar, sin datos de contacto (el formulario no los pide): mensaje propio, log con su
+//      lead_quality_flag y SIN reenvío a n8n.
 //   6. Idempotencia por event_id (10 min, en memoria de la instancia: parcial).
 //   7. Motor de calidad (lib/lead-quality/engine.js) + LEAD_GATE_MODE:
 //      - shadow (por defecto): reenvía todo lo que evalúa el motor y agrega
@@ -269,6 +270,14 @@ async function procesar(req, res) {
     return send(res, 409, { success: false, code: 'form_expired', message: 'El formulario expiró por seguridad. Vuelve a enviarlo; si el aviso se repite, recarga la página o escríbenos a contacto@riselanding.com o por WhatsApp.' });
   }
 
+  // 3b) Solicitante que se declara no comercial (proyecto personal, empleo, proveedor): se
+  // resuelve en el paso 1 del formulario, SIN datos de contacto. Solo cuenta el tipo; no se
+  // valida contacto, no aplica Turnstile (no hay nada que guardar) y nunca se reenvía.
+  const tipoSolicitante = schema.SOLICITANTES[campo(body.solicitante)];
+  if (tipoSolicitante && !tipoSolicitante.comercial) {
+    return responderNoComercial(req, res, body, headers, ip, ahora, tipoSolicitante.flag);
+  }
+
   // 4) Validación de campos → 422 con el error de cada campo (esquema compartido + MX y
   // libphonenumber). El cliente pinta cada mensaje junto a su campo.
   const validacion = await validarLead(body);
@@ -309,6 +318,30 @@ async function procesar(req, res) {
   return send(res, r.status, r.cuerpo);
 }
 
+// Solicitante no comercial: mensaje propio + log con su lead_quality_flag. Sin datos personales:
+// el log no lleva hashes de correo ni teléfono (el formulario ya no los pide en este caso).
+function responderNoComercial(req, res, body, headers, ip, ahora, flag) {
+  if (superaRateLimit(ip, ahora)) {
+    res.setHeader('Retry-After', '600');
+    return send(res, 429, { success: false, code: 'rate_limited', message: 'Recibimos varios envíos seguidos desde tu conexión. Espera unos minutos para volver a intentarlo, o escríbenos a contacto@riselanding.com o por WhatsApp.' });
+  }
+  const eventId = idempotencia.esUuid(body.event_id) ? body.event_id.toLowerCase() : crypto.randomUUID();
+  const leadId = idempotencia.esUuid(body.lead_id) ? body.lead_id.toLowerCase() : crypto.randomUUID();
+  log.registrar('lead_not_forwarded', {
+    event_id: eventId,
+    lead_quality_flag: flag,
+    attribution: atribucion.desdeCookie(headers.cookie)
+  });
+  return send(res, 200, {
+    success: true,
+    outcome: 'no_comercial',
+    lead_quality_flag: flag,
+    message: mensajeNoComercial(flag),
+    event_id: eventId,
+    lead_id: leadId
+  });
+}
+
 // Pasos 6–10: rate limit, Turnstile, solicitantes no comerciales, motor de calidad, modo del
 // gate y reenvío. Devuelve { status, cuerpo } para que la idempotencia pueda recordarlo.
 async function decidir(c) {
@@ -342,27 +375,6 @@ async function decidir(c) {
       senalTurnstile = 'turnstile_misconfigured';
       log.registrarError(senalTurnstile, { codes: resultado.codigos, email_sha256: log.sha256(email) });
     }
-  }
-
-  // 8) Solicitantes que se declararon no comerciales: nunca se crea lead en n8n, en ningún modo.
-  // Se responde con su mensaje específico y queda en el log con su lead_quality_flag.
-  if (!datos.comercial) {
-    log.registrar('lead_not_forwarded', {
-      event_id: c.eventId,
-      lead_quality_flag: datos.flagSolicitante,
-      attribution: attribution,
-      email_sha256: log.sha256(datos.email),
-      phone_sha256: log.sha256Telefono(datos.telefonoE164 || datos.telefono)
-    });
-    return {
-      status: 200,
-      cuerpo: Object.assign({
-        success: true,
-        outcome: 'no_comercial',
-        lead_quality_flag: datos.flagSolicitante,
-        message: mensajeNoComercial(datos.flagSolicitante)
-      }, ids)
-    };
   }
 
   // 9) Motor de calidad (lib/lead-quality/engine.js). Las señales de la ruta van como

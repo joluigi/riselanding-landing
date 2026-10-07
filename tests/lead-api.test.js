@@ -13,6 +13,7 @@ const idempotencia = require('../api/_lib/idempotencia.js');
 const calidad = require('../api/_lib/calidad.js');
 
 const URL_N8N = 'https://n8n.test.invalid/webhook/lead';
+const UUID_NC = '99999999-8888-4777-a666-555555555555';
 const URL_CF = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 const LLAVES_CONTRATO = ['nombre', 'empresa', 'email', 'telefono', 'mensaje', 'interes_pilar',
   'fuente', 'spam_score', 'spam_flags', 'ip', 'user_agent'].sort();
@@ -83,8 +84,7 @@ function tokenDeHace(ms) { return formToken.emitir(Date.now() - ms); }
 function cuerpoValido(extra) {
   return Object.assign({
     solicitante: 'empresa',
-    nombre: 'Ana',
-    apellido: 'Prueba',
+    nombre: 'Ana Prueba',
     email: 'ana.prueba@example.mx',
     telefono: '+52 55 0000 0000',
     telefono_pais: 'MX',
@@ -346,8 +346,10 @@ test('rate limit: 5 envíos por IP en 10 min pasan, el 6.º recibe 429', async f
 
 // --- Fase 2: validación del servidor, contrato con n8n y solicitantes no comerciales ---
 
-// Réplica exacta de cómo armaba el payload el index.html anterior (commit 1e2184a)
+// Réplica exacta de cómo armaba el payload el index.html anterior (commit 1e2184a), que tenía
+// Nombre y Apellido por separado: c._viejo trae lo que la persona habría tecleado en cada uno.
 function payloadClienteAnterior(c) {
+  const viejo = c._viejo || { nombre: 'Ana', apellido: 'Prueba' };
   const servicios = c.servicios;
   function pilar(s) {
     const ads = s.indexOf('Publicidad Digital') !== -1;
@@ -362,7 +364,7 @@ function payloadClienteAnterior(c) {
   const tamanos = { '1_10': '1–10 personas', '11_50': '11–50 personas', '51_200': '51–200 personas', '200_plus': 'Más de 200 personas' };
   const utm = ['utm_source', 'utm_medium', 'utm_campaign'].map(function (k) { return c[k] ? k + '=' + c[k] : null; }).filter(Boolean).join(' ');
   return {
-    nombre: (c.nombre + ' ' + c.apellido).trim(),
+    nombre: (viejo.nombre + ' ' + viejo.apellido).trim(),
     empresa: c.empresa.trim(),
     email: c.email.trim(),
     telefono: c.telefono.trim(),
@@ -378,11 +380,15 @@ test('contrato: nombre, empresa, email, teléfono, mensaje, interes_pilar y fuen
     { servicios: ['Publicidad Digital', 'SEO y Posicionamiento'], tamano: '200_plus', utm_source: 'google', utm_medium: 'cpc', utm_campaign: 'marca-sintetica' },
     { servicios: ['SEO y Posicionamiento', 'Reediseño / Desarrollo página web'], tamano: '1_10', utm_source: 'meta' },
     { servicios: SERVICIOS_TODOS(), tamano: '51_200', email: 'Ana.Prueba@Example.MX' },
-    { servicios: ['Implementación de CRM', 'Automatización de procesos', 'Dashboards y reportes'], empresa: '  Empresa Sintética Dos  ' }
+    { servicios: ['Implementación de CRM', 'Automatización de procesos', 'Dashboards y reportes'], empresa: '  Empresa Sintética Dos  ' },
+    // Nombre completo de varias palabras: primera = nombre, resto = apellido
+    { nombre: '  María de la O Ruiz ', _viejo: { nombre: 'María', apellido: 'de la O Ruiz' } }
   ];
   for (let i = 0; i < casos.length; i++) {
     const c = cuerpoValido(casos[i]);
+    const viejo = c._viejo; delete c._viejo;
     await enviar(c);
+    c._viejo = viejo;
     const saliente = Object.assign({}, reenvios[i]);
     // Única diferencia permitida en modo shadow (por defecto): el sufijo " · Calidad: flag/tier score"
     assert.match(saliente.mensaje, / · Calidad: [a-z_]+\/[ABC] \d+$/);
@@ -395,13 +401,17 @@ test('contrato: nombre, empresa, email, teléfono, mensaje, interes_pilar y fuen
 function SERVICIOS_TODOS() { return require('../lib/lead-quality/schema.js').SERVICIOS.slice(); }
 
 test('422 con el error de cada campo y el primero como message; no se reenvía', async function () {
-  const r = await enviar(cuerpoValido({ nombre: 'T', apellido: 'T', telefono: '55 1234 567', empresa: 'Nada', servicios: [], necesidad: 'corto', consentimiento: false }));
+  const r = await enviar(cuerpoValido({ nombre: 'T T', telefono: '55 1234 567', empresa: 'Nada', servicios: [], necesidad: 'corto', consentimiento: false }));
   assert.strictEqual(r.status, 422);
   assert.strictEqual(r.data.code, 'validation');
-  assert.deepStrictEqual(Object.keys(r.data.errors), ['nombre', 'apellido', 'telefono', 'empresa', 'servicios', 'necesidad', 'consentimiento']);
+  // En el orden del formulario de 2 pasos: primero los del paso 1, luego los de contacto
+  assert.deepStrictEqual(Object.keys(r.data.errors), ['servicios', 'necesidad', 'nombre', 'telefono', 'empresa', 'consentimiento']);
   assert.strictEqual(r.data.errors.telefono, 'Escribe tu número a 10 dígitos');
   assert.strictEqual(r.data.errors.empresa, 'Escribe el nombre de tu empresa o negocio');
-  assert.strictEqual(r.data.message, r.data.errors.nombre);
+  assert.strictEqual(r.data.errors.nombre, 'Escribe tu nombre completo, no solo la inicial.');
+  assert.strictEqual(r.data.message, r.data.errors.servicios);
+  const una = await enviar(cuerpoValido({ nombre: 'Ana' }));
+  assert.strictEqual(una.data.errors.nombre, 'Escribe tu nombre y apellido.');
   assert.strictEqual(reenvios.length, 0);
 });
 
@@ -456,7 +466,7 @@ test('teléfono fuera de México: libphonenumber valida; al saliente se antepone
   assert.strictEqual(reenvios.length, 2);
 });
 
-test('solicitantes no comerciales: no se reenvían, mensaje propio y log con su flag', async function () {
+test('solicitantes no comerciales: solo con el tipo (sin datos de contacto), mensaje propio, log sin PII y sin reenvío', async function () {
   delete process.env.VENDOR_CONTACT_EMAIL;
   const casos = [
     ['personal', 'student', /trabajamos con empresas y negocios/i],
@@ -464,23 +474,45 @@ test('solicitantes no comerciales: no se reenvían, mensaje propio y log con su 
     ['proveedor', 'competitor', /no estamos buscando proveedores/]
   ];
   for (let i = 0; i < casos.length; i++) {
-    const r = await enviar(cuerpoValido({ solicitante: casos[i][0], empresa: '', servicios: [], tamano: '', presupuesto: '', necesidad: '' }));
+    // Lo que manda el paso 1 del formulario: solo el tipo + señales anti-bot
+    const r = await enviar({ solicitante: casos[i][0], form_token: tokenDeHace(20000), website_url_2: '', event_id: UUID_NC });
     assert.strictEqual(r.status, 200);
-    assert.strictEqual(r.data.success, true);
-    assert.strictEqual(r.data.outcome, 'no_comercial');
-    assert.strictEqual(r.data.lead_quality_flag, casos[i][1]);
+    assert.deepStrictEqual([r.data.success, r.data.outcome, r.data.lead_quality_flag, r.data.event_id], [true, 'no_comercial', casos[i][1], UUID_NC]);
     assert.match(r.data.message, casos[i][2]);
     const l = ultimoLog('lead_not_forwarded');
     assert.strictEqual(l.lead_quality_flag, casos[i][1]);
-    assert.match(l.email_sha256, /^[0-9a-f]{64}$/);
+    assert.ok(!('email_sha256' in l) && !('phone_sha256' in l), 'el log no lleva datos personales');
   }
   assert.strictEqual(reenvios.length, 0);
-  assert.ok(logs.join('\n').indexOf('ana.prueba@example.mx') === -1, 'correo en claro en el log');
+
+  // Aunque un cliente viejo mande datos de contacto, no se validan ni se registran
+  const r = await enviar(cuerpoValido({ solicitante: 'empleo', nombre: 'T', telefono: '5500' }));
+  assert.strictEqual(r.data.outcome, 'no_comercial');
+  assert.ok(logs.join('\n').indexOf('ana.prueba@example.mx') === -1);
+  assert.ok(!('email_sha256' in ultimoLog('lead_not_forwarded')));
 
   process.env.VENDOR_CONTACT_EMAIL = 'proveedores@example.invalid';
-  const r = await enviar(cuerpoValido({ solicitante: 'proveedor' }));
-  assert.match(r.data.message, /proveedores@example\.invalid/);
+  const pr = await enviar({ solicitante: 'proveedor', form_token: tokenDeHace(20000) });
+  assert.match(pr.data.message, /proveedores@example\.invalid/);
   delete process.env.VENDOR_CONTACT_EMAIL;
+});
+
+test('no comercial: siguen aplicando honeypot, token y rate limit; Turnstile no (no hay nada que guardar)', async function () {
+  let r = await enviar({ solicitante: 'empleo', form_token: tokenDeHace(20000), website_url_2: 'x' });
+  assert.deepStrictEqual(r.data, { success: true });
+  assert.strictEqual(ultimoLog('lead_blocked').reason, 'honeypot');
+  r = await enviar({ solicitante: 'empleo' });
+  assert.strictEqual(ultimoLog('lead_blocked').reason, 'bad_form_token');
+  r = await enviar({ solicitante: 'empleo', form_token: tokenDeHace(1000) });
+  assert.strictEqual(ultimoLog('lead_blocked').reason, 'too_fast');
+  activarTurnstile();
+  r = await enviar({ solicitante: 'empleo', form_token: tokenDeHace(20000) });
+  assert.strictEqual(r.data.outcome, 'no_comercial');
+  assert.strictEqual(llamadasCf, 0);
+  const ip = '192.0.2.77';
+  for (let i = 0; i < 5; i++) await enviar({ solicitante: 'personal', form_token: tokenDeHace(20000) }, { ip: ip });
+  r = await enviar({ solicitante: 'personal', form_token: tokenDeHace(20000) }, { ip: ip });
+  assert.strictEqual(r.status, 429);
 });
 
 test('log: el mismo teléfono mexicano da el mismo phone_sha256 en cualquier formato y evento', async function () {
@@ -491,8 +523,8 @@ test('log: el mismo teléfono mexicano da el mismo phone_sha256 en cualquier for
   });
   await enviar(cuerpoValido({ website_url_2: 'x', telefono: '55 0000 0000' }));
   const bloqueado = ultimoLog('lead_blocked').phone_sha256;
-  await enviar(cuerpoValido({ solicitante: 'empleo', telefono: '+52 1 55 0000 0000' }));
-  assert.strictEqual(ultimoLog('lead_not_forwarded').phone_sha256, bloqueado);
+  await enviar(cuerpoValido({ telefono: '+52 1 55 0000 0000' }));
+  assert.strictEqual(ultimoLog('lead_evaluated').phone_sha256, bloqueado);
   assert.strictEqual(bloqueado, h);
 });
 

@@ -10,7 +10,7 @@ const LISTAS = { junkCompany: junk.values, disposable: desechables.domains };
 
 function base(extra) {
   return Object.assign({
-    solicitante: 'empresa', nombre: 'Ana', apellido: 'Prueba', email: 'ana@empresa-sintetica.mx',
+    solicitante: 'empresa', nombre: 'Ana Prueba', email: 'ana@empresa-sintetica.mx',
     telefono: '55 0000 0000', telefono_pais: 'MX', empresa: 'Empresa Sintética Uno', sitio_web: '',
     tamano: '11_50', servicios: ['Implementación de CRM'], presupuesto: 'sin_definir',
     necesidad: 'Queremos ordenar el seguimiento de prospectos en un CRM.', consentimiento: true
@@ -28,39 +28,51 @@ test('listas de datos: al menos 100 dominios desechables y la lista basura de la
 });
 
 test('envío completo válido: ok, sin errores y datos normalizados', function () {
-  const v = S.validar(base({ nombre: '  aNA   maría ', apellido: 'de la o', email: ' Ana@Empresa-Sintetica.MX ' }), { listas: LISTAS });
+  const v = S.validar(base({ nombre: '  aNA   maría   de la o ', email: ' Ana@Empresa-Sintetica.MX ' }), { listas: LISTAS });
   assert.deepStrictEqual(v.errores, []);
   assert.strictEqual(v.ok, true);
-  assert.strictEqual(v.datos.nombre, 'Ana María');
-  assert.strictEqual(v.datos.apellido, 'De la O'); // partícula en minúscula salvo al inicio
+  assert.strictEqual(v.datos.nombreCompleto, 'Ana María de la O');
+  assert.deepStrictEqual([v.datos.nombre, v.datos.apellido], ['Ana', 'María de la O']);
   assert.strictEqual(v.datos.email, 'ana@empresa-sintetica.mx');
   assert.strictEqual(v.datos.telefonoE164, '+525500000000');
   assert.strictEqual(v.datos.comercial, true);
   assert.strictEqual(v.datos.flagSolicitante, null);
 });
 
-test('nombre: Title Case, espacios colapsados y partículas en minúscula', function () {
-  assert.strictEqual(S.validarNombre('  juan   carlos ', 'nombre').valor, 'Juan Carlos');
-  assert.strictEqual(S.validarNombre('maría de los ángeles', 'nombre').valor, 'María de los Ángeles');
-  assert.strictEqual(S.validarNombre('ana-lucía', 'nombre').valor, 'Ana-Lucía');
-  assert.strictEqual(S.validarNombre("o'neil", 'apellido').valor, "O'Neil");
+test('nombre completo: Title Case, espacios colapsados y partículas en minúscula', function () {
+  assert.strictEqual(S.validarNombreCompleto('  juan   carlos  pérez ').valor, 'Juan Carlos Pérez');
+  assert.strictEqual(S.validarNombreCompleto('maría de los ángeles ruiz').valor, 'María de los Ángeles Ruiz');
+  assert.strictEqual(S.validarNombreCompleto('ana-lucía torres').valor, 'Ana-Lucía Torres');
+  assert.strictEqual(S.validarNombreCompleto("kevin o'neil").valor, "Kevin O'Neil");
 });
 
-test('nombre: 2+ letras en la primera palabra; iniciales intermedias permitidas', function () {
-  assert.strictEqual(S.validarNombre('Juan C.', 'nombre').error, '');
-  assert.strictEqual(S.validarNombre('de la O', 'apellido').error, '');
-  assert.strictEqual(S.validarNombre('T', 'nombre').error, 'nombre_corto');
-  assert.strictEqual(S.validarNombre('T T', 'nombre').error, 'nombre_corto');
-  assert.strictEqual(S.validarNombre('Q', 'apellido').error, 'apellido_corto');
-  assert.strictEqual(S.validarNombre('J. Pérez', 'apellido').error, 'apellido_corto'); // primera palabra de 1 letra
+test('nombre completo: al menos 2 palabras, la primera con 2+ letras; iniciales intermedias permitidas', function () {
+  ['Juan C. Pérez', 'María de la O', 'Lu Wong', 'Ana Prueba'].forEach(function (n) {
+    assert.strictEqual(S.validarNombreCompleto(n).error, '', n);
+  });
+  assert.strictEqual(S.validarNombreCompleto('Juan').error, 'nombre_una_palabra');
+  assert.strictEqual(S.validarNombreCompleto('Juan .').error, 'nombre_una_palabra'); // "." no es palabra
+  assert.strictEqual(S.validarNombreCompleto('T T').error, 'nombre_corto');
+  assert.strictEqual(S.validarNombreCompleto('Q Q Q').error, 'nombre_corto');
+  assert.strictEqual(S.validarNombreCompleto('J. Pérez').error, 'nombre_corto'); // primera palabra de 1 letra
+  assert.strictEqual(S.MENSAJES.nombre_una_palabra, 'Escribe tu nombre y apellido.');
 });
 
-test('nombre: rechaza dígitos, símbolos y vacío', function () {
-  assert.strictEqual(S.validarNombre('Xkxkx 4prtqrk', 'nombre').error, 'nombre_digitos');
-  assert.strictEqual(S.validarNombre('Ana_', 'nombre').error, 'nombre_simbolos');
-  assert.strictEqual(S.validarNombre('...', 'nombre').error, 'nombre_simbolos');
-  assert.strictEqual(S.validarNombre('   ', 'nombre').error, 'nombre_vacio');
-  assert.strictEqual(S.validarNombre('', 'apellido').error, 'apellido_vacio');
+test('nombre completo: rechaza dígitos, símbolos, vacío y exceso de longitud', function () {
+  assert.strictEqual(S.validarNombreCompleto('Xkxkx 4prtqrk').error, 'nombre_digitos');
+  assert.strictEqual(S.validarNombreCompleto('Ana_ Prueba').error, 'nombre_simbolos');
+  assert.strictEqual(S.validarNombreCompleto('... ...').error, 'nombre_simbolos');
+  assert.strictEqual(S.validarNombreCompleto('   ').error, 'nombre_vacio');
+  assert.strictEqual(S.validarNombreCompleto('Ana ' + 'a'.repeat(200)).error, 'nombre_largo');
+});
+
+test('separarNombre: primera palabra + resto (el resto conserva lo tecleado salvo extremos)', function () {
+  assert.deepStrictEqual(S.separarNombre('  Ana   María  Pérez '), { nombre: 'Ana', apellido: 'María  Pérez' });
+  assert.deepStrictEqual(S.separarNombre('Ana Prueba'), { nombre: 'Ana', apellido: 'Prueba' });
+  assert.deepStrictEqual(S.separarNombre('Ana'), { nombre: 'Ana', apellido: '' });
+  // Clientes viejos que mandan nombre y apellido por separado: se unen
+  const v = S.validar(base({ nombre: 'Ana', apellido: 'Prueba Ruiz' }), { listas: LISTAS });
+  assert.deepStrictEqual([v.ok, v.datos.nombre, v.datos.apellido], [true, 'Ana', 'Prueba Ruiz']);
 });
 
 test('correo: formato, minúsculas y desechables (incluye subdominios)', function () {
@@ -129,13 +141,15 @@ test('empresa: obligatoria (2+ caracteres) para empresa y emprendimiento; lista 
   assert.strictEqual(S.validar(base({ empresa: 'Nada Más Transportes' }), { listas: LISTAS }).ok, true);
 });
 
-test('servicios (mín. 1, orden canónico), tamaño, presupuesto, necesidad (30+) y consentimiento', function () {
+test('servicios (mín. 1, orden canónico), tamaño, presupuesto, necesidad (20+) y consentimiento', function () {
   const v = S.validar(base({ servicios: [], tamano: '', presupuesto: 'x', necesidad: 'muy corto', consentimiento: false }), { listas: LISTAS });
-  assert.deepStrictEqual(campos(v), ['tamano', 'servicios', 'presupuesto', 'necesidad', 'consentimiento']);
+  assert.deepStrictEqual(campos(v), ['servicios', 'tamano', 'presupuesto', 'necesidad', 'consentimiento']);
   const orden = S.validar(base({ servicios: ['Dashboards y reportes', 'Publicidad Digital', 'no-existe'] }), { listas: LISTAS });
   assert.deepStrictEqual(orden.datos.servicios, ['Publicidad Digital', 'Dashboards y reportes']);
-  assert.strictEqual(S.validar(base({ necesidad: 'x'.repeat(29) }), { listas: LISTAS }).ok, false);
-  assert.strictEqual(S.validar(base({ necesidad: 'x'.repeat(30) }), { listas: LISTAS }).ok, true);
+  assert.strictEqual(S.NECESIDAD_MIN, 20);
+  assert.strictEqual(S.validar(base({ necesidad: 'x'.repeat(19) }), { listas: LISTAS }).ok, false);
+  assert.strictEqual(S.validar(base({ necesidad: 'x'.repeat(20) }), { listas: LISTAS }).ok, true);
+  assert.strictEqual(S.validar(base({ necesidad: '  x  x  x  x  x  x  x  x ' }), { listas: LISTAS }).ok, false, 'los espacios no cuentan dobles');
   assert.strictEqual(S.validar(base({ necesidad: 'x'.repeat(2001) }), { listas: LISTAS }).errores[0].codigo, 'necesidad_larga');
 });
 
@@ -144,21 +158,28 @@ test('solicitante sin elegir: se exige y se validan también los campos de negoc
   assert.deepStrictEqual(campos(v), ['solicitante', 'empresa']);
 });
 
-test('solicitantes no comerciales: flag propio y sin exigir campos de negocio', function () {
+test('solicitantes no comerciales: solo cuenta el tipo; no se piden ni se devuelven datos de contacto', function () {
   const casos = { personal: 'student', empleo: 'job_seeker', proveedor: 'competitor' };
   Object.keys(casos).forEach(function (tipo) {
-    const v = S.validar(base({ solicitante: tipo, empresa: '', tamano: '', servicios: [], presupuesto: '', necesidad: '' }), { listas: LISTAS });
+    const v = S.validar({ solicitante: tipo }, { listas: LISTAS });
     assert.strictEqual(v.ok, true, tipo + ': ' + JSON.stringify(v.errores));
-    assert.strictEqual(v.datos.comercial, false);
-    assert.strictEqual(v.datos.flagSolicitante, casos[tipo]);
+    assert.deepStrictEqual(v.datos, { solicitante: tipo, comercial: false, flagSolicitante: casos[tipo] });
+    // Aunque llegaran datos de contacto (cliente viejo o API directa), no se validan ni se devuelven
+    const con = S.validar(base({ solicitante: tipo, nombre: 'T', telefono: '5500', consentimiento: false }), { listas: LISTAS });
+    assert.strictEqual(con.ok, true);
+    assert.ok(!('email' in con.datos) && !('telefono' in con.datos) && !('nombre' in con.datos));
   });
-  // Los datos de contacto y el consentimiento se siguen exigiendo
-  assert.deepStrictEqual(campos(S.validar(base({ solicitante: 'empleo', telefono: '5500', consentimiento: false }), { listas: LISTAS })), ['telefono', 'consentimiento']);
+});
+
+test('pasos del formulario: el paso 1 son los campos del negocio; el 2, los de contacto', function () {
+  assert.deepStrictEqual(S.PASOS[1], ['solicitante', 'servicios', 'tamano', 'presupuesto', 'necesidad']);
+  assert.deepStrictEqual(S.PASOS[2], ['nombre', 'email', 'telefono', 'empresa', 'sitio_web', 'consentimiento']);
+  assert.deepStrictEqual(S.CAMPOS, S.PASOS[1].concat(S.PASOS[2]));
 });
 
 test('errores en el orden del formulario, con mensaje en español', function () {
   const v = S.validar({}, { listas: LISTAS });
-  assert.deepStrictEqual(campos(v), ['solicitante', 'nombre', 'apellido', 'email', 'telefono', 'empresa', 'tamano', 'servicios', 'presupuesto', 'necesidad', 'consentimiento']);
+  assert.deepStrictEqual(campos(v), ['solicitante', 'servicios', 'tamano', 'presupuesto', 'necesidad', 'nombre', 'email', 'telefono', 'empresa', 'consentimiento']);
   v.errores.forEach(function (e) { assert.ok(e.mensaje && e.mensaje.length > 5, e.campo); });
 });
 
