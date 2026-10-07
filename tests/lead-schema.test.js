@@ -141,15 +141,18 @@ test('empresa: obligatoria (2+ caracteres) para empresa y emprendimiento; lista 
   assert.strictEqual(S.validar(base({ empresa: 'Nada Más Transportes' }), { listas: LISTAS }).ok, true);
 });
 
-test('servicios (mín. 1, orden canónico), tamaño, presupuesto, necesidad (20+) y consentimiento', function () {
+test('servicios (mín. 1, orden canónico), tamaño, presupuesto y consentimiento; necesidad opcional', function () {
   const v = S.validar(base({ servicios: [], tamano: '', presupuesto: 'x', necesidad: 'muy corto', consentimiento: false }), { listas: LISTAS });
-  assert.deepStrictEqual(campos(v), ['servicios', 'tamano', 'presupuesto', 'necesidad', 'consentimiento']);
+  assert.deepStrictEqual(campos(v), ['servicios', 'tamano', 'presupuesto', 'consentimiento']);
   const orden = S.validar(base({ servicios: ['Dashboards y reportes', 'Publicidad Digital', 'no-existe'] }), { listas: LISTAS });
   assert.deepStrictEqual(orden.datos.servicios, ['Publicidad Digital', 'Dashboards y reportes']);
-  assert.strictEqual(S.NECESIDAD_MIN, 20);
-  assert.strictEqual(S.validar(base({ necesidad: 'x'.repeat(19) }), { listas: LISTAS }).ok, false);
-  assert.strictEqual(S.validar(base({ necesidad: 'x'.repeat(20) }), { listas: LISTAS }).ok, true);
-  assert.strictEqual(S.validar(base({ necesidad: '  x  x  x  x  x  x  x  x ' }), { listas: LISTAS }).ok, false, 'los espacios no cuentan dobles');
+  // "¿Qué quieres resolver?" es opcional: vacío o corto pasa; solo hay tope de 2000
+  ['', '   ', 'Más ventas', 'x'.repeat(20)].forEach(function (n) {
+    assert.strictEqual(S.validar(base({ necesidad: n }), { listas: LISTAS }).ok, true, JSON.stringify(n));
+  });
+  assert.strictEqual(S.validar(base({ necesidad: undefined }), { listas: LISTAS }).ok, true);
+  assert.strictEqual(S.NECESIDAD_MIN_PUNTOS, 20);
+  assert.ok(!('necesidad_corta' in S.MENSAJES));
   assert.strictEqual(S.validar(base({ necesidad: 'x'.repeat(2001) }), { listas: LISTAS }).errores[0].codigo, 'necesidad_larga');
 });
 
@@ -179,7 +182,7 @@ test('pasos del formulario: el paso 1 son los campos del negocio; el 2, los de c
 
 test('errores en el orden del formulario, con mensaje en español', function () {
   const v = S.validar({}, { listas: LISTAS });
-  assert.deepStrictEqual(campos(v), ['solicitante', 'servicios', 'tamano', 'presupuesto', 'necesidad', 'nombre', 'email', 'telefono', 'empresa', 'consentimiento']);
+  assert.deepStrictEqual(campos(v), ['solicitante', 'servicios', 'tamano', 'presupuesto', 'nombre', 'email', 'telefono', 'empresa', 'consentimiento']);
   v.errores.forEach(function (e) { assert.ok(e.mensaje && e.mensaje.length > 5, e.campo); });
 });
 

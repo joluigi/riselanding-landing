@@ -21,6 +21,7 @@ Ninguna de las fases 6–9 es bloqueante:
 - **Fase 7 (UX):** el doble envío ya está cubierto (botón deshabilitado + bandera + idempotencia por `event_id`) y los errores son accesibles. Pendiente menor: los mensajes dicen "escríbenos por WhatsApp" sin número (siempre incluyen también el correo).
 - **Fase 8 (payload):** el sufijo " · Calidad: …" ya sale en shadow; Title Case, minúsculas del correo y "México" son cosméticos.
 - **Embudo del formulario en 2 pasos:** `rl_form_start` → `rl_form_step` (paso 2, `step_name:"contacto"`) → `rl_form_submit_attempt` → `rl_lead_submit`. `rl_form_error` lleva `step_number`.
+- **"¿Qué quieres resolver?" es opcional:** sin mínimo para enviar; el motor da +10 solo con 20+ caracteres sin tecleo al azar (vacío o corto: 0, sin penalizar). `rl_lead_submit.has_message` (booleano, sin el texto) mide cuántos leads lo llenan. Para verlo en GA4 hace falta la variable `DLV - rl_event_data.has_message` y agregarla como parámetro a la etiqueta "GA4 - generate_lead" (acción en GTM).
 - **Fase 9 (observabilidad):** los logs estructurados (`lead_evaluated`, `lead_blocked`, `destination_failed`, `destination_misconfigured`, `turnstile_*`) y la suite de pruebas ya existen.
 
 ## 2. Qué entra al release
@@ -46,6 +47,7 @@ Ninguna de las fases 6–9 es bloqueante:
 | `bca7680` | Nombre completo en un campo, necesidad 20+, no comerciales sin datos de contacto | ✅ |
 | `0a546f9` | Formulario en 2 pasos + `rl_form_step` | ✅ |
 | `b7d907f` | Aviso: ajuste de exactitud por formulario de 2 pasos (aprobado por José Luis) | ✅ |
+| _(este cambio)_ | "¿Qué quieres resolver?" opcional + `has_message` en `rl_lead_submit` | ✅ |
 | — | Baja de `/index-legacy` y `Form/` | ❌ No creado; va aparte |
 
 ## 3. Pasos para publicar (SIN Turnstile)
@@ -70,6 +72,7 @@ reputación de envío del dominio).
      - pantalla de gracias, sin widget de Turnstile y sin espacio vacío sobre el botón;
      - Vercel Logs: `lead_evaluated` con `mode:"shadow"`, `forwarded:true`, `destination_status:200` y `attribution`;
      - n8n v5 → Executions: 200; Notion: fila nueva cuyas "Notas iniciales" terminan en ` · Calidad: …`; correo de bienvenida recibido.
+   - "¿Qué quieres resolver? (opcional)": se puede continuar con el campo vacío; en GTM Preview, `rl_lead_submit.has_message` = `false` / `true` según se haya escrito.
    - Formulario en 2 pasos: "Continuar →" valida el paso 1 sin enviar nada (DevTools → Network: ningún POST a `/api/lead`); el paso 2 muestra "Paso 2 de 2", foco en "Nombre completo"; "← Atrás" conserva lo capturado.
    - "Busco empleo" en el paso 1 → "Continuar": aviso de vacantes ahí mismo, **sin** pedir datos de contacto; el POST solo lleva `solicitante` (+ token, honeypot, `event_id`, `lead_id`); log `lead_not_forwarded` sin hashes; **sin** fila en Notion; en GTM Preview, `non_commercial_submit` a GA4.
    - `curl -s https://riselanding.com/api/lead -H 'Content-Type: application/json' -d '{"nombre":"Bot"}'` → `{"success":true}` y log `lead_blocked` / `bad_form_token`.

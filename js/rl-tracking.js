@@ -170,6 +170,8 @@
       time_to_convert_sec: f.t0 ? Math.max(0, Math.round((Date.now() - f.t0) / 1000)) : null,
       touch_count: ctx.touchCount,
       days_since_first_touch: ctx.daysSinceFirstTouch,
+      // ¿Escribió "¿Qué quieres resolver?" (opcional)? Solo el booleano, nunca el texto
+      has_message: typeof f.hasMessage === 'boolean' ? f.hasMessage : null,
       attribution: attribution() // click IDs + first/last touch de rl_attr, sin PII
     });
     // user_data con el formato de Google (enhanced conversions): correo, teléfono E.164 y, dentro

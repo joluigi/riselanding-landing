@@ -404,8 +404,9 @@ test('422 con el error de cada campo y el primero como message; no se reenvía',
   const r = await enviar(cuerpoValido({ nombre: 'T T', telefono: '55 1234 567', empresa: 'Nada', servicios: [], necesidad: 'corto', consentimiento: false }));
   assert.strictEqual(r.status, 422);
   assert.strictEqual(r.data.code, 'validation');
-  // En el orden del formulario de 2 pasos: primero los del paso 1, luego los de contacto
-  assert.deepStrictEqual(Object.keys(r.data.errors), ['servicios', 'necesidad', 'nombre', 'telefono', 'empresa', 'consentimiento']);
+  // En el orden del formulario de 2 pasos: primero los del paso 1, luego los de contacto.
+  // "necesidad" no aparece: es opcional (un texto corto ya no es error)
+  assert.deepStrictEqual(Object.keys(r.data.errors), ['servicios', 'nombre', 'telefono', 'empresa', 'consentimiento']);
   assert.strictEqual(r.data.errors.telefono, 'Escribe tu número a 10 dígitos');
   assert.strictEqual(r.data.errors.empresa, 'Escribe el nombre de tu empresa o negocio');
   assert.strictEqual(r.data.errors.nombre, 'Escribe tu nombre completo, no solo la inicial.');
@@ -794,4 +795,16 @@ test('Fase 6: sin cookie o con cookie corrupta, attribution = {} y el envío sig
   r = await enviar(cuerpoValido(), { cookie: 'rl_attr=%7Bnope' });
   assert.strictEqual(r.status, 200);
   assert.deepStrictEqual(ultimoLog('lead_evaluated').attribution, {});
+});
+
+test('"¿Qué quieres resolver?" opcional: vacío se acepta y las notas a n8n no llevan ninguna pieza "Necesidad:"', async function () {
+  const r = await enviar(cuerpoValido({ necesidad: '' }));
+  assert.strictEqual(r.status, 200);
+  const m = reenvios[0].mensaje;
+  assert.ok(m.indexOf('Necesidad') === -1, m);
+  assert.strictEqual(m, 'Servicios: Implementación de CRM · Tamaño: 11–50 personas · Calidad: clean/A 73');
+  // Con texto tampoco viaja hoy: la pieza "Necesidad: …" es de la Fase 8 (no implementada)
+  await enviar(cuerpoValido());
+  assert.ok(reenvios[1].mensaje.indexOf('Necesidad') === -1);
+  assert.deepStrictEqual(Object.keys(reenvios[0]).sort(), LLAVES_CONTRATO);
 });

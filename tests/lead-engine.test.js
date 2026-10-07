@@ -314,3 +314,21 @@ test('mensaje de 20+ caracteres sin tecleo al azar suma +10 (antes 30)', functio
   assert.strictEqual(evaluar({ necesidad: 'Queremos más ventas.' }).lead_score, 68);       // 20 caracteres
   assert.strictEqual(evaluar({ necesidad: 'Queremos sdfghjk ventas' }).lead_score, 58);    // 20+ pero con tecleo al azar
 });
+
+test('mensaje opcional: vacío o corto no suma ni resta; 20+ sin tecleo +10; tecleo al azar o URLs como antes', function () {
+  // Base sin mensaje: 20 + 10 + corporativo 15 + 1–10 3 + 1 servicio 5 + teléfono 5 = 58
+  const vacio = evaluar({ necesidad: '' });
+  assert.deepStrictEqual([vacio.lead_score, vacio.spam_points, vacio.signals, vacio.lead_quality_flag], [58, 0, [], 'clean']);
+  assert.strictEqual(evaluar({ necesidad: undefined }).lead_score, 58);
+  // Con texto pero menos de 20 caracteres: 0 puntos, sin penalizar
+  const corto = evaluar({ necesidad: 'Más ventas' });
+  assert.deepStrictEqual([corto.lead_score, corto.spam_points, corto.signals], [58, 0, []]);
+  // 20+ sin tecleo al azar: +10 → 68
+  assert.strictEqual(evaluar({ necesidad: 'Queremos más ventas.' }).lead_score, 68);
+  // Tecleo al azar: no suma los +10 (sin señal de spam, igual que antes)
+  const azar = evaluar({ necesidad: 'Queremos sdfghjk ventas ya' });
+  assert.deepStrictEqual([azar.lead_score, azar.spam_points], [58, 0]);
+  // URLs en el mensaje: siguen sumando spam_points (+1 por URL ajena), aunque el texto sea corto
+  const url = evaluar({ necesidad: 'ver ajena-qa.com' });
+  assert.deepStrictEqual([url.spam_points, url.signals], [1, ['url_in_message']]);
+});

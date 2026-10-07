@@ -278,3 +278,12 @@ test('rl_form_error incluye el paso del formulario en que ocurrió (step_number)
   assert.deepStrictEqual(Object.keys(ev[0]).sort(), ['error_field', 'error_type', 'event_id', 'form_id', 'step_number']);
   delete globalThis.dataLayer;
 });
+
+test('rl_lead_submit.has_message: booleano de si escribió "¿Qué quieres resolver?", nunca el texto', async function () {
+  delete globalThis.__rl;
+  const con = await RL.buildLeadSubmit({ email: 'a@empresa.mx', hasMessage: true, verdict: VEREDICTO_A });
+  const sin = await RL.buildLeadSubmit({ email: 'a@empresa.mx', hasMessage: false, verdict: VEREDICTO_A });
+  assert.deepStrictEqual([con.has_message, sin.has_message], [true, false]);
+  const nada = await RL.buildLeadSubmit({ email: 'a@empresa.mx', verdict: VEREDICTO_A });
+  assert.ok(!('has_message' in nada), 'si no se informa, la clave se omite (nunca null)');
+});

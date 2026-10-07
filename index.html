@@ -1400,9 +1400,10 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
               <option value="mas_50k">Más de $50,000</option>
             </select>
           </div>
-          <div class="field full" data-solo-comercial><label for="f-necesidad">¿Qué quieres resolver? *</label>
-            <textarea id="f-necesidad" name="necesidad" rows="3" maxlength="2000" placeholder="Ej. Queremos más solicitudes de cotización de clientes en el Bajío y dar seguimiento por WhatsApp"></textarea>
-            <span class="contador" id="f-necesidad-contador">0 / 20 caracteres mínimo</span>
+          <div class="field full" data-solo-comercial><label for="f-necesidad">¿Qué quieres resolver? (opcional)</label>
+            <textarea id="f-necesidad" name="necesidad" rows="3" maxlength="2000" aria-describedby="f-necesidad-ayuda" placeholder="Ej. Queremos más solicitudes de cotización de clientes en el Bajío y dar seguimiento por WhatsApp"></textarea>
+            <span class="field-hint" id="f-necesidad-ayuda">Nos ayuda a llegar con tu diagnóstico más avanzado.</span>
+            <span class="contador" id="f-necesidad-contador" aria-hidden="true"></span>
           </div>
           <div class="field full form-actions">
             <button type="button" class="btn btn-primary form-actions__main" id="f-continuar">Continuar →</button>
@@ -1830,15 +1831,13 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     el.setAttribute('aria-describedby', ((el.getAttribute('aria-describedby') || '') + ' hint-email').trim());
   }
 
-  // Contador de "¿Qué quieres resolver?" (se lee al enfocar el campo, sin anunciar cada tecla)
+  // Contador informativo de "¿Qué quieres resolver?" (opcional, sin mínimo; solo aparece al escribir)
   var necesidad = $('f-necesidad'), contador = $('f-necesidad-contador');
   function actualizarContador() {
     var n = necesidad.value.replace(/\s+/g, ' ').trim().length;
-    contador.textContent = n >= S.NECESIDAD_MIN ? n + ' caracteres' : n + ' / ' + S.NECESIDAD_MIN + ' caracteres mínimo';
-    contador.classList.toggle('ok', n >= S.NECESIDAD_MIN);
+    contador.textContent = n ? n + ' / ' + S.NECESIDAD_MAX : '';
   }
   if (necesidad && contador) {
-    necesidad.setAttribute('aria-describedby', 'f-necesidad-contador');
     necesidad.addEventListener('input', actualizarContador);
     actualizarContador();
   }
@@ -2090,6 +2089,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
             email: raw.email, phoneRaw: raw.telefono, phoneE164: e164Cliente(v.datos),
             firstName: v.datos.nombre, lastName: v.datos.apellido, sizeBucket: v.datos.tamano || null,
             pilar: S.pilar(v.datos.servicios), t0: t0, eventId: data.event_id, leadId: data.lead_id,
+            hasMessage: !!v.datos.necesidad,
             verdict: {
               lead_quality_flag: data.lead_quality_flag, lead_score: data.lead_score,
               lead_tier: data.lead_tier, email_domain_type: data.email_domain_type
