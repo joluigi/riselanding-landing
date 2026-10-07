@@ -47,7 +47,7 @@ Ninguna de las fases 6–9 es bloqueante:
 | `bca7680` | Nombre completo en un campo, necesidad 20+, no comerciales sin datos de contacto | ✅ |
 | `0a546f9` | Formulario en 2 pasos + `rl_form_step` | ✅ |
 | `b7d907f` | Aviso: ajuste de exactitud por formulario de 2 pasos (aprobado por José Luis) | ✅ |
-| _(este cambio)_ | "¿Qué quieres resolver?" opcional + `has_message` en `rl_lead_submit` | ✅ |
+| `875420c` | "¿Qué quieres resolver?" opcional + `has_message` en `rl_lead_submit` | ✅ |
 | — | Baja de `/index-legacy` y `Form/` | ❌ No creado; va aparte |
 
 ## 3. Pasos para publicar (SIN Turnstile)
