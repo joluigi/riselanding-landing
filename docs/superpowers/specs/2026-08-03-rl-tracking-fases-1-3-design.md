@@ -21,7 +21,9 @@ Implementar la Capa 1 (sitio) del esquema de tracking: publicar los eventos `rl_
 
 **Se implementa:** `rl_context_ready`, `rl_scroll_depth` (25/50/75/90), `rl_engaged_session`, `rl_service_view`, `rl_case_study_view`, `rl_form_start`, `rl_form_error`, `rl_lead_submit`, `rl_phone_click`, `rl_whatsapp_click` (dormido).
 
-**Fuera de alcance (no existe la feature en el sitio):** `rl_pricing_view`, `rl_content_download`, `rl_form_step` (el formulario es de un solo paso; el embudo se mide con `rl_form_start` → `rl_form_submit_attempt` → `rl_lead_submit`), `rl_meeting_booked`, y todos los eventos Nivel D (CRM/server-side, Fase 6 de la guía). `api/lead.js` no se modifica.
+**`rl_form_step` (agregado 7-oct-2026, formulario en 2 pasos):** `{ form_id, form_location, step_number: 2, step_name: "contacto" }` al pasar al paso 2, una vez por formulario. Embudo: `rl_form_start` → `rl_form_step` → `rl_form_submit_attempt` → `rl_lead_submit`. `rl_form_error` lleva `step_number`.
+
+**Fuera de alcance (no existe la feature en el sitio):** `rl_pricing_view`, `rl_content_download`, `rl_meeting_booked`, y todos los eventos Nivel D (CRM/server-side, Fase 6 de la guía). `api/lead.js` no se modifica.
 
 ## Arquitectura
 

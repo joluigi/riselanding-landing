@@ -16,7 +16,7 @@ sospechoso se etiqueta y SIEMPRE llega a Notion para que un humano decida.
 | 4 | Token vencido | Token de más de 2 h. El cliente lo renueva solo cada 90 min, así que un humano casi nunca lo ve | 409 `form_expired`: pide reenviar, **no** es spam |
 | 5 | Header `X-Form-Token` | Lo añade el JS del form. Su ausencia NO bloquea | +2 al score |
 | 6 | Validación de campos | Esquema compartido con el navegador (`lib/lead-quality/schema.js`): nombre (2+ letras en la primera palabra, sin dígitos), correo (formato, desechables de `lib/lead-quality/data/disposable-email-domains.json`, **registros MX** con timeout de 2 s que no bloquea), teléfono (México: 10 dígitos sin 0/1 inicial; otros países: libphonenumber), empresa (obligatoria para empresa/emprendimiento, lista `junk-company.json`), sitio, tamaño, servicios (mín. 1), presupuesto, necesidad (30+), consentimiento | 422 con un error por campo, en línea |
-| 6b | Solicitante no comercial | "Proyecto personal / escolar", "Busco empleo" o "Proveedor o agencia" → mensaje propio, log `lead_not_forwarded` con `student` / `job_seeker` / `competitor` | **No** se reenvía a n8n, en ningún modo |
+| 6b | Solicitante no comercial | "Proyecto personal / escolar", "Busco empleo" o "Proveedor o agencia" se resuelven en el **paso 1** del formulario: al servidor solo va el tipo (+ token, honeypot, `event_id`); **no se piden ni se registran datos de contacto**. Aplican honeypot, token y rate limit; Turnstile no (no hay nada que guardar). Log `lead_not_forwarded` con `student` / `job_seeker` / `competitor` y atribución, sin hashes | **No** se reenvía a n8n, en ningún modo |
 | 7 | Rate limit en memoria | Máx 5 envíos / 10 min por IP. **Parcial**: cada instancia serverless tiene su propia memoria y se recicla; la capa firme es el WAF (paso 4 de la escalación) | 429 visible |
 | 8 | Turnstile (Managed) | Solo si existen `TURNSTILE_SITE_KEY` **y** `TURNSTILE_SECRET_KEY`. Va después de validar para no gastar el token de un solo uso en un 422 | Fallo o sin token → fake success* (`turnstile_failed`). Cloudflare con timeout de 3 s, 5xx, red o `internal-error` → **sigue** con `turnstile_unavailable` (log nivel info). Secreto ausente/inválido u otro error de configuración → **sigue** con `turnstile_misconfigured` (log nivel **error**: hay que corregir las variables) |
 | 9 | Motor de calidad | `lib/lead-quality/engine.js`: `spam_points` (≥ 3 → `spam`), `lead_score` 0–100, `lead_tier` A/B/C, `lead_quality_flag` y `signals[]` auditables | Según `LEAD_GATE_MODE` (ver abajo) |
@@ -126,6 +126,8 @@ El cliente publica `rl_form_error` con un código, nunca con valores del formula
 | 409 (token vencido / formulario anterior) | `server_error` | `form_expired` |
 | Otro `success:false` o respuesta no JSON (p. ej. 502 de n8n) | `server_error` | — |
 | Validación del navegador | `client_validation` | id del campo |
+
+Todos los `rl_form_error` llevan `step_number` (1 = negocio, 2 = contacto): el paso en que ocurrió.
 
 Las respuestas 429 y 409 muestran un mensaje en español con contacto alterno (correo y WhatsApp).
 

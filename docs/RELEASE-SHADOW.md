@@ -4,7 +4,7 @@ Rama: `feat/lead-quality-gate` → `main` (Vercel publica `main` en Production a
 Objetivo: publicar el gate en **shadow** para que empiece el periodo de observación. Las fases 6–9
 van en PRs posteriores.
 
-Última actualización: 5-oct-2026 (aviso aprobado por legal; release sin Turnstile; Turnstile a las +48 h).
+Última actualización: 7-oct-2026 (formulario en 2 pasos; aviso aprobado + ajuste de exactitud; release sin Turnstile; Turnstile a las +48 h).
 
 ## 1. Estado de los bloqueantes
 
@@ -20,6 +20,7 @@ Ninguna de las fases 6–9 es bloqueante:
 - **Fase 6 (atribución):** ya está hecha (`d92cb62`) y entra al release; de todos modos no era bloqueante (es aditiva).
 - **Fase 7 (UX):** el doble envío ya está cubierto (botón deshabilitado + bandera + idempotencia por `event_id`) y los errores son accesibles. Pendiente menor: los mensajes dicen "escríbenos por WhatsApp" sin número (siempre incluyen también el correo).
 - **Fase 8 (payload):** el sufijo " · Calidad: …" ya sale en shadow; Title Case, minúsculas del correo y "México" son cosméticos.
+- **Embudo del formulario en 2 pasos:** `rl_form_start` → `rl_form_step` (paso 2, `step_name:"contacto"`) → `rl_form_submit_attempt` → `rl_lead_submit`. `rl_form_error` lleva `step_number`.
 - **Fase 9 (observabilidad):** los logs estructurados (`lead_evaluated`, `lead_blocked`, `destination_failed`, `destination_misconfigured`, `turnstile_*`) y la suite de pruebas ya existen.
 
 ## 2. Qué entra al release
@@ -42,6 +43,9 @@ Ninguna de las fases 6–9 es bloqueante:
 | `2efc019` | Aviso: conservación temporal de bloqueadas (retirada después en `93b4756`) | ✅ (forma parte del historial aprobado) |
 | `93b4756` | Aviso: ajustes de revisión legal — **aprobado para release** (5-oct-2026) | ✅ |
 | `d92cb62` | Fase 6: `utm_id`/`referrer` en `rl_attr`; atribución en `rl_lead_submit` y en el log | ✅ (lista y probada) |
+| `bca7680` | Nombre completo en un campo, necesidad 20+, no comerciales sin datos de contacto | ✅ |
+| `0a546f9` | Formulario en 2 pasos + `rl_form_step` | ✅ |
+| `b7d907f` | Aviso: ajuste de exactitud por formulario de 2 pasos (aprobado por José Luis) | ✅ |
 | — | Baja de `/index-legacy` y `Form/` | ❌ No creado; va aparte |
 
 ## 3. Pasos para publicar (SIN Turnstile)
@@ -66,7 +70,8 @@ reputación de envío del dominio).
      - pantalla de gracias, sin widget de Turnstile y sin espacio vacío sobre el botón;
      - Vercel Logs: `lead_evaluated` con `mode:"shadow"`, `forwarded:true`, `destination_status:200` y `attribution`;
      - n8n v5 → Executions: 200; Notion: fila nueva cuyas "Notas iniciales" terminan en ` · Calidad: …`; correo de bienvenida recibido.
-   - Envío como "Busco empleo": aviso de vacantes, log `lead_not_forwarded`, **sin** fila en Notion; en GTM Preview, `non_commercial_submit` a GA4.
+   - Formulario en 2 pasos: "Continuar →" valida el paso 1 sin enviar nada (DevTools → Network: ningún POST a `/api/lead`); el paso 2 muestra "Paso 2 de 2", foco en "Nombre completo"; "← Atrás" conserva lo capturado.
+   - "Busco empleo" en el paso 1 → "Continuar": aviso de vacantes ahí mismo, **sin** pedir datos de contacto; el POST solo lleva `solicitante` (+ token, honeypot, `event_id`, `lead_id`); log `lead_not_forwarded` sin hashes; **sin** fila en Notion; en GTM Preview, `non_commercial_submit` a GA4.
    - `curl -s https://riselanding.com/api/lead -H 'Content-Type: application/json' -d '{"nombre":"Bot"}'` → `{"success":true}` y log `lead_blocked` / `bad_form_token`.
    - En los logs: `destination_misconfigured` y `destination_failed` = **0**.
    - Confirmar en GTM Preview que Meta - Lead no dispara con tier C (sección 7).
@@ -113,7 +118,7 @@ Los logs de Vercel en Hobby duran muy poco: revisarlos varias veces al día o co
 | **Vercel → Logs** | `"evento":"lead_evaluated"`: distribución de `lead_quality_flag`/`lead_tier`, y `forwarded:true` en todos (shadow). `"evento":"lead_blocked"` por `reason`: un pico de `too_fast` o `bad_form_token` puede indicar personas reales bloqueadas. Nivel error: `destination_failed`, `destination_misconfigured`, `turnstile_misconfigured` (deben ser **0**). Volumen de 422 (fricción), 429 y 502/503. |
 | **n8n v5 → Executions** | Todas en verde; el `mensaje` con " · Calidad: …"; ninguna duplicada con el mismo `x-rl-event-id`. |
 | **Notion** | Volumen diario frente a la semana previa; revisar **cada** fila `Calidad: spam` (falsos positivos); que no entre ningún student/job_seeker. |
-| **GA4 → Realtime / DebugView** | Con GTM Preview: llegan `generate_lead`, `form_error`, `form_submit_attempt` y `non_commercial_submit` (este último con `applicant_type`). Embudo: `rl_form_start` → `form_submit_attempt` → `generate_lead`. |
+| **GA4 → Realtime / DebugView** | Con GTM Preview: llegan `generate_lead`, `form_error`, `form_submit_attempt` y `non_commercial_submit` (este último con `applicant_type`). Embudo: `rl_form_start` → `rl_form_step` (paso 2) → `form_submit_attempt` → `generate_lead`. |
 | **Google Ads** | La conversión secundaria "Lead" puede bajar: el tier ahora lo calcula el motor del servidor. |
 
 ## 7. Etiquetas de GTM que escuchan los eventos del formulario
@@ -126,6 +131,7 @@ modifica GTM).
 | `rl_lead_submit` | Ads - Lead [SECUNDARIA] | G1, G5, G2, G3 | solo `clean` + tier A/B |
 | `rl_lead_submit` | Meta - Lead | G1, G5, G2, **G3** (agregado) | solo `clean` + tier A/B |
 | `rl_lead_submit` | GA4 - generate_lead | G1, G5 | todos los flags (por diseño: "se mide todo") |
+| `rl_form_step` | (variables `DLV - rl_event_data.step_number` / `step_name` ya existen; confirmar en GTM si hay etiqueta GA4) | G1, G5 | una vez por formulario, al pasar al paso 2 |
 | `rl_form_submit_attempt` | GA4 - form_submit_attempt (nuevo; activador `CE - rl_form_submit_attempt`) | G1, G5 | siempre (solo GA4) |
 | `rl_non_commercial_submit` | GA4 - non_commercial_submit (nuevo; activador `CE - rl_non_commercial_submit`, variable `DLV - rl_event_data.applicant_type`) | G1, G5 | siempre (solo GA4; ninguna conversión) |
 | `rl_form_error` | GA4 - form_error | G1, G5 | siempre |
