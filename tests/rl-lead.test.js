@@ -268,3 +268,13 @@ test('Fase 6: rl_lead_submit incluye la atribución de rl_attr (sin PII)', async
     assert.deepStrictEqual(p.attribution, { gclid: 'gclid-sintetico', first_touch: attr.ft, last_touch: attr.lt, touch_count: 3, days_since_first_touch: 5 });
   } finally { delete globalThis.document; delete globalThis.__rl; }
 });
+
+test('rl_form_error incluye el paso del formulario en que ocurrió (step_number), nunca valores', function () {
+  globalThis.dataLayer = [];
+  RL.pushFormError('client_validation', 'necesidad', 1);
+  RL.pushFormError('server_error', 'destination_error', 2);
+  const ev = globalThis.dataLayer.filter(function (e) { return e.event === 'rl_form_error'; }).map(function (e) { return e.rl_event_data; });
+  assert.deepStrictEqual(ev.map(function (d) { return [d.error_field, d.step_number]; }), [['necesidad', 1], ['destination_error', 2]]);
+  assert.deepStrictEqual(Object.keys(ev[0]).sort(), ['error_field', 'error_type', 'event_id', 'form_id', 'step_number']);
+  delete globalThis.dataLayer;
+});

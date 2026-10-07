@@ -666,6 +666,20 @@ section{position:relative;z-index:1}
 .hp-field{position:absolute!important;left:-9999px!important;top:-9999px!important;width:1px;height:1px;overflow:hidden}
 .turnstile-slot{min-height:65px}
 .form-grid [hidden]{display:none!important}
+.sr-only{position:absolute!important;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.form-progress{grid-column:1/-1;display:flex;align-items:center;gap:12px;margin:0 0 4px;scroll-margin-top:96px}
+.form-progress__text{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-dim);white-space:nowrap}
+.form-progress__bar{flex:1;height:3px;border-radius:3px;background:var(--line);overflow:hidden}
+.form-progress__bar span{display:block;height:100%;width:50%;background:var(--accent);border-radius:3px;transition:width .35s var(--ease)}
+.form-step{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;min-width:0}
+.form-step__title{grid-column:1/-1;margin:2px 0 2px;font-family:"Bricolage Grotesque","Helvetica Neue",sans-serif;font-weight:600;font-size:20px;letter-spacing:-.01em;line-height:1.25;outline:none}
+@media (max-width:639px){.form-step .field.half{grid-column:1/-1}}
+.form-actions{margin-top:10px}
+.form-actions__main{width:100%;justify-content:center;padding:18px 22px;font-size:15px}
+.form-actions__back{align-self:center;margin-top:12px}
+.form-actions__note{font-size:11.5px;color:var(--ink-mute);margin-top:10px;text-align:center;font-family:"JetBrains Mono",monospace;letter-spacing:.06em;display:block}
+.form-link{align-self:flex-start;background:none;border:0;padding:4px 0;color:var(--ink-dim);font:inherit;font-size:14px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.form-link:hover,.form-link:focus-visible{color:var(--ink)}
 .form-intro{grid-column:1/-1;margin:0 0 6px;color:var(--ink-dim);font-size:14.5px;line-height:1.5}
 .field .label{font-family:"JetBrains Mono",monospace;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-mute)}
 .field textarea{resize:vertical;min-height:112px;line-height:1.5}
@@ -673,7 +687,7 @@ section{position:relative;z-index:1}
 .field input,.field select,.field textarea{min-width:0;width:100%;box-sizing:border-box}
 .field select{text-overflow:ellipsis}
 .tel-row{display:flex;gap:8px}
-.tel-row select{flex:0 0 118px;width:118px;padding-left:12px;padding-right:8px}
+.tel-row select{flex:0 0 100px;width:100px;padding-left:10px;padding-right:4px}
 .tel-row input{flex:1 1 auto;min-width:0}
 @media (max-width:420px){.tel-row{flex-direction:column}.tel-row select{flex:none;width:100%}}
 .field [aria-invalid="true"]{border-color:rgba(255,107,107,.65)}
@@ -1329,6 +1343,11 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
 
       <form class="form-grid" id="lead-form" novalidate>
         <p class="form-intro">Trabajamos con empresas y negocios que quieren crecer sus ventas.</p>
+        <div class="form-progress" id="f-progreso">
+          <span class="form-progress__text" id="f-paso-texto">Paso 1 de 2</span>
+          <span class="form-progress__bar" aria-hidden="true"><span id="f-paso-barra"></span></span>
+        </div>
+        <p class="sr-only" id="f-anuncio" aria-live="polite"></p>
         <input type="hidden" id="utm_source" name="utm_source">
         <input type="hidden" id="utm_medium" name="utm_medium">
         <input type="hidden" id="utm_campaign" name="utm_campaign">
@@ -1337,79 +1356,95 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
           <label for="f-hp">Sitio web alterno</label>
           <input id="f-hp" name="website_url_2" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
         </div>
-        <div class="field full"><label for="f-solicitante">¿Para quién es la solicitud? *</label>
-          <select id="f-solicitante" name="solicitante" required>
-            <option value="" selected>Selecciona una opción</option>
-            <option value="empresa">Mi empresa o negocio</option>
-            <option value="emprendimiento">Un emprendimiento que estoy arrancando</option>
-            <option value="personal">Un proyecto personal / escolar</option>
-            <option value="empleo">Busco empleo o prácticas</option>
-            <option value="proveedor">Soy proveedor o agencia y quiero ofrecer servicios</option>
-          </select>
-        </div>
-        <div class="field"><label for="f-nombre">Nombre *</label><input id="f-nombre" name="Name_First" required autocomplete="given-name" placeholder="María"></div>
-        <div class="field"><label for="f-apellido">Apellido *</label><input id="f-apellido" name="Name_Last" required autocomplete="family-name" placeholder="González"></div>
-        <div class="field full"><label for="f-email">Correo de trabajo *</label><input id="f-email" type="email" name="Email" required autocomplete="email" placeholder="maria@tuempresa.mx"></div>
-        <div class="field full"><label for="f-tel">WhatsApp / Teléfono *</label>
-          <div class="tel-row">
-            <select id="f-tel-pais" name="telefono_pais" aria-label="País del teléfono (lada internacional)">
-              <option value="MX" selected>MX +52</option>
-              <option value="US">EE. UU. +1</option>
-              <option value="CO">CO +57</option>
-              <option value="GT">GT +502</option>
-              <option value="PE">PE +51</option>
-              <option value="CL">CL +56</option>
-              <option value="AR">AR +54</option>
-              <option value="ES">ES +34</option>
-              <option value="INTL">Otro país</option>
+
+        <!-- Paso 1: el negocio. Nada se envía al servidor al terminarlo -->
+        <div class="form-step" id="f-paso-1" role="group" aria-labelledby="f-paso-1-titulo">
+          <h3 class="form-step__title" id="f-paso-1-titulo" tabindex="-1">Cuéntanos de tu negocio</h3>
+          <div class="field full"><label for="f-solicitante">¿Para quién es la solicitud? *</label>
+            <select id="f-solicitante" name="solicitante" required>
+              <option value="" selected>Selecciona una opción</option>
+              <option value="empresa">Mi empresa o negocio</option>
+              <option value="emprendimiento">Un emprendimiento que estoy arrancando</option>
+              <option value="personal">Un proyecto personal / escolar</option>
+              <option value="empleo">Busco empleo o prácticas</option>
+              <option value="proveedor">Soy proveedor o agencia y quiero ofrecer servicios</option>
             </select>
-            <input id="f-tel" type="tel" name="PhoneNumber_countrycode" required placeholder="55 5878 8983" autocomplete="tel-national" inputmode="tel">
+          </div>
+          <div class="field full" data-solo-comercial>
+            <span class="label" id="f-servicios-label">¿Qué servicio(s) te interesan? *</span>
+            <div class="checks" id="f-servicios" role="group" aria-labelledby="f-servicios-label" tabindex="-1">
+              <label class="chk"><input type="checkbox" data-zoho="Publicidad Digital"><span class="box"></span>SEM</label>
+              <label class="chk"><input type="checkbox" data-zoho="SEO y Posicionamiento"><span class="box"></span>SEO</label>
+              <label class="chk"><input type="checkbox" data-zoho="Reediseño / Desarrollo página web"><span class="box"></span>Web</label>
+              <label class="chk"><input type="checkbox" data-zoho="Implementación de CRM"><span class="box"></span>CRM</label>
+              <label class="chk"><input type="checkbox" data-zoho="Automatización de procesos"><span class="box"></span>Automatización</label>
+              <label class="chk"><input type="checkbox" data-zoho="Dashboards y reportes"><span class="box"></span>Dashboards</label>
+            </div>
+          </div>
+          <div class="field half" data-solo-comercial><label for="f-tamano">Tamaño del equipo *</label>
+            <select id="f-tamano" name="tamano">
+              <option value="" selected>Selecciona una opción</option>
+              <option value="1_10">1–10 personas</option>
+              <option value="11_50">11–50 personas</option>
+              <option value="51_200">51–200 personas</option>
+              <option value="200_plus">Más de 200 personas</option>
+            </select>
+          </div>
+          <div class="field half" data-solo-comercial><label for="f-presupuesto">Presupuesto mensual (MXN) *</label>
+            <select id="f-presupuesto" name="presupuesto">
+              <option value="" selected>Selecciona una opción</option>
+              <option value="sin_definir">Aún no lo defino</option>
+              <option value="menos_10k">Menos de $10,000</option>
+              <option value="10k_25k">$10,000 – $25,000</option>
+              <option value="25k_50k">$25,000 – $50,000</option>
+              <option value="mas_50k">Más de $50,000</option>
+            </select>
+          </div>
+          <div class="field full" data-solo-comercial><label for="f-necesidad">¿Qué quieres resolver? *</label>
+            <textarea id="f-necesidad" name="necesidad" rows="3" maxlength="2000" placeholder="Ej. Queremos más solicitudes de cotización de clientes en el Bajío y dar seguimiento por WhatsApp"></textarea>
+            <span class="contador" id="f-necesidad-contador">0 / 20 caracteres mínimo</span>
+          </div>
+          <div class="field full form-actions">
+            <button type="button" class="btn btn-primary form-actions__main" id="f-continuar">Continuar →</button>
           </div>
         </div>
-        <div class="field full"><label for="f-empresa">Empresa o negocio <span id="f-empresa-req">*</span></label><input id="f-empresa" name="SingleLine" autocomplete="organization" placeholder="Tu empresa S.A."></div>
-        <div class="field full" data-solo-comercial><label for="f-sitio">Sitio web o Instagram de la empresa (opcional)</label><input id="f-sitio" name="sitio_web" autocomplete="url" inputmode="url" placeholder="tuempresa.mx o @tuempresa"></div>
-        <div class="field full" data-solo-comercial><label for="f-tamano">Tamaño del equipo *</label>
-          <select id="f-tamano" name="tamano">
-            <option value="" selected>Selecciona una opción</option>
-            <option value="1_10">1–10 personas</option>
-            <option value="11_50">11–50 personas</option>
-            <option value="51_200">51–200 personas</option>
-            <option value="200_plus">Más de 200 personas</option>
-          </select>
-        </div>
-        <div class="field full" data-solo-comercial>
-          <span class="label" id="f-servicios-label">¿Qué servicio(s) te interesan? *</span>
-          <div class="checks" id="f-servicios" role="group" aria-labelledby="f-servicios-label" tabindex="-1">
-            <label class="chk"><input type="checkbox" data-zoho="Publicidad Digital"><span class="box"></span>SEM</label>
-            <label class="chk"><input type="checkbox" data-zoho="SEO y Posicionamiento"><span class="box"></span>SEO</label>
-            <label class="chk"><input type="checkbox" data-zoho="Reediseño / Desarrollo página web"><span class="box"></span>Web</label>
-            <label class="chk"><input type="checkbox" data-zoho="Implementación de CRM"><span class="box"></span>CRM</label>
-            <label class="chk"><input type="checkbox" data-zoho="Automatización de procesos"><span class="box"></span>Automatización</label>
-            <label class="chk"><input type="checkbox" data-zoho="Dashboards y reportes"><span class="box"></span>Dashboards</label>
+
+        <!-- Paso 2: el contacto -->
+        <div class="form-step" id="f-paso-2" role="group" aria-labelledby="f-paso-2-titulo" hidden>
+          <h3 class="form-step__title" id="f-paso-2-titulo" tabindex="-1">¿A quién le enviamos el diagnóstico?</h3>
+          <div class="field full"><label for="f-nombre">Nombre completo *</label><input id="f-nombre" name="nombre" required autocomplete="name" placeholder="María González"></div>
+          <div class="field half"><label for="f-email">Correo de trabajo *</label><input id="f-email" type="email" name="Email" required autocomplete="email" placeholder="maria@tuempresa.mx"></div>
+          <div class="field half"><label for="f-tel">WhatsApp *</label>
+            <div class="tel-row">
+              <select id="f-tel-pais" name="telefono_pais" aria-label="País del teléfono (lada internacional)">
+                <option value="MX" selected>MX +52</option>
+                <option value="US">EE. UU. +1</option>
+                <option value="CO">CO +57</option>
+                <option value="GT">GT +502</option>
+                <option value="PE">PE +51</option>
+                <option value="CL">CL +56</option>
+                <option value="AR">AR +54</option>
+                <option value="ES">ES +34</option>
+                <option value="INTL">Otro país</option>
+              </select>
+              <input id="f-tel" type="tel" name="PhoneNumber_countrycode" required placeholder="55 5878 8983" autocomplete="tel-national" inputmode="tel">
+            </div>
           </div>
-        </div>
-        <div class="field full" data-solo-comercial><label for="f-presupuesto">Presupuesto mensual estimado (MXN) *</label>
-          <select id="f-presupuesto" name="presupuesto">
-            <option value="" selected>Selecciona una opción</option>
-            <option value="sin_definir">Aún no lo defino</option>
-            <option value="menos_10k">Menos de $10,000</option>
-            <option value="10k_25k">$10,000 – $25,000</option>
-            <option value="25k_50k">$25,000 – $50,000</option>
-            <option value="mas_50k">Más de $50,000</option>
-          </select>
-        </div>
-        <div class="field full" data-solo-comercial><label for="f-necesidad">¿Qué quieres resolver? *</label>
-          <textarea id="f-necesidad" name="necesidad" rows="4" maxlength="2000" placeholder="Ej. Queremos más solicitudes de cotización de clientes en el Bajío y dar seguimiento por WhatsApp"></textarea>
-          <span class="contador" id="f-necesidad-contador">0 / 30 caracteres mínimo</span>
-        </div>
-        <div class="field full">
-          <label class="consent"><input type="checkbox" id="f-consent" name="consentimiento" required><span>He leído y acepto el <a href="/aviso-de-privacidad" target="_blank" rel="noopener">aviso de privacidad</a>. *</span></label>
-        </div>
-        <!-- Cloudflare Turnstile: solo se muestra si /api/form-token entrega una site key -->
-        <div class="field full turnstile-slot" id="f-turnstile" hidden></div>
-        <div class="field full" style="margin-top:10px">
-          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;padding:18px 22px;font-size:15px">Quiero mi diagnóstico gratuito →</button>
-          <span style="font-size:11.5px;color:var(--ink-mute);margin-top:10px;text-align:center;font-family:'JetBrains Mono';letter-spacing:.06em;display:block">TUS DATOS ESTÁN SEGUROS · SOLO LOS USAMOS PARA RESPONDERTE</span>
+          <div class="field full"><label for="f-empresa">Empresa o negocio *</label><input id="f-empresa" name="SingleLine" autocomplete="organization" placeholder="Tu empresa S.A."></div>
+          <div class="field full" id="f-sitio-toggle-caja">
+            <button type="button" class="form-link" id="f-sitio-toggle" aria-expanded="false" aria-controls="f-sitio-campo">+ Agregar sitio web o Instagram (opcional)</button>
+          </div>
+          <div class="field full" id="f-sitio-campo" hidden><label for="f-sitio">Sitio web o Instagram de la empresa (opcional)</label><input id="f-sitio" name="sitio_web" autocomplete="url" inputmode="url" placeholder="tuempresa.mx o @tuempresa"></div>
+          <div class="field full">
+            <label class="consent"><input type="checkbox" id="f-consent" name="consentimiento" required><span>He leído y acepto el <a href="/aviso-de-privacidad" target="_blank" rel="noopener">aviso de privacidad</a>. *</span></label>
+          </div>
+          <!-- Cloudflare Turnstile: solo se muestra si /api/form-token entrega una site key -->
+          <div class="field full turnstile-slot" id="f-turnstile" hidden></div>
+          <div class="field full form-actions">
+            <button type="submit" class="btn btn-primary form-actions__main">Quiero mi diagnóstico gratuito →</button>
+            <button type="button" class="form-link form-actions__back" id="f-atras">← Atrás</button>
+            <span class="form-actions__note">TUS DATOS ESTÁN SEGUROS · SOLO LOS USAMOS PARA RESPONDERTE</span>
+          </div>
         </div>
       </form>
     </div>
@@ -1664,7 +1699,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
 
   // Campo del esquema → control que recibe aria-invalid y el foco
   var CONTROL = {
-    solicitante: 'f-solicitante', nombre: 'f-nombre', apellido: 'f-apellido', email: 'f-email',
+    solicitante: 'f-solicitante', nombre: 'f-nombre', email: 'f-email',
     telefono: 'f-tel', empresa: 'f-empresa', sitio_web: 'f-sitio', tamano: 'f-tamano',
     servicios: 'f-servicios', presupuesto: 'f-presupuesto', necesidad: 'f-necesidad', consentimiento: 'f-consent'
   };
@@ -1683,7 +1718,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
 
   function leerFormulario() {
     return {
-      solicitante: valor('f-solicitante'), nombre: valor('f-nombre'), apellido: valor('f-apellido'),
+      solicitante: valor('f-solicitante'), nombre: valor('f-nombre'),
       email: valor('f-email'), telefono: valor('f-tel'), telefono_pais: valor('f-tel-pais'),
       empresa: valor('f-empresa'), sitio_web: valor('f-sitio'), tamano: valor('f-tamano'),
       servicios: serviciosMarcados(), presupuesto: valor('f-presupuesto'), necesidad: valor('f-necesidad'),
@@ -1728,11 +1763,18 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
 
   function limpiarErrores() { S.CAMPOS.forEach(limpiarError); }
 
-  // errores: [{ campo, mensaje }] en el orden del formulario; el primero recibe el foco
+  function pasoDe(campo) { return S.PASOS[1].indexOf(campo) !== -1 ? 1 : 2; }
+
+  // errores: [{ campo, mensaje }] en el orden del formulario; el primero recibe el foco (y si es
+  // de otro paso, p. ej. un 422 del servidor, se regresa a ese paso)
   function mostrarErrores(errores) {
     limpiarErrores();
+    if (!errores.length) return;
+    var paso = pasoDe(errores[0].campo);
+    if (paso !== pasoActual) irAPaso(paso, { sinFoco: true });
+    if (errores.some(function (e) { return e.campo === 'sitio_web'; })) abrirSitio(false);
     errores.forEach(function (e) { marcarError(e.campo, e.mensaje); });
-    var primero = errores[0] && $(CONTROL[errores[0].campo]);
+    var primero = $(CONTROL[errores[0].campo]);
     if (primero) primero.focus();
   }
 
@@ -1752,7 +1794,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
   form.addEventListener('change', function (ev) { var c = campoDelEvento(ev); if (c) revalidar(c); });
 
   // Al salir de un campo de texto con contenido, se valida en el momento (sin regañar campos vacíos)
-  var AL_SALIR = ['nombre', 'apellido', 'email', 'telefono', 'empresa', 'sitio_web'];
+  var AL_SALIR = ['nombre', 'email', 'telefono', 'empresa', 'sitio_web'];
   form.addEventListener('focusout', function (ev) {
     var c = campoDelEvento(ev);
     if (!c || AL_SALIR.indexOf(c) === -1 || !String(valor(CONTROL[c])).trim()) return;
@@ -1806,9 +1848,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     var tipo = S.SOLICITANTES[valor('f-solicitante')];
     var comercial = !tipo || tipo.comercial;
     Array.prototype.forEach.call(form.querySelectorAll('[data-solo-comercial]'), function (el) { el.hidden = !comercial; });
-    var req = $('f-empresa-req');
-    if (req) req.textContent = comercial ? '*' : '(opcional)';
-    if (!comercial) ['empresa', 'sitio_web', 'tamano', 'servicios', 'presupuesto', 'necesidad'].forEach(limpiarError);
+    if (!comercial) ['tamano', 'servicios', 'presupuesto', 'necesidad'].forEach(limpiarError);
   }
   $('f-solicitante').addEventListener('change', aplicarSolicitante);
   aplicarSolicitante();
@@ -1848,6 +1888,109 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
     try { if (window.RL) RL.pushEvent(nombre, datos); } catch (e) {}
   }
 
+  function pushError(tipo, campo) {
+    try { if (window.RL) RL.pushFormError(tipo, campo, pasoActual); } catch (e) {}
+  }
+
+  // --- Formulario en 2 pasos (mismo componente, sin recargar). Nada se envía al terminar el paso 1 ---
+  var pasoActual = 1;
+  var pasoVisto = false; // rl_form_step se emite una vez por formulario (embudo limpio)
+  var TITULOS = { 1: 'Cuéntanos de tu negocio', 2: '¿A quién le enviamos el diagnóstico?' };
+  function irAPaso(n, opciones) {
+    var o = opciones || {};
+    pasoActual = n;
+    $('f-paso-1').hidden = n !== 1;
+    $('f-paso-2').hidden = n !== 2;
+    $('f-paso-texto').textContent = 'Paso ' + n + ' de 2';
+    $('f-paso-barra').style.width = (n * 50) + '%';
+    $('f-anuncio').textContent = 'Paso ' + n + ' de 2: ' + TITULOS[n];
+    quitarError();
+    if (n === 2 && !pasoVisto) {
+      pasoVisto = true;
+      pushEvento('rl_form_step', { form_id: 'agenda_diagnostico', form_location: 'contacto', step_number: 2, step_name: 'contacto' });
+    }
+    if (!o.sinFoco) {
+      var primero = n === 1 ? $('f-solicitante') : $('f-nombre');
+      if (primero) primero.focus();
+    }
+    var caja = $('f-progreso');
+    if (caja && caja.getBoundingClientRect().top < 0) caja.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  }
+
+  function abrirSitio(enfocar) {
+    $('f-sitio-campo').hidden = false;
+    $('f-sitio-toggle-caja').hidden = true;
+    $('f-sitio-toggle').setAttribute('aria-expanded', 'true');
+    if (enfocar) $('f-sitio').focus();
+  }
+  $('f-sitio-toggle').addEventListener('click', function () { abrirSitio(true); });
+  $('f-atras').addEventListener('click', function () { irAPaso(1); });
+
+  // "Continuar": valida solo el paso 1. Si el solicitante no es comercial, se resuelve aquí mismo
+  var btnContinuar = $('f-continuar');
+  function continuar() {
+    if (enviando) return;
+    quitarError();
+    var raw = leerFormulario();
+    var v = S.validar(raw, { listas: listas });
+    var errores1 = v.errores.filter(function (e) { return pasoDe(e.campo) === 1; });
+    if (errores1.length) {
+      mostrarErrores(errores1);
+      pushError('client_validation', errores1[0].campo);
+      return;
+    }
+    S.PASOS[1].forEach(limpiarError);
+    var tipo = S.SOLICITANTES[raw.solicitante];
+    if (tipo && !tipo.comercial) { enviarNoComercial(raw.solicitante); return; }
+    irAPaso(2);
+  }
+  btnContinuar.addEventListener('click', continuar);
+
+  // No comercial: al servidor SOLO va el tipo de solicitante (+ señales anti-bot); ningún dato personal
+  function enviarNoComercial(solicitante) {
+    var texto = btnContinuar.textContent;
+    enviando = true;
+    btnContinuar.disabled = true; btnContinuar.textContent = 'Un momento…';
+    var cuerpo = { solicitante: solicitante, website_url_2: valor('f-hp'), event_id: nuevoUuid() };
+    if (window.__rl && window.__rl.leadId) cuerpo.lead_id = window.__rl.leadId;
+    asegurarToken().then(function () {
+      cuerpo.form_token = tk.valor || '';
+      return fetch('/api/lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-Form-Token': 'rl1' },
+        body: JSON.stringify(cuerpo)
+      }).catch(function (e) { e.tipo = 'network_error'; throw e; });
+    }).then(function (r) { return r.json(); }).then(function (data) {
+      if (!data.success) {
+        if (data.code === 'form_expired') { tk.obtenido = false; pedirToken(); }
+        var e = new Error(data.message || 'error'); e.delServidor = !!data.message; e.code = data.code; throw e;
+      }
+      enviando = false;
+      btnContinuar.disabled = false; btnContinuar.textContent = texto;
+      if (data.outcome === 'no_comercial') {
+        try { if (window.RL) RL.pushNonCommercialSubmit(data.lead_quality_flag, data.event_id); } catch (e) {}
+        mostrarAviso(data.message);
+      }
+    }).catch(function (err) {
+      enviando = false;
+      btnContinuar.disabled = false; btnContinuar.textContent = texto;
+      try { if (window.RL) { var fe = RL.classifySubmitError(err); RL.pushFormError(fe[0], fe[1], pasoActual); } } catch (e) {}
+      mostrarErrorGeneral(err);
+    });
+  }
+
+  function mostrarErrorGeneral(err) {
+    quitarError();
+    var tipoCliente = err && MENSAJES_CLIENTE[err.tipo];
+    var aviso = document.createElement('div');
+    aviso.className = 'form-error';
+    aviso.setAttribute('role', 'alert');
+    aviso.textContent = tipoCliente ? MENSAJES_CLIENTE[err.tipo]
+      : (err && err.delServidor) ? err.message
+      : 'No pudimos enviar el formulario. Inténtalo de nuevo o escríbenos a contacto@riselanding.com o por WhatsApp.';
+    form.appendChild(aviso);
+  }
+
   // Solicitante no comercial: mensaje honesto en lugar de la pantalla de gracias. Los campos
   // solo se ocultan (no se borran) para que "Cambia la opción" regrese con todo lo capturado.
   function mostrarAviso(texto) {
@@ -1869,7 +2012,7 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       ocultos.forEach(function (el) { el.hidden = false; });
       $('f-solicitante').value = '';
       aplicarSolicitante();
-      $('f-solicitante').focus();
+      irAPaso(1);
     });
     form.appendChild(aviso);
     aviso.focus();
@@ -1878,15 +2021,16 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
   form.addEventListener('submit', function (ev) {
     ev.preventDefault();
     if (enviando) return; // doble clic o Enter repetido mientras hay un envío en curso
+    if (pasoActual === 1) { continuar(); return; } // Enter en el paso 1 = "Continuar"
     quitarError(); // cada reintento parte sin el aviso del intento anterior
-    // Intento de envío (antes de validar): base del embudo form_start → submit_attempt → lead_submit
+    // Intento de envío (antes de validar). Embudo: form_start → form_step → submit_attempt → lead_submit
     pushEvento('rl_form_submit_attempt', { form_id: 'agenda_diagnostico', form_location: 'contacto' });
 
     var raw = leerFormulario();
     var v = S.validar(raw, { listas: listas });
     if (!v.ok) {
       mostrarErrores(v.errores);
-      try { if (window.RL) RL.pushFormError('client_validation', v.errores[0].campo); } catch (e) {}
+      pushError('client_validation', v.errores[0].campo);
       return;
     }
     limpiarErrores();
@@ -1924,17 +2068,6 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
         throw e;
       }
 
-      if (data.outcome === 'no_comercial') {
-        // No es lead: evento propio (nunca rl_lead_submit) y el formulario queda listo por si eligió mal
-        try { if (window.RL) RL.pushNonCommercialSubmit(data.lead_quality_flag, data.event_id); } catch (e) {}
-        envio.id = ''; // si cambia la opción y vuelve a enviar, es otro envío
-        enviando = false;
-        reiniciarTurnstile();
-        btn.disabled = false; btn.textContent = btnTexto;
-        mostrarAviso(data.message);
-        return;
-      }
-
       function mostrarExito() {
         form.classList.add('sent');
         form.innerHTML =
@@ -1970,16 +2103,9 @@ html.js #servicios.anim-hold .svc-illu *{animation-play-state:paused !important}
       reiniciarTurnstile();
       btn.disabled = false; btn.textContent = btnTexto;
       quitarError();
-      try { if (window.RL) { var fe = RL.classifySubmitError(err); RL.pushFormError(fe[0], fe[1]); } } catch (e) {}
+      try { if (window.RL) { var fe = RL.classifySubmitError(err); RL.pushFormError(fe[0], fe[1], pasoActual); } } catch (e) {}
       if (err && err.errores && err.errores.length) { mostrarErrores(err.errores); return; } // 422: errores en línea
-      var tipoCliente = err && MENSAJES_CLIENTE[err.tipo];
-      var aviso = document.createElement('div');
-      aviso.className = 'form-error';
-      aviso.setAttribute('role', 'alert');
-      aviso.textContent = tipoCliente ? MENSAJES_CLIENTE[err.tipo]
-        : (err && err.delServidor) ? err.message
-        : 'No pudimos enviar el formulario. Inténtalo de nuevo o escríbenos a contacto@riselanding.com o por WhatsApp.';
-      form.appendChild(aviso);
+      mostrarErrorGeneral(err);
     });
   });
 })();

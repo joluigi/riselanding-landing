@@ -48,10 +48,11 @@
 
   // error_type: 'client_validation' | 'server_error' | 'network_error'.
   // error_field: id del campo en validación, o código de fricción (ver classifySubmitError).
+  // step_number: paso del formulario (1 negocio, 2 contacto) en que ocurrió.
   // Nunca lleva valores del formulario.
-  function pushFormError(errorType, errorField) {
+  function pushFormError(errorType, errorField, stepNumber) {
     return pushEvent('rl_form_error', {
-      form_id: 'agenda_diagnostico', error_type: errorType, error_field: errorField
+      form_id: 'agenda_diagnostico', error_type: errorType, error_field: errorField, step_number: stepNumber
     });
   }
 
