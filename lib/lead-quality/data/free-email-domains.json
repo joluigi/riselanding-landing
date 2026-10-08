@@ -1,0 +1,21 @@
+{
+  "_doc": "Dominios de correo gratuito. Un correo aquí NO es spam por sí solo (muchas PyMEs lo usan): solo cambia email_domain_type a \"free\", activa la regla de coincidencia correo/nombre y deja de sumar los +15 de correo corporativo. Comparación exacta del dominio, en minúsculas.",
+  "domains": [
+    "gmail.com",
+    "hotmail.com",
+    "hotmail.es",
+    "outlook.com",
+    "outlook.es",
+    "live.com",
+    "live.com.mx",
+    "yahoo.com",
+    "yahoo.com.mx",
+    "icloud.com",
+    "me.com",
+    "msn.com",
+    "prodigy.net.mx",
+    "proton.me",
+    "protonmail.com",
+    "aol.com"
+  ]
+}

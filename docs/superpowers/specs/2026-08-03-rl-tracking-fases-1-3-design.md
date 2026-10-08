@@ -21,7 +21,9 @@ Implementar la Capa 1 (sitio) del esquema de tracking: publicar los eventos `rl_
 
 **Se implementa:** `rl_context_ready`, `rl_scroll_depth` (25/50/75/90), `rl_engaged_session`, `rl_service_view`, `rl_case_study_view`, `rl_form_start`, `rl_form_error`, `rl_lead_submit`, `rl_phone_click`, `rl_whatsapp_click` (dormido).
 
-**Fuera de alcance (no existe la feature en el sitio):** `rl_pricing_view`, `rl_content_download`, `rl_form_step`, `rl_meeting_booked`, y todos los eventos Nivel D (CRM/server-side, Fase 6 de la guía). `api/lead.js` no se modifica.
+**`rl_form_step` (agregado 7-oct-2026, formulario en 2 pasos):** `{ form_id, form_location, step_number: 2, step_name: "contacto" }` al pasar al paso 2, una vez por formulario. Embudo: `rl_form_start` → `rl_form_step` → `rl_form_submit_attempt` → `rl_lead_submit`. `rl_form_error` lleva `step_number`.
+
+**Fuera de alcance (no existe la feature en el sitio):** `rl_pricing_view`, `rl_content_download`, `rl_meeting_booked`, y todos los eventos Nivel D (CRM/server-side, Fase 6 de la guía). `api/lead.js` no se modifica.
 
 ## Arquitectura
 
@@ -37,7 +39,7 @@ Implementar la Capa 1 (sitio) del esquema de tracking: publicar los eventos `rl_
 ### Cookies (first-party, dominio propio, `SameSite=Lax`)
 
 - **`rl_lid`** (400 días): JSON compacto con `lead_id` (UUIDv4), `first_seen` (ISO), `session_count`. Sesión nueva = ausencia de flag en `sessionStorage`; incrementa `session_count` y genera `session_id` con formato `{epoch}.{sufijo5}` (§2.2 de la guía). `is_returning = session_count > 1`.
-- **`rl_attr`** (90 días): `gclid`, `gbraid`, `wbraid`, `fbclid`, `msclkid` (los presentes en la URL), `first_touch` y `last_touch` (`source`, `medium`, `campaign`, `content`, `term`, `timestamp`, `landing_page`), `touch_count`, y `network_meta` desde `rl_net`/`rl_mt`/`rl_dev` de la plantilla de seguimiento. Reglas: `first_touch` se escribe una sola vez y **nunca** se sobrescribe (C-checklist §6); al inicio de cada sesión nueva, si hay origen identificable (UTMs, click ID o referrer externo) se actualiza `last_touch` con ese origen; si no lo hay, `last_touch` se conserva. `touch_count` incrementa exactamente una vez por sesión nueva (identificable o directa); dentro de la misma sesión nunca incrementa.
+- **`rl_attr`** (90 días): `gclid`, `gbraid`, `wbraid`, `fbclid`, `msclkid` (los presentes en la URL), `first_touch` y `last_touch` (`source`, `medium`, `campaign`, `content`, `term`, `timestamp`, `landing_page` y, desde el 1-oct-2026, de forma aditiva `utm_id` y `referrer` — solo el origen del referrer externo, sin ruta ni query; `null` si es interno o no hay), `touch_count`, y `network_meta` desde `rl_net`/`rl_mt`/`rl_dev` de la plantilla de seguimiento. Reglas: `first_touch` se escribe una sola vez y **nunca** se sobrescribe (C-checklist §6); al inicio de cada sesión nueva, si hay origen identificable (UTMs, click ID o referrer externo) se actualiza `last_touch` con ese origen; si no lo hay, `last_touch` se conserva. `touch_count` incrementa exactamente una vez por sesión nueva (identificable o directa); dentro de la misma sesión nunca incrementa.
 - **`rl_internal`** (permanente, 400 días): la URL `?rl_internal=1` la fija; `user.is_internal: true` desde entonces (guarda G1). No hay mecanismo de des-marcado (igual que la guía).
 - **`rl_geo`** (sesión): la escribe el middleware; el bootstrap solo la lee.
 
@@ -73,7 +75,7 @@ Reglas transversales: **reset** `dataLayer.push({ rl_event_data: null })` antes 
 | `rl_service_view` | 20 s **acumulados** de visibilidad de `#servicios` (IntersectionObserver: ratio ≥50% **o** la sección cubriendo ≥50% del viewport — en móvil la sección es más alta que la pantalla y el ratio nunca llega a 0.5) + temporizador que pausa al salir | `service_line 'paquete_integral'`, `assigned_partner 'ambos'`, `dwell_time_sec` |
 | `rl_case_study_view` | El fondo de `#resultados` alcanza el 75% de recorrido visible | `case_id 'resultados_home'`, `case_segment 'general_b2b_mx'`, `read_depth_pct` |
 | `rl_form_start` | Primer `focusin` en un campo de `#lead-form` (1× por instancia) | `form_id 'agenda_diagnostico'`, `form_location 'contacto'` |
-| `rl_form_error` | `reportValidity()` falla (`error_type 'client_validation'` + `error_field` = id del primer campo inválido); el gateway responde `success: false` o un cuerpo no JSON (`error_type 'server_error'`); `fetch` rechaza sin respuesta HTTP (`error_type 'network_error'`) | `form_id`, `error_type`, `error_field` (solo en validación) |
+| `rl_form_error` | `reportValidity()` falla (`error_type 'client_validation'` + `error_field` = id del primer campo inválido); el gateway responde `success: false` o un cuerpo no JSON (`error_type 'server_error'`); `fetch` rechaza sin respuesta HTTP (`error_type 'network_error'`) | `form_id`, `error_type`, `error_field` (id del campo en validación; en fallos del envío, código de fricción: `turnstile_unavailable`, `network`, `rate_limited`, `form_expired` — ver SEGURIDAD-FORMULARIO.md) |
 | `rl_phone_click` | Click delegado en `a[href^="tel:"]` | `cta_location` (`footer`) |
 | `rl_whatsapp_click` | Click delegado en `a[href*="wa.me"]` — **dormido** hasta que exista el enlace | `transaction_id`, `prefilled_ref`, `cta_location`, `service_line` — `prefilled_ref` = `RL-` + primeros 8 caracteres del `lead_id`; el listener lo inserta en el parámetro `text` de la URL wa.me al momento del click (C-19) |
 
@@ -89,42 +91,30 @@ Select opcional "Tamaño de tu empresa": `1_10`, `11_50`, `51_200`, `200_plus` (
 
 `rl_lead_submit` se emite cuando el gateway responde `success: true` (incluye el fake success que reciben los bots: llegan etiquetados, ver flag). Se emite antes de reemplazar el form por el mensaje de éxito. Payload §2.4 adaptado:
 
-- Identidad: `event_id` (UUIDv4 nuevo), `transaction_id = lead_id`, `lead_id`.
+- Identidad: `event_id` (UUIDv4 del envío, confirmado por `/api/lead`; el mismo que usa la idempotencia y el header `x-rl-event-id` hacia n8n), `transaction_id = lead_id`, `lead_id` (cookie `rl_lid`, confirmado por el servidor). *(Actualizado 2026-09-29, lead quality gate.)*
 - Origen: `form_id 'agenda_diagnostico'`, `form_location 'contacto'`, `lead_source_channel 'form'`.
 - Interés: `service_line` derivado de `pilar()` existente — mapa: Bundle Completo → `paquete_integral`, Google Ads → `publicidad_digital`, Sitio Web + SEO → `web_seo`, CRM + Automatización → `crm_automatizacion`; `assigned_partner 'ambos'`.
 - Cualificación: `company_size_bucket` (o `null`), `prospect_segment null`, `prospect_geo null`, `operation_volume_bucket null`, `current_marketing_maturity null` (el form no los captura; claves presentes con `null` para mantener el contrato).
-- Calidad: `email_domain_type` (`corporate` | `free` | `disposable`). Lista `free`: gmail.com, hotmail.com/.es, outlook.com/.es, yahoo.com/.com.mx, live.com/.com.mx, icloud.com, proton.me, protonmail.com, aol.com, msn.com. Lista `disposable`: la misma de `api/lead.js`, duplicada en cliente (con comentario cruzado en ambos archivos para mantenerlas en sincronía). Todo lo demás → `corporate`. Además `lead_quality_flag`, `lead_score`, `lead_tier`.
+- Calidad: `email_domain_type`, `lead_quality_flag`, `lead_score`, `lead_tier` — vienen del veredicto del servidor (ver sección siguiente). Las listas viven en `lib/lead-quality/data/*.json`.
 - Alineación: `vertical_fit 'horizontal'`, `segment_match null` (no hay `prospect_segment` que comparar).
-- `user_data`: `sha256_email_address` (correo en minúsculas, sin espacios) y `sha256_phone_number` (E.164: dígitos, con `+52` antepuesto a los 10 dígitos nacionales) vía `crypto.subtle` (ya hay un helper `sha256hex` en el sitio; se reutiliza/mueve a rl-tracking). Sin Web Crypto → claves omitidas, jamás texto plano.
-- Contexto: `time_to_convert_sec` (desde `t0` existente), `touch_count`, `days_since_first_touch`.
+- `user_data` (formato de enhanced conversions de Google): `sha256_email_address` (correo en minúsculas, sin espacios), `sha256_phone_number` (E.164 de cualquier país: México por la regla de 10 dígitos, otros con su código) y `address.sha256_first_name` / `address.sha256_last_name` (minúsculas, sin acentos —la ñ queda como n—, sin espacios extremos ni dobles) vía `crypto.subtle`. Sin Web Crypto → claves omitidas, jamás texto plano. *(Nombre y apellido agregados 2026-09-29; su mapeo a variables de GTM es acción externa.)*
+- Contexto: `time_to_convert_sec` (desde `t0` existente), `touch_count`, `days_since_first_touch`, `has_message` (booleano: si escribió "¿Qué quieres resolver?", que es opcional; nunca el texto; agregado 8-oct-2026) y `attribution` (click IDs + `first_touch`/`last_touch` de `rl_attr` + contadores; sin PII). La misma atribución, filtrada por lista blanca, queda en el log del servidor (`lead_evaluated`, `lead_not_forwarded`); **no** viaja a n8n. *(Agregado 1-oct-2026.)*
 
-### `lead_quality_flag`
+### `lead_quality_flag`, `lead_score`, `lead_tier` y `email_domain_type`
 
-- `spam`: honeypot `b_comments` lleno.
-- `suspect`: correo desechable **o** teléfono que no valida como MX de 10 dígitos (tras normalizar).
-- `clean`: el resto.
+> **Sustituido (2026-09-29, lead quality gate, Fase 3).** El modelo de cliente descrito aquí
+> originalmente (base 15, flags `clean`/`suspect`/`spam` calculados en el navegador) se eliminó.
+> Los cuatro campos los calcula ahora el motor del servidor `lib/lead-quality/engine.js`
+> (`evaluateLead`), `/api/lead` los devuelve en la respuesta y `rl_lead_submit` los publica
+> tal cual, con los mismos nombres de campo. Sin veredicto del servidor (fake success de un
+> rechazo duro, error de red) no se publica `rl_lead_submit`. Reglas, puntos y fixtures:
+> `lib/lead-quality/engine.js` y `tests/lead-engine.test.js`.
+>
+> Valores de `lead_quality_flag`: `spam` · `student` · `job_seeker` · `competitor` · `suspect` ·
+> `clean`. `student` y `job_seeker` (y `competitor` autodeclarado) nunca llegan a `rl_lead_submit`:
+> se publican como `rl_non_commercial_submit`. Tiers: A ≥ 70 · B 40–69 · C < 40.
 
 La guarda G2 del contenedor bloquea Ads/Meta para todo lo que no sea `clean`; GA4 lo recibe todo etiquetado ("se mide todo, se optimiza poco").
-
-### `lead_score` (0–100) y `lead_tier`
-
-```
-base 15
-+25 correo corporativo   | +5 correo gratuito | −30 correo desechable
-+15 empresa llenada
-+15 tamaño 51_200 o 200_plus | +10 tamaño 11_50 | +5 tamaño 1_10
-+10 teléfono MX válido (10 dígitos)
-+5  ≥1 servicio seleccionado
-clamp [0, 100] · Tier A ≥70 · B 40–69 · C <40
-Si flag = spam → score 0, tier C directo.
-```
-
-Casos de referencia (el teléfono válido y ≥1 servicio están presentes en casi todo envío real, por ser campos obligatorios/habituales):
-
-- gmail sin empresa (+tel +servicio) = 15+5+10+5 = **35 → Tier C** → G3 bloquea Ads (caso de QA de la guía).
-- gmail + empresa + tamaño 1_10 = 55 → Tier B (pyme chica con correo gratuito, realista en MX).
-- Corporativo + empresa (sin tamaño) = 70 → Tier A; con tamaño 51_200 = 85 → Tier A.
-- Desechable = máx. 30 → Tier C y flag `suspect`.
 
 ## Manejo de errores
 

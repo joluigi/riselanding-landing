@@ -3,22 +3,6 @@
 (function (global) {
   'use strict';
 
-  var FREE_DOMAINS = [
-    'gmail.com', 'hotmail.com', 'hotmail.es', 'outlook.com', 'outlook.es',
-    'yahoo.com', 'yahoo.com.mx', 'live.com', 'live.com.mx', 'icloud.com',
-    'proton.me', 'protonmail.com', 'aol.com', 'msn.com'
-  ];
-  // Mantener en sincronía con DOMINIOS_DESECHABLES de api/lead.js
-  var DISPOSABLE_DOMAINS = [
-    'mailinator.com', 'guerrillamail.com', '10minutemail.com', 'temp-mail.org', 'tempmail.com',
-    'yopmail.com', 'sharklasers.com', 'trashmail.com', 'getnada.com', 'dispostable.com',
-    'maildrop.cc', 'mintemail.com', 'throwawaymail.com', 'fakeinbox.com', 'mohmal.com',
-    'emailondeck.com', 'mailnesia.com', 'mytemp.email', 'tempr.email', 'discard.email',
-    'mailcatch.com', 'tempmailo.com', 'moakt.com', 'tmpmail.org', 'correotemporal.org',
-    'luxusmail.org', 'mailpoof.com', 'tempail.com', 'cuvox.de', 'dayrep.com',
-    'einrot.com', 'fleckens.hu', 'gustr.com', 'jourrapide.com', 'rhyta.com',
-    'superrito.com', 'teleworm.us', 'armyspy.com'
-  ];
   var SERVICE_LINE_MAP = {
     'Bundle Completo': 'paquete_integral',
     'Google Ads': 'publicidad_digital',
@@ -62,21 +46,62 @@
     return payload;
   }
 
-  // error_type: 'client_validation' | 'server_error' | 'network_error'; error_field solo en validación
-  function pushFormError(errorType, errorField) {
+  // error_type: 'client_validation' | 'server_error' | 'network_error'.
+  // error_field: id del campo en validación, o código de fricción (ver classifySubmitError).
+  // step_number: paso del formulario (1 negocio, 2 contacto) en que ocurrió.
+  // Nunca lleva valores del formulario.
+  function pushFormError(errorType, errorField, stepNumber) {
     return pushEvent('rl_form_error', {
-      form_id: 'agenda_diagnostico', error_type: errorType, error_field: errorField
+      form_id: 'agenda_diagnostico', error_type: errorType, error_field: errorField, step_number: stepNumber
     });
   }
 
-  function emailDomainType(email) {
-    var dom = String(email || '').trim().toLowerCase().split('@')[1] || '';
-    if (!dom) return 'free';
-    for (var i = 0; i < DISPOSABLE_DOMAINS.length; i++) {
-      var d = DISPOSABLE_DOMAINS[i];
-      if (dom === d || dom.slice(-(d.length + 1)) === '.' + d) return 'disposable';
-    }
-    return FREE_DOMAINS.indexOf(dom) !== -1 ? 'free' : 'corporate';
+  // Traduce un fallo del envío a [error_type, error_field] para medir fricción.
+  // err.tipo lo pone el cliente (sin_token, turnstile, network_error); err.code, /api/lead.
+  function classifySubmitError(err) {
+    var tipo = err && err.tipo, code = err && err.code;
+    if (tipo === 'turnstile') return ['network_error', 'turnstile_unavailable'];
+    if (tipo === 'sin_token' || tipo === 'network_error') return ['network_error', 'network'];
+    if (code === 'rate_limited') return ['server_error', 'rate_limited'];
+    if (code === 'form_expired') return ['server_error', 'form_expired'];
+    if (code === 'validation') return ['server_error', err.campo]; // 422: código del primer campo
+    if (code === 'destination_error') return ['server_error', 'destination_error']; // n8n falló 2 veces
+    return ['server_error', undefined];
+  }
+
+  // Atribución sin PII a partir de la cookie rl_attr (la escribe el bootstrap de index.html):
+  // click IDs + first/last touch (fuente, medio, campaña, landing) + contadores del bootstrap.
+  function attributionFromCookie(cookieStr) {
+    var m = String(cookieStr || '').match(/(?:^|; )rl_attr=([^;]*)/);
+    var a = null;
+    try { a = m ? JSON.parse(decodeURIComponent(m[1])) : null; } catch (e) { a = null; }
+    a = a || {};
+    var ctx = global.__rl || {};
+    return compact({
+      gclid: a.gclid, gbraid: a.gbraid, wbraid: a.wbraid, fbclid: a.fbclid, msclkid: a.msclkid,
+      first_touch: a.ft, last_touch: a.lt,
+      touch_count: ctx.touchCount, days_since_first_touch: ctx.daysSinceFirstTouch
+    });
+  }
+
+  function attribution() {
+    return attributionFromCookie(global.document ? global.document.cookie : '');
+  }
+
+  // Solicitante que se declaró no comercial (student / job_seeker / competitor). Evento propio,
+  // NUNCA rl_lead_submit: ninguna etiqueta de conversión escucha este nombre.
+  function pushNonCommercialSubmit(applicantType, eventId) {
+    return pushEvent('rl_non_commercial_submit', {
+      event_id: eventId, applicant_type: applicantType, form_id: 'agenda_diagnostico', form_location: 'contacto',
+      attribution: attribution()
+    });
+  }
+
+  // Nombre para hashear (user_data): minúsculas, sin acentos, sin espacios extremos ni dobles
+  function normalizeName(v) {
+    var s = String(v || '');
+    if (typeof s.normalize === 'function') s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+    return s.toLowerCase().replace(/\s+/g, ' ').trim();
   }
 
   function phoneE164MX(raw) {
@@ -84,28 +109,6 @@
     if (d.length === 13 && d.slice(0, 3) === '521') d = d.slice(3); // formato legado +52 1
     if (d.length === 12 && d.slice(0, 2) === '52') d = d.slice(2);
     return d.length === 10 ? '+52' + d : null;
-  }
-
-  // TODO: descalificadores de la Guía (competitor / job_seeker / student) y denylist de
-  // dominios de agencias. Aún no definidos en el spec; cuando existan, bajan el flag aquí.
-  function leadScore(input) {
-    if (input.honeypotFilled) return { score: 0, tier: 'C', flag: 'spam' };
-    var s = 15;
-    if (input.emailType === 'corporate') s += 25;
-    else if (input.emailType === 'free') s += 5;
-    else if (input.emailType === 'disposable') s -= 30;
-    if (input.hasCompany) s += 15;
-    if (input.sizeBucket === '51_200' || input.sizeBucket === '200_plus') s += 15;
-    else if (input.sizeBucket === '11_50') s += 10;
-    else if (input.sizeBucket === '1_10') s += 5;
-    if (input.phoneValid) s += 10;
-    if (input.servicesCount > 0) s += 5;
-    s = Math.max(0, Math.min(100, s));
-    return {
-      score: s,
-      tier: s >= 70 ? 'A' : (s >= 40 ? 'B' : 'C'),
-      flag: (input.emailType === 'disposable' || !input.phoneValid) ? 'suspect' : 'clean'
-    };
   }
 
   function serviceLineFromPilar(p) { return SERVICE_LINE_MAP[p] || 'paquete_integral'; }
@@ -134,47 +137,67 @@
     }).catch(function () { return null; });
   }
 
+  // Veredicto del servidor (motor de calidad de /api/lead). Es la ÚNICA fuente de
+  // lead_quality_flag / lead_score / lead_tier / email_domain_type: sin él no hay rl_lead_submit.
+  function validVerdict(v) {
+    return !!v && typeof v.lead_quality_flag === 'string' && typeof v.lead_score === 'number' &&
+      typeof v.lead_tier === 'string' && typeof v.email_domain_type === 'string';
+  }
+
+  // Resuelve con el payload de rl_lead_submit, o con null si falta el veredicto del servidor
   function buildLeadSubmit(f) {
+    if (!validVerdict(f && f.verdict)) return Promise.resolve(null);
     var ctx = global.__rl || {};
     var emailNorm = String(f.email || '').trim().toLowerCase();
-    var e164 = phoneE164MX(f.phoneRaw);
-    var emailType = emailDomainType(emailNorm);
-    var leadId = ctx.leadId || uuid(); // transaction_id === lead_id aunque falte el bootstrap
-    var q = leadScore({
-      emailType: emailType, hasCompany: !!f.hasCompany, sizeBucket: f.sizeBucket || null,
-      phoneValid: !!e164, servicesCount: f.servicesCount || 0, honeypotFilled: !!f.honeypotFilled
-    });
+    // E.164 del cliente para cualquier país (lo arma index.html); si no viene, la regla de México
+    var e164 = /^\+\d{7,15}$/.test(String(f.phoneE164 || '')) ? f.phoneE164 : phoneE164MX(f.phoneRaw);
+    var nombre = normalizeName(f.firstName), apellido = normalizeName(f.lastName);
+    var v = f.verdict;
+    // event_id y lead_id los confirma el servidor (idempotencia); transaction_id === lead_id
+    var leadId = f.leadId || ctx.leadId || uuid();
     // prospect_segment, prospect_geo, operation_volume_bucket, current_marketing_maturity y
     // segment_match se omiten: el formulario no los captura.
     var payload = compact({
-      event_id: uuid(),
+      event_id: f.eventId || uuid(),
       transaction_id: leadId,
       lead_id: leadId,
       form_id: 'agenda_diagnostico', form_location: 'contacto', lead_source_channel: 'form',
       service_line: serviceLineFromPilar(f.pilar), assigned_partner: 'ambos',
       company_size_bucket: f.sizeBucket,
-      email_domain_type: emailType,
-      lead_quality_flag: q.flag, lead_score: q.score, lead_tier: q.tier,
+      email_domain_type: v.email_domain_type,
+      lead_quality_flag: v.lead_quality_flag, lead_score: v.lead_score, lead_tier: v.lead_tier,
       vertical_fit: 'horizontal',
       time_to_convert_sec: f.t0 ? Math.max(0, Math.round((Date.now() - f.t0) / 1000)) : null,
       touch_count: ctx.touchCount,
-      days_since_first_touch: ctx.daysSinceFirstTouch
+      days_since_first_touch: ctx.daysSinceFirstTouch,
+      // ¿Escribió "¿Qué quieres resolver?" (opcional)? Solo el booleano, nunca el texto
+      has_message: typeof f.hasMessage === 'boolean' ? f.hasMessage : null,
+      attribution: attribution() // click IDs + first/last touch de rl_attr, sin PII
     });
+    // user_data con el formato de Google (enhanced conversions): correo, teléfono E.164 y, dentro
+    // de address, nombre y apellido. Solo hashes SHA-256; sin Web Crypto se omiten, nunca en claro.
     return Promise.all([
-      sha256hex(emailNorm),
-      e164 ? sha256hex(e164) : Promise.resolve(null)
+      emailNorm ? sha256hex(emailNorm) : Promise.resolve(null),
+      e164 ? sha256hex(e164) : Promise.resolve(null),
+      nombre ? sha256hex(nombre) : Promise.resolve(null),
+      apellido ? sha256hex(apellido) : Promise.resolve(null)
     ]).then(function (hs) {
       var ud = {};
       if (hs[0]) ud.sha256_email_address = hs[0];
       if (hs[1]) ud.sha256_phone_number = hs[1];
-      if (ud.sha256_email_address || ud.sha256_phone_number) payload.user_data = ud;
+      var address = {};
+      if (hs[2]) address.sha256_first_name = hs[2];
+      if (hs[3]) address.sha256_last_name = hs[3];
+      if (address.sha256_first_name || address.sha256_last_name) ud.address = address;
+      if (Object.keys(ud).length) payload.user_data = ud;
       return payload;
     });
   }
 
   var RL = {
-    uuid: uuid, pushEvent: pushEvent, pushFormError: pushFormError, emailDomainType: emailDomainType,
-    phoneE164MX: phoneE164MX, leadScore: leadScore,
+    uuid: uuid, pushEvent: pushEvent, pushFormError: pushFormError, classifySubmitError: classifySubmitError,
+    attributionFromCookie: attributionFromCookie, pushNonCommercialSubmit: pushNonCommercialSubmit,
+    phoneE164MX: phoneE164MX, normalizeName: normalizeName,
     serviceLineFromPilar: serviceLineFromPilar, prefilledRef: prefilledRef,
     sha256hex: sha256hex, buildLeadSubmit: buildLeadSubmit,
     _crossedThresholds: crossedThresholds, _engagedReady: engagedReady

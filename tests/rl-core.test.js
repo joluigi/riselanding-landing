@@ -8,15 +8,6 @@ test('uuid: formato UUIDv4', function () {
   assert.notStrictEqual(RL.uuid(), RL.uuid());
 });
 
-test('emailDomainType: corporate / free / disposable (incluye subdominios)', function () {
-  assert.strictEqual(RL.emailDomainType('maria@empresa.mx'), 'corporate');
-  assert.strictEqual(RL.emailDomainType('MARIA@GMAIL.COM'), 'free');
-  assert.strictEqual(RL.emailDomainType('x@yahoo.com.mx'), 'free');
-  assert.strictEqual(RL.emailDomainType('x@mailinator.com'), 'disposable');
-  assert.strictEqual(RL.emailDomainType('x@sub.mailinator.com'), 'disposable');
-  assert.strictEqual(RL.emailDomainType(''), 'free');
-});
-
 test('phoneE164MX: normaliza a +52 y rechaza longitudes inválidas', function () {
   assert.strictEqual(RL.phoneE164MX('55 5878 8983'), '+525558788983');
   assert.strictEqual(RL.phoneE164MX('+52 55 5878 8983'), '+525558788983');
@@ -25,33 +16,9 @@ test('phoneE164MX: normaliza a +52 y rechaza longitudes inválidas', function ()
   assert.strictEqual(RL.phoneE164MX(''), null);
 });
 
-test('leadScore: casos de referencia del spec (base 15)', function () {
-  // gmail sin empresa, tel válido, 1 servicio → 35 C clean (caso QA de la guía)
-  assert.deepStrictEqual(
-    RL.leadScore({ emailType: 'free', hasCompany: false, sizeBucket: null, phoneValid: true, servicesCount: 1, honeypotFilled: false }),
-    { score: 35, tier: 'C', flag: 'clean' });
-  // corporativo + empresa sin tamaño → 70 A
-  assert.deepStrictEqual(
-    RL.leadScore({ emailType: 'corporate', hasCompany: true, sizeBucket: null, phoneValid: true, servicesCount: 1, honeypotFilled: false }),
-    { score: 70, tier: 'A', flag: 'clean' });
-  // corporativo + empresa + 51_200 → 85 A
-  assert.strictEqual(
-    RL.leadScore({ emailType: 'corporate', hasCompany: true, sizeBucket: '51_200', phoneValid: true, servicesCount: 1, honeypotFilled: false }).score, 85);
-  // gmail + empresa + 1_10 → 55 B
-  assert.deepStrictEqual(
-    RL.leadScore({ emailType: 'free', hasCompany: true, sizeBucket: '1_10', phoneValid: true, servicesCount: 1, honeypotFilled: false }),
-    { score: 55, tier: 'B', flag: 'clean' });
-  // desechable → suspect y ≤30
-  const d = RL.leadScore({ emailType: 'disposable', hasCompany: true, sizeBucket: '200_plus', phoneValid: true, servicesCount: 1, honeypotFilled: false });
-  assert.strictEqual(d.tier, 'C');
-  assert.strictEqual(d.flag, 'suspect');
-  // teléfono inválido → suspect
-  assert.strictEqual(
-    RL.leadScore({ emailType: 'corporate', hasCompany: true, sizeBucket: null, phoneValid: false, servicesCount: 1, honeypotFilled: false }).flag, 'suspect');
-  // honeypot → spam directo
-  assert.deepStrictEqual(
-    RL.leadScore({ emailType: 'corporate', hasCompany: true, sizeBucket: '51_200', phoneValid: true, servicesCount: 3, honeypotFilled: true }),
-    { score: 0, tier: 'C', flag: 'spam' });
+test('el modelo de calidad del cliente ya no existe: el veredicto viene solo del servidor', function () {
+  assert.strictEqual(RL.leadScore, undefined);
+  assert.strictEqual(RL.emailDomainType, undefined);
 });
 
 test('serviceLineFromPilar: mapa completo con fallback', function () {

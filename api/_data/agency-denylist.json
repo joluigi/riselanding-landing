@@ -1,0 +1,4 @@
+{
+  "_doc": "Dominios de agencias competidoras. Si el dominio del correo o del sitio web informado coincide (o es subdominio), lead_quality_flag = \"competitor\" (señal agency_denylist). Vive en api/_data para que NO se publique como archivo estático. Formato de cada entrada: { \"domain\": \"agencia-ejemplo.mx\", \"note\": \"por qué está aquí\", \"added\": \"AAAA-MM-DD\" }. Solo el campo domain es obligatorio.",
+  "entries": []
+}
