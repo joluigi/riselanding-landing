@@ -1,93 +1,91 @@
 # Release del lead quality gate en modo SHADOW
 
-Rama: `feat/lead-quality-gate` → `main` (Vercel publica `main` en Production automáticamente).
-Objetivo: publicar el gate en **shadow** para que empiece el periodo de observación. Las fases 6–9
-van en PRs posteriores.
+PR #4 · rama `feat/lead-quality-gate` → `main` por **Squash and merge** (lo hace José Luis en GitHub).
+Vercel publica `main` en Production automáticamente. **Fecha del release y del aviso: 7 de octubre de 2026.**
 
-Última actualización: 7-oct-2026 (formulario en 2 pasos; aviso aprobado + ajuste de exactitud; release sin Turnstile; Turnstile a las +48 h).
+Última actualización: 7-oct-2026 (preparación final: fecha del aviso puesta, `npm run check:release` en verde).
 
-## 1. Estado de los bloqueantes
+## 1. Resumen
 
-| # | Bloqueante | Estado |
+**Entra (todo en modo `shadow`: el motor etiqueta, pero todo lo que evalúa se sigue reenviando a n8n):**
+- Motor de calidad del servidor (`lib/lead-quality/engine.js`): `lead_quality_flag`, `lead_score`, `lead_tier`, `spam_points`, `signals[]`; sufijo ` · Calidad: flag/tier score` en "Notas iniciales".
+- Barreras anti-bot: token HMAC (`/api/form-token`, tiempo mínimo 4 s), honeypot `website_url_2`, rate limit en memoria, idempotencia por `event_id`, reintento hacia n8n, sin secretos en el código.
+- Cloudflare Turnstile **listo pero apagado** (opcional; se activa a las +48 h, sección 5).
+- Formulario en 2 pasos (negocio → contacto), nombre completo, "¿Qué quieres resolver?" opcional, no comerciales resueltos en el paso 1 sin datos de contacto.
+- Aviso de privacidad actualizado y aprobado (5-oct-2026 + ajuste de exactitud), con fecha 7 DE OCTUBRE DE 2026.
+- Tracking `rl_*`: `rl_lead_submit` con el veredicto del servidor y `user_data` hasheado, `rl_form_step`, `rl_form_submit_attempt`, `rl_non_commercial_submit`, `rl_form_error` con `step_number`, `has_message`.
+- Atribución: `utm_id` y `referrer` (solo origen) en `rl_attr`; atribución en `rl_lead_submit` y en el log del servidor (no viaja a n8n).
+
+**No entra:**
+- Fase 7: botón/número de WhatsApp y liga de agenda (ojo: `gracias.html` conserva el enlace marcador `wa.me/521XXXXXXXXXX` que ya está en producción; esa página no la usa el formulario).
+- Fase 8: pieza "Necesidad: …" (y demás piezas) en las notas de Notion.
+- Modo `enforce` (criterio en la sección 8).
+- Baja de `/index-legacy` y `Form/`.
+
+## 2. Squash commit sugerido
+
+**Título:** `feat: filtro de calidad de leads + formulario en 2 pasos (modo shadow)`
+
+**Cuerpo:**
+```
+- Motor de calidad del servidor (lead_quality_flag / lead_score / lead_tier / signals) en
+  modo shadow: etiqueta y reenvía todo a n8n con " · Calidad: flag/tier score".
+- Anti-bot: token HMAC con tiempo mínimo, honeypot, rate limit, idempotencia por event_id,
+  reintento hacia n8n; Turnstile listo y apagado; sin secretos en el código (check en npm test).
+- Formulario en 2 pasos con nombre completo, mensaje opcional y no comerciales resueltos en el
+  paso 1 sin datos de contacto. Contrato con n8n sin cambios (mismas 11 llaves).
+- Tracking rl_*: veredicto del servidor en rl_lead_submit, user_data hasheado, rl_form_step,
+  rl_form_submit_attempt, rl_non_commercial_submit, has_message; atribución utm_id/referrer.
+- Aviso de privacidad aprobado por revisión legal, vigente desde el 7 de octubre de 2026.
+
+Commits clave: 339f3ac (anti-bot), f437146 (validación compartida), 170f337 (motor),
+8e6b93d (shadow/enforce, idempotencia, reintento), c23fd89 (sin secretos), d92cb62
+(atribución), 0a546f9 (2 pasos), 875420c (mensaje opcional + has_message), 93b4756 y
+b7d907f (aviso aprobado), 450d6b6 (fecha del aviso).
+```
+
+## 3. Variables de Production (solo nombres)
+
+| Variable | Estado | Notas |
 |---|---|---|
-| 1 | Aprobación legal del aviso de privacidad | ✅ **Cumplido.** Aviso aprobado el 5-oct-2026 con los ajustes de `93b4756` (sobre `b2e450a` y `2efc019`). Solo falta poner la fecha real el día del release (paso 1). |
-| 2 | `FORM_TOKEN_SECRET` en Production | ⛔ **Pendiente.** Sin él, la capa de token y tiempo mínimo queda apagada (no rompe, pero no protege). |
-| 3 | `N8N_WEBHOOK_URL` y `FORM_SHARED_SECRET` en Production | ✅ Definidas (rotación del 30-sep/1-oct: n8n v5 con Header Auth; v4 despublicado). El código **ya no tiene valores de respaldo**: sin ellas, los leads reciben 503. |
-| 4 | Turnstile | **No entra al release.** Se publica sin `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` y se activa 48 h después si todo está estable (sección 5). |
+| `FORM_TOKEN_SECRET` | **Configurar antes del merge** | Distinta a la de Preview. Sin ella la capa de token y tiempo mínimo queda apagada (no rompe, pero no protege). |
+| `LEAD_GATE_MODE` | **Configurar antes del merge** = `shadow` | Es el valor por defecto, pero se deja explícito. |
+| `N8N_WEBHOOK_URL` | ✅ Ya existe | Obligatoria (https, flujo n8n v5). Sin ella los leads reciben 503. |
+| `FORM_SHARED_SECRET` | ✅ Ya existe | Obligatoria (header `x-form-secret`). Sin ella los leads reciben 503. |
+| `TURNSTILE_SITE_KEY` / `TURNSTILE_SECRET_KEY` | ❌ **No configurar todavía** | Se activan juntas 48 h después (sección 5). |
+| `VENDOR_CONTACT_EMAIL` | Opcional | Correo que ven proveedores/agencias; si no existe, el mensaje no lo incluye. |
 
-Ninguna de las fases 6–9 es bloqueante:
+Son todas las variables que lee el código (`api/lead.js`, `api/_lib/turnstile.js`, `api/_lib/form-token.js`).
 
-- **Fase 6 (atribución):** ya está hecha (`d92cb62`) y entra al release; de todos modos no era bloqueante (es aditiva).
-- **Fase 7 (UX):** el doble envío ya está cubierto (botón deshabilitado + bandera + idempotencia por `event_id`) y los errores son accesibles. Pendiente menor: los mensajes dicen "escríbenos por WhatsApp" sin número (siempre incluyen también el correo).
-- **Fase 8 (payload):** el sufijo " · Calidad: …" ya sale en shadow; Title Case, minúsculas del correo y "México" son cosméticos.
-- **Embudo del formulario en 2 pasos:** `rl_form_start` → `rl_form_step` (paso 2, `step_name:"contacto"`) → `rl_form_submit_attempt` → `rl_lead_submit`. `rl_form_error` lleva `step_number`.
-- **"¿Qué quieres resolver?" es opcional:** sin mínimo para enviar; el motor da +10 solo con 20+ caracteres sin tecleo al azar (vacío o corto: 0, sin penalizar). `rl_lead_submit.has_message` (booleano, sin el texto) mide cuántos leads lo llenan. Para verlo en GA4 hace falta la variable `DLV - rl_event_data.has_message` y agregarla como parámetro a la etiqueta "GA4 - generate_lead" (acción en GTM).
-- **Fase 9 (observabilidad):** los logs estructurados (`lead_evaluated`, `lead_blocked`, `destination_failed`, `destination_misconfigured`, `turnstile_*`) y la suite de pruebas ya existen.
+## 4. Checklist de release
 
-## 2. Qué entra al release
+- [ ] Visto bueno de Rut
+- [ ] Variables de Production configuradas (`FORM_TOKEN_SECRET`, `LEAD_GATE_MODE=shadow`; sin Turnstile)
+- [ ] Squash and merge (título y cuerpo de la sección 2)
+- [ ] Deploy de Production en estado Ready (`vercel inspect riselanding.com` → commit del squash)
+- [ ] Prueba desde `https://riselanding.com/?rl_internal=1` con "Prueba Riselanding" y `jose.vazquez@riselanding.com`: fila en Notion (notas con " · Calidad: …"), correo de bienvenida, `lead_evaluated` en el log (`mode:"shadow"`, `forwarded:true`, `destination_status:200`), `generate_lead` con `has_message` en GA4 DebugView (requiere el parámetro `has_message` en la etiqueta "GA4 - generate_lead")
+- [ ] Monitoreo de 1 hora en los logs de Vercel (`lead_evaluated`, `lead_blocked`, y en nivel error `destination_failed` / `destination_misconfigured` = 0)
 
-| Commit | Contenido | ¿Entra? |
-|---|---|---|
-| `339f3ac` | Fase 1: token HMAC, Turnstile (dormido sin claves), honeypot, rate limit | ✅ |
-| `44334e9` | `turnstile_misconfigured` y telemetría de fricción | ✅ |
-| `f437146` | Fase 2: campos nuevos y validación compartida | ✅ |
-| `2561a58` | `phone_sha256` consistente en logs | ✅ |
-| `b2e450a` | Aviso de privacidad: datos nuevos, Turnstile, MX | ✅ (aprobado con los ajustes de `93b4756`) |
-| `73b1949` | `rl_non_commercial_submit` y "¿Elegiste mal? Cambia la opción" | ✅ |
-| `170f337` | Fase 3: motor de calidad | ✅ |
-| `604f760` | Motor: teclado, URLs propias, vocabulario del negocio | ✅ |
-| `8e6b93d` | Fase 4: `LEAD_GATE_MODE`, idempotencia, reintento | ✅ |
-| `e4558cf` | URLs `.mx` y criterio para enforce | ✅ |
-| `aa373f7` | Fase 5: `user_data` con nombre/apellido y E.164 | ✅ |
-| `c23fd89` | Sin valores de respaldo del destino + check de secretos | ✅ (rotación confirmada) |
-| `d73f745`, `c0928d3` | Documentación (este checklist, correo de pruebas, auth de git) | ✅ |
-| `2efc019` | Aviso: conservación temporal de bloqueadas (retirada después en `93b4756`) | ✅ (forma parte del historial aprobado) |
-| `93b4756` | Aviso: ajustes de revisión legal — **aprobado para release** (5-oct-2026) | ✅ |
-| `d92cb62` | Fase 6: `utm_id`/`referrer` en `rl_attr`; atribución en `rl_lead_submit` y en el log | ✅ (lista y probada) |
-| `bca7680` | Nombre completo en un campo, necesidad 20+, no comerciales sin datos de contacto | ✅ |
-| `0a546f9` | Formulario en 2 pasos + `rl_form_step` | ✅ |
-| `b7d907f` | Aviso: ajuste de exactitud por formulario de 2 pasos (aprobado por José Luis) | ✅ |
-| `875420c` | "¿Qué quieres resolver?" opcional + `has_message` en `rl_lead_submit` | ✅ |
-| — | Baja de `/index-legacy` y `Form/` | ❌ No creado; va aparte |
+Verificaciones adicionales recomendadas tras el deploy:
+- `GET https://riselanding.com/api/form-token` → 200, `Cache-Control: no-store`, `form_token` presente y `turnstile_site_key: null`.
+- "Busco empleo" en el paso 1 → aviso ahí mismo; el POST solo lleva `solicitante` (+ token, honeypot, `event_id`, `lead_id`); log `lead_not_forwarded` sin hashes; sin fila en Notion.
+- `curl -s https://riselanding.com/api/lead -H 'Content-Type: application/json' -d '{"nombre":"Bot"}'` → `{"success":true}` y log `lead_blocked` / `bad_form_token`.
+- GTM Preview: Meta - Lead no dispara con tier C (sección 7).
 
-## 3. Pasos para publicar (SIN Turnstile)
+### Plan de rollback
 
-Correo para envíos de prueba que llegan a n8n: **`jose.vazquez@riselanding.com`**, siempre con el
-nombre "Prueba Riselanding" (n8n manda correo de bienvenida; un buzón inexistente rebota y daña la
-reputación de envío del dominio).
+- **Instant Rollback en Vercel** al deployment `riselanding-landing-czi0wj8ea-joluigis-projects.vercel.app` (Dashboard → Deployments → ese deployment → **Instant Rollback**, o `vercel rollback riselanding-landing-czi0wj8ea-joluigis-projects.vercel.app`). Es el Production vigente antes del release (commit `1e2184a`, redesplegado con las variables rotadas).
+  - ⚠️ **No** hacer rollback a deployments anteriores a ese (p. ej. `riselanding-landing-7f2mxu5b2…`): usan la URL vieja de n8n, que ahora responde 404.
+  - Mientras dure el rollback, los pushes a `main` no se publican solos hasta `vercel promote` o deshacer el rollback.
+- **En git (si hace falta):** `git revert <commit del squash>` en `main` (un solo commit, sin `-m`).
+- **Parcial:** borrar `FORM_TOKEN_SECRET` → Redeploy apaga solo la capa de token. El gate ya está en `shadow`: no hay modo más permisivo.
 
-1. **Fecha del aviso.** En `aviso-de-privacidad.html` reemplaza `[FECHA DEL RELEASE]` por la fecha real del release (formato `6 DE OCTUBRE DE 2026`), commit en la rama, y ejecuta `npm run check:release`: debe responder "✔ Listo para release". El aviso ya está aprobado por legal (5-oct-2026); no cambies otro texto sin nueva revisión.
-2. **Variables en Vercel → Settings → Environment Variables → Production.** Aplican solo en el siguiente deploy:
-   - `FORM_TOKEN_SECRET`: nuevo y **distinto** del de Preview:
-     `node -e "console.log(require('crypto').randomBytes(32).toString('base64url'))"`
-   - `LEAD_GATE_MODE=shadow`.
-   - **No** definir `TURNSTILE_SITE_KEY` ni `TURNSTILE_SECRET_KEY` todavía (sección 5).
-   - Ya están: `N8N_WEBHOOK_URL`, `FORM_SHARED_SECRET`.
-3. **PR** `feat/lead-quality-gate` → `main` (con la CLI: `GH_TOKEN=$(gh auth token --user joluigi) gh pr create …`, ver `docs/git-auth-local.md`). Revisar el preview del PR.
-4. **Merge** con merge commit. Anotar el nombre del deployment nuevo de Production: es el destino del rollback de Turnstile (sección 5).
-5. **Verificación posterior al deploy** (~10 min):
-   - `vercel inspect riselanding.com`: deployment nuevo con el commit del merge.
-   - `GET https://riselanding.com/api/form-token` → 200, `Cache-Control: no-store`, `form_token` presente y `turnstile_site_key: null`.
-   - Envío real **"Prueba Riselanding"** con `jose.vazquez@riselanding.com` desde `https://riselanding.com/?rl_internal=1` (G1 evita que cuente como conversión). Esperado:
-     - pantalla de gracias, sin widget de Turnstile y sin espacio vacío sobre el botón;
-     - Vercel Logs: `lead_evaluated` con `mode:"shadow"`, `forwarded:true`, `destination_status:200` y `attribution`;
-     - n8n v5 → Executions: 200; Notion: fila nueva cuyas "Notas iniciales" terminan en ` · Calidad: …`; correo de bienvenida recibido.
-   - "¿Qué quieres resolver? (opcional)": se puede continuar con el campo vacío; en GTM Preview, `rl_lead_submit.has_message` = `false` / `true` según se haya escrito.
-   - Formulario en 2 pasos: "Continuar →" valida el paso 1 sin enviar nada (DevTools → Network: ningún POST a `/api/lead`); el paso 2 muestra "Paso 2 de 2", foco en "Nombre completo"; "← Atrás" conserva lo capturado.
-   - "Busco empleo" en el paso 1 → "Continuar": aviso de vacantes ahí mismo, **sin** pedir datos de contacto; el POST solo lleva `solicitante` (+ token, honeypot, `event_id`, `lead_id`); log `lead_not_forwarded` sin hashes; **sin** fila en Notion; en GTM Preview, `non_commercial_submit` a GA4.
-   - `curl -s https://riselanding.com/api/lead -H 'Content-Type: application/json' -d '{"nombre":"Bot"}'` → `{"success":true}` y log `lead_blocked` / `bad_form_token`.
-   - En los logs: `destination_misconfigured` y `destination_failed` = **0**.
-   - Confirmar en GTM Preview que Meta - Lead no dispara con tier C (sección 7).
+### Post-release
 
-## 4. Cómo revertir en menos de 5 minutos
+- **+48 h:** activar Turnstile con hostnames `riselanding.com` y `www.riselanding.com` (sección 5: condiciones, verificación y reversa).
+- **2 a 4 semanas:** revisar los datos del modo shadow (sufijo "Calidad" en Notion, logs `lead_evaluated`) para decidir si se pasa a `enforce` (sección 8 y criterio en `SEGURIDAD-FORMULARIO.md`).
 
-- **Todo el release:**
-  `vercel rollback riselanding-landing-czi0wj8ea-joluigis-projects.vercel.app`
-  (o Dashboard → Deployments → ese deployment → **Instant Rollback**). Es el Production vigente al 1-oct (commit `1e2184a`, redesplegado con las variables rotadas).
-  - ⚠️ **No** hacer rollback a deployments anteriores a ese (p. ej. `riselanding-landing-7f2mxu5b2…`): usan la URL vieja de n8n, que ahora responde 404, y **todos** los leads fallarían.
-  - Mientras dure el rollback, los siguientes pushes a `main` no se publican solos hasta ejecutar `vercel promote` o deshacer el rollback. Corrección definitiva: `git revert -m 1 <merge>`.
-- **Solo la capa de token:** borrar `FORM_TOKEN_SECRET` → Redeploy (1–2 min).
-- **Comportamiento del gate:** ya está en `shadow`; no hay nada más permisivo que eso.
+Correo para envíos de prueba que llegan a n8n: **`jose.vazquez@riselanding.com`**, siempre con el nombre "Prueba Riselanding".
 
 ## 5. Activación de Turnstile (+48 h)
 
