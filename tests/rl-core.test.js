@@ -233,8 +233,8 @@ test('rl-taxonomy.json: documenta cada evento rl_* que publica el código, con e
     assert.strictEqual(typeof e.gtm_trigger, 'boolean', e.name + ': gtm_trigger');
     porNombre[e.name] = e;
   });
-  // index.html (legado) sale al final de ola 1 y js/rl-form.js llega con PR2: se leen los que existan
-  const fuentes = ['js/rl-tracking.js', 'src/tracking/rl-bootstrap.js', 'js/rl-form.js', 'index.html']
+  // fuentes que publican eventos rl_* (el index.html legado se borró en PR7)
+  const fuentes = ['js/rl-tracking.js', 'src/tracking/rl-bootstrap.js', 'js/rl-form.js']
     .filter(function (f) { return fs.existsSync(path.join(RAIZ, f)); })
     .map(function (f) { return fs.readFileSync(path.join(RAIZ, f), 'utf8'); }).join('\n');
   const emitidos = new Set();
