@@ -62,7 +62,7 @@ Se conservan porque son honestos: el caso de manufactura etiquetado como "Ejempl
 | Fase 1 · MVP | Fase 2 · Mejoras |
 |---|---|
 | Páginas: home, una página por servicio con keyword propia (lista final según F7a: SEM, SEO, Web, CRM, Automatización, Dashboards), `/aviso-de-privacidad`, `/gracias` (si se adopta la redirección tras el éxito), 404 | Blog MDX, landings por segmento o industria |
-| Componente interactivo: diagnóstico rápido o calculadora (reglas y rangos los define José por escrito) | Casos de estudio reales con permiso del cliente |
+| Componente interactivo: diagnóstico de madurez digital (ola 2, del 28-oct al 3-nov) | Casos de estudio reales con permiso del cliente |
 | Integraciones: formulario y API actuales sin cambios (contrato en `docs/contrato-integraciones.md`), GTM-P3WZC7MV, n8n hacia Notion CRM, Turnstile | Enhanced Conversions, Meta CAPI, banner de cookies con CMP |
 | Idiomas: español (es-MX) | Inglés si hay demanda |
 
@@ -144,6 +144,6 @@ Proyecto interno: el equipo ya tiene acceso a Vercel, GitHub, GTM, GA4, n8n y No
 ## 14. Respuestas de José (2026-10-20)
 
 1. WhatsApp: +52 55 4821 3439, visible como conversión secundaria.
-2. Componente interactivo: José pidió opciones; se eligen en F1.
-3. Lanzamiento: 2026-10-27. Meta: 50 leads calificados a 90 días.
+2. Componente interactivo: diagnóstico de madurez digital (8 a 10 preguntas, puntaje por pilar Atraer, Convertir, Medir y Automatizar, siguientes pasos y precarga del formulario). Claude redacta preguntas y ponderación; José las aprueba por escrito antes de F4.
+3. Lanzamiento escalonado. 2026-10-27: home, páginas de servicio de las campañas activas, legales y formulario. 2026-10-28 a 2026-11-03: resto de servicios y diagnóstico de madurez. Meta: 50 leads calificados a 90 días.
 4. Keywords: `docs/seo/keywords-google-ads-editor.csv` (estructura de campañas de Google Ads Editor con 12 grupos corporativos y 1 local). No trae volumen ni dificultad: la priorización por volumen queda pendiente de un export de Keyword Planner con métricas.
