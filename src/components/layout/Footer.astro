@@ -17,7 +17,8 @@ const { ctaHref = '#contacto' } = Astro.props;
 const pilares = PILARES
   .map((p) => ({ ...p, servicios: serviciosDePilar(p.id, { soloPublicados: true }) }))
   .filter((p) => p.servicios.length > 0);
-const totalColumnas = pilares.length + 2;
+// Contacto ocupa 2 columnas (correo y teléfono no caben en una)
+const totalColumnas = pilares.length + 3;
 const anio = new Date().getFullYear();
 ---
 <footer class="site-footer" aria-labelledby="footer-title">
@@ -46,7 +47,7 @@ const anio = new Date().getFullYear();
             <li><a href="/#nosotros">Nosotros</a></li>
           </ul>
         </div>
-        <div>
+        <div class="footer-contacto">
           <h3 class="footer-title">Contacto</h3>
           <ul class="footer-links">
             <li><a href={WHATSAPP_URL} target="_blank" rel="noopener"><Icono nombre="whatsapp" tamano="sm" />WhatsApp {WHATSAPP_VISIBLE}</a></li>
