@@ -1,0 +1,13 @@
+---
+// Herramientas que operamos (docs/wireframes/home.md §2): solo texto, sin logos de terceros ni sellos
+// de partner (decisión de F3 y pregunta 11 del cuestionario).
+import { HERRAMIENTAS } from './contenido.js';
+---
+<section class="tools" id="herramientas" aria-labelledby="tools-title">
+  <div class="container reveal">
+    <h2 class="eyebrow" id="tools-title">Herramientas que operamos</h2>
+    <ul class="tools__list" role="list">
+      {HERRAMIENTAS.map((h) => <li>{h}</li>)}
+    </ul>
+  </div>
+</section>

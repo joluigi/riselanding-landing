@@ -1,0 +1,62 @@
+---
+// Maqueta Convertir: pipeline de CRM. Empresas, personas y montos ficticios (leyenda en Hero.astro).
+import Ventana from './Ventana.astro';
+import Icono from '../ui/Icono.astro';
+
+const ETAPAS = [
+  {
+    nombre: 'Nuevo', total: 8,
+    tratos: [
+      { empresa: 'Industrias Tavira', contacto: 'Mariana Ortiz · Compras', monto: '$185,000', vendedor: 'AV' },
+      { empresa: 'Distribuidora Ocotal', contacto: 'Jorge Salas · Dirección', monto: '$96,000', vendedor: 'DT' }
+    ]
+  },
+  {
+    nombre: 'Calificado', total: 5,
+    tratos: [
+      { empresa: 'Transportes Cedral', contacto: 'Ana Ruiz · Operaciones', monto: '$240,000', vendedor: 'AV' },
+      { empresa: 'Clínica Valdivia', contacto: 'Luis Fuentes · Administración', monto: '$72,000', vendedor: 'DT' }
+    ]
+  },
+  {
+    nombre: 'Propuesta', total: 3,
+    tratos: [
+      { empresa: 'Constructora Ámbar', contacto: 'Paola Méndez · Dirección', monto: '$310,000', vendedor: 'DT' }
+    ]
+  },
+  {
+    nombre: 'Ganado', total: 2,
+    tratos: [
+      { empresa: 'Grupo Lumbre', contacto: 'Carlos Ibarra · Comercial', monto: '$158,000', ganado: true }
+    ]
+  }
+];
+---
+<Ventana titulo="CRM · Pipeline comercial">
+  <div class="mock-head">
+    <div>
+      <p class="eyebrow">Oportunidades</p>
+      <p class="mock-title">Pipeline B2B</p>
+    </div>
+    <span class="mock-chip">18 abiertas</span>
+  </div>
+  <div class="pipeline">
+    {ETAPAS.map((e) => (
+      <div class="stage">
+        <div class="stage__head"><span class="stage__name">{e.nombre}</span><span class="stage__count">{e.total}</span></div>
+        {e.tratos.map((t) => (
+          <div class="deal">
+            <p class="deal__company">{t.empresa}</p>
+            <p class="deal__contact">{t.contacto}</p>
+            <div class="deal__foot">
+              <span class="deal__amount">{t.monto}</span>
+              {t.ganado
+                ? <span class="deal__won"><Icono nombre="check" tamano="sm" />Cerrado</span>
+                : <span class="avatar" aria-hidden="true">{t.vendedor}</span>}
+            </div>
+          </div>
+        ))}
+      </div>
+    ))}
+  </div>
+</Ventana>

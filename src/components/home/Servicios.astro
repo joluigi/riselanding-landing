@@ -1,0 +1,39 @@
+---
+// Índice de servicios por pilar (docs/wireframes/home.md §4). id="servicios" es contrato:
+// rl-tracking.js publica rl_service_view cuando la sección está 20 s en pantalla
+// (docs/contrato-integraciones.md §5).
+// Solo se enlazan páginas publicadas. Un pilar sin páginas en la ola actual (Medir en ola 1) muestra
+// sus servicios enlazados a /servicios#<pilar>, donde están descritos.
+import Tarjeta from '../ui/Tarjeta.astro';
+import ChipServicio from '../ui/ChipServicio.astro';
+import EnlaceAccion from '../ui/EnlaceAccion.astro';
+import { PILARES, serviciosDePilar } from '../../data/servicios.js';
+
+const pilares = PILARES.map((p) => {
+  const publicados = serviciosDePilar(p.id, { soloPublicados: true });
+  const chips = publicados.length
+    ? publicados.map((s) => ({ slug: s.slug, href: undefined }))
+    : serviciosDePilar(p.id).map((s) => ({ slug: s.slug, href: `/servicios#${p.id}` }));
+  return { ...p, chips };
+});
+---
+<section class="section" id="servicios" aria-labelledby="services-title">
+  <div class="container reveal">
+    <div class="section-head">
+      <p class="eyebrow">Servicios</p>
+      <h2 id="services-title">Todo lo que necesitas para vender más, ordenado por etapa.</h2>
+    </div>
+    <div class="svc-index">
+      {pilares.map((p) => (
+        <Tarjeta class="svc-col">
+          <h3>{p.nombre}</h3>
+          <p class="svc-col__desc">{p.descripcion}</p>
+          <ul class="chips" role="list">
+            {p.chips.map((c) => <li><ChipServicio slug={c.slug} href={c.href} /></li>)}
+          </ul>
+        </Tarjeta>
+      ))}
+    </div>
+    <p class="svc-index__mas"><EnlaceAccion href="/servicios">Ver todos los servicios</EnlaceAccion></p>
+  </div>
+</section>
