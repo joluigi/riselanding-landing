@@ -128,3 +128,75 @@ function definirPruebas() {
     assert.ok(!fs.existsSync(path.join(DIST, 'lib/lead-quality/engine.js')), 'engine.js es solo de servidor: no se publica');
   });
 }
+
+// --- (c) Formulario (PR2, plan F4 §6): ids del contrato §4, data-zoho de SERVICIOS, orden de
+// scripts y servicio precargado por página. Las páginas que aún no existen se omiten (PR3 y PR4).
+const SERVICIOS = require('../../lib/lead-quality/schema.js').SERVICIOS;
+
+const IDS_FORMULARIO = [
+  'lead-form', 'f-hp', 'f-solicitante', 'f-servicios', 'f-tamano', 'f-presupuesto', 'f-necesidad',
+  'f-necesidad-contador', 'f-nombre', 'f-email', 'f-tel', 'f-tel-pais', 'f-empresa', 'f-sitio',
+  'f-sitio-campo', 'f-sitio-toggle', 'f-sitio-toggle-caja', 'f-consent', 'f-turnstile', 'f-continuar',
+  'f-atras', 'f-paso-1', 'f-paso-2', 'f-paso-texto', 'f-paso-barra', 'f-anuncio', 'f-progreso',
+  'utm_source', 'utm_medium', 'utm_campaign'
+];
+
+// Servicio precargado (docs/sitemap.md §7.6); null = sin data-servicio
+const FORMULARIOS = [
+  // TEMPORAL (PR2): la home provisional precarga CRM para probar data-servicio; PR3 la regresa a null
+  { archivo: 'index.html', servicio: 'Implementación de CRM' },
+  { archivo: 'servicios.html', servicio: null },
+  { archivo: 'servicios/crm.html', servicio: 'Implementación de CRM' },
+  { archivo: 'servicios/automatizacion.html', servicio: 'Automatización de procesos' },
+  { archivo: 'servicios/google-ads.html', servicio: 'Publicidad Digital' },
+  { archivo: 'servicios/sitio-web.html', servicio: 'Reediseño / Desarrollo página web' }
+];
+
+function escaparHtml(s) {
+  return s.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+if (fs.existsSync(DIST)) {
+  FORMULARIOS.forEach(function (f) {
+    const ruta = path.join(DIST, f.archivo);
+    const nombre = f.archivo + ': formulario del contrato';
+    if (!fs.existsSync(ruta)) {
+      test(nombre, { skip: 'dist/' + f.archivo + ' todavía no existe' }, function () {});
+      return;
+    }
+    test(nombre, function () {
+      const html = fs.readFileSync(ruta, 'utf8');
+      IDS_FORMULARIO.forEach(function (id) {
+        assert.strictEqual(html.split('id="' + id + '"').length - 1, 1, 'id="' + id + '" debe existir una sola vez');
+      });
+      SERVICIOS.forEach(function (s) {
+        assert.ok(html.indexOf('data-zoho="' + escaparHtml(s) + '"') !== -1, 'falta data-zoho="' + s + '"');
+      });
+      assert.strictEqual(html.split('data-zoho="').length - 1, SERVICIOS.length, 'un chip por valor de SERVICIOS');
+      assert.match(html, /class="hp-field"/, 'falta el honeypot .hp-field');
+
+      const iTrack = html.indexOf('/js/rl-tracking.js');
+      const iSchema = html.indexOf('<script src="/lib/lead-quality/schema.js"');
+      const iForm = html.indexOf('<script src="/js/rl-form.js"');
+      assert.ok(iSchema !== -1, 'falta <script src="/lib/lead-quality/schema.js">');
+      assert.ok(iForm !== -1, 'falta <script src="/js/rl-form.js">');
+      assert.ok(iTrack < iSchema && iSchema < iForm, 'orden: rl-tracking.js, schema.js, rl-form.js');
+      assert.strictEqual(html.split('/js/rl-form.js').length - 1, 1, 'rl-form.js una sola vez');
+
+      const form = html.match(/<form\b[^>]*\bid="lead-form"[^>]*>/);
+      assert.ok(form, 'no se encontró la etiqueta <form id="lead-form">');
+      const ds = form[0].match(/\bdata-servicio="([^"]*)"/);
+      if (f.servicio === null) {
+        assert.strictEqual(ds, null, 'esta página no precarga servicio');
+      } else {
+        assert.ok(ds, 'falta data-servicio en #lead-form');
+        assert.strictEqual(ds[1], escaparHtml(f.servicio));
+      }
+      assert.match(html, /<section\b[^>]*\bid="contacto"/, 'falta la sección #contacto');
+    });
+  });
+
+  test('dist/js/rl-form.js publicado', function () {
+    assert.ok(fs.existsSync(path.join(DIST, 'js', 'rl-form.js')), 'falta dist/js/rl-form.js');
+  });
+}

@@ -1,0 +1,52 @@
+---
+// Sección #contacto compartida por home, /servicios y páginas de servicio
+// (docs/wireframes/plantilla-servicio.md, "Componente #contacto"): CTA final en tarjeta sobre aura,
+// qué incluye el diagnóstico, enlace de WhatsApp y el formulario de 2 pasos (LeadForm).
+// form_location es siempre 'contacto' (lo fija js/rl-form.js).
+// La página que lo incluye debe pasar formulario={true} a Base.astro (carga schema.js y rl-form.js).
+import LeadForm from './LeadForm.astro';
+
+interface Props {
+  /** H2 propio de la página. */
+  titulo?: string;
+  /** Bajada opcional bajo el H2. */
+  bajada?: string;
+  /** Valor literal de SERVICIOS a precargar (mapa en docs/sitemap.md §7.6); null = sin precarga. */
+  servicio?: string | null;
+}
+
+const {
+  titulo = 'Empieza con un diagnóstico de tu operación comercial.',
+  bajada = 'Revisamos cómo llegan, se atienden y se miden tus prospectos hoy, y te entregamos recomendaciones concretas para los siguientes 90 días.',
+  servicio = null
+} = Astro.props;
+
+const INCLUYE = [
+  'Revisión de tus campañas, sitio, CRM y medición actuales.',
+  'Las oportunidades de mayor impacto, ordenadas por esfuerzo.',
+  'Recomendaciones concretas para los siguientes 90 días.'
+];
+---
+<section class="contacto" id="contacto" aria-labelledby="contacto-titulo">
+  <div class="container">
+    <div class="contacto__tarjeta">
+      <div class="contacto__intro">
+        <p class="eyebrow">Diagnóstico sin costo</p>
+        <h2 id="contacto-titulo">{titulo}</h2>
+        {bajada && <p class="lead">{bajada}</p>}
+        <ol class="contacto__incluye" role="list" aria-label="Qué incluye el diagnóstico">
+          {INCLUYE.map((punto, i) => (
+            <li><span class="contacto__num" aria-hidden="true">{i + 1}</span><span>{punto}</span></li>
+          ))}
+        </ol>
+        <a class="contacto__whatsapp" href="https://wa.me/525548213439" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+          Escríbenos por WhatsApp
+        </a>
+      </div>
+      <div class="contacto__formulario">
+        <LeadForm servicio={servicio} />
+      </div>
+    </div>
+  </div>
+</section>
