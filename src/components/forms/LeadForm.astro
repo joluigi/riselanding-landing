@@ -2,8 +2,9 @@
 // Formulario "Agenda tu diagnóstico" (#lead-form), camino A del contrato
 // (docs/contrato-integraciones.md §3 y §4): mismos ids, clases y valores literales que lee
 // js/rl-form.js; solo cambian el CSS (src/styles/form.css) y las etiquetas visibles de los chips.
-// Un solo LeadForm por página (ids únicos). Los scripts van al final con defer: schema.js antes de
-// rl-form.js, y ambos después de /js/rl-tracking.js (defer en el head), así se conserva el orden.
+// Un solo LeadForm por página (ids únicos). Este componente no carga scripts: la página que lo
+// incluye pasa formulario={true} a Base.astro, que agrega al final del body schema.js y rl-form.js
+// con defer, en ese orden y después de /js/rl-tracking.js.
 import '../../styles/form.css';
 import esquema from '../../../lib/lead-quality/schema.js?raw';
 
@@ -139,5 +140,3 @@ if (servicio && SERVICIOS.indexOf(servicio) === -1) {
     </div>
   </div>
 </form>
-<script src="/lib/lead-quality/schema.js" defer is:inline></script>
-<script src="/js/rl-form.js" defer is:inline></script>

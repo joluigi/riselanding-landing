@@ -3,6 +3,7 @@
 // (docs/wireframes/plantilla-servicio.md, "Componente #contacto"): CTA final en tarjeta sobre aura,
 // qué incluye el diagnóstico, enlace de WhatsApp y el formulario de 2 pasos (LeadForm).
 // form_location es siempre 'contacto' (lo fija js/rl-form.js).
+// La página que lo incluye debe pasar formulario={true} a Base.astro (carga schema.js y rl-form.js).
 import LeadForm from './LeadForm.astro';
 
 interface Props {
