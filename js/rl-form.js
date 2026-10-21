@@ -405,7 +405,10 @@
         if (primero) primero.focus();
       }
       var caja = $('f-progreso');
-      if (caja && caja.getBoundingClientRect().top < 0) caja.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      if (caja && caja.getBoundingClientRect().top < 0) {
+        var reducir = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        caja.scrollIntoView({ block: 'start', behavior: reducir ? 'auto' : 'smooth' });
+      }
     }
 
     function abrirSitio(enfocar) {
