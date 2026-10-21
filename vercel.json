@@ -1,4 +1,14 @@
 {
   "cleanUrls": true,
-  "trailingSlash": false
+  "trailingSlash": false,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "installCommand": "npm ci",
+  "devCommand": "astro dev --port $PORT",
+  "redirects": [
+    { "source": "/Form", "destination": "/", "statusCode": 301 },
+    { "source": "/Form/(.*)", "destination": "/", "statusCode": 301 },
+    { "source": "/index-legacy", "destination": "/", "statusCode": 301 },
+    { "source": "/index-legacy.html", "destination": "/", "statusCode": 301 }
+  ]
 }

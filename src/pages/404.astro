@@ -1,0 +1,36 @@
+---
+// PROVISIONAL (PR0): 404 mínima con tokens. La definitiva (sitemap §6) llega en PR1.
+import Base from '../layouts/Base.astro';
+---
+<Base
+  title="Página no encontrada | Riselanding"
+  robots="noindex"
+  tracking={{ template: 'error_404_v1', type: 'error', serviceLine: 'paquete_integral', isLandingPage: false }}
+>
+  <main class="container error-404">
+    <p class="eyebrow">Error 404</p>
+    <h1>Esta página no existe</h1>
+    <p class="lead">Puede que el enlace haya cambiado. Vuelve al inicio o escríbenos y te ayudamos.</p>
+    <p><a class="error-404__cta" href="/">Volver al inicio</a></p>
+  </main>
+</Base>
+
+<style>
+  .error-404 {
+    display: grid;
+    gap: 16px;
+    align-content: center;
+    min-height: 100vh;
+    padding-block: 72px;
+  }
+  .error-404__cta {
+    display: inline-block;
+    padding: 14px 24px;
+    border-radius: var(--radius-pill);
+    background: var(--color-accent);
+    color: var(--color-accent-contrast);
+    font-family: var(--font-display);
+    font-weight: 700;
+    text-decoration: none;
+  }
+</style>

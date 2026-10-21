@@ -1,0 +1,53 @@
+---
+// Layout base (mínimo, PR0). Orden del <head> obligatorio (docs/contrato-integraciones.md §2, plan F4 §3):
+// charset, bootstrap rl, GTM, /js/rl-tracking.js; después el resto. Astro agrega sus <link rel=stylesheet>
+// al final del head, así que no alteran ese orden. PR1 completa SEO (OG, favicons, JSON-LD), Header y Footer.
+import RlBootstrap from '../components/tracking/RlBootstrap.astro';
+import Gtm from '../components/tracking/Gtm.astro';
+import GtmNoscript from '../components/tracking/GtmNoscript.astro';
+import '../styles/tokens.css';
+import '../styles/base.css';
+
+interface Tracking {
+  template: string;
+  serviceLine?: string;
+  type?: string;
+  publishDate?: string;
+  isLandingPage?: boolean;
+  targetSegment?: string;
+}
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Ruta pública sin .html ni barra final ("/", "/aviso-de-privacidad"). Nunca Astro.url.pathname. */
+  path?: string;
+  robots?: string;
+  tracking: Tracking;
+}
+
+const { title, description, path, robots, tracking } = Astro.props;
+// La home conserva la barra ("https://riselanding.com/"); el resto va sin barra final
+const canonical = !path ? null
+  : path === '/' ? new URL('/', Astro.site).href
+  : new URL(path, Astro.site).href.replace(/\/$/, '');
+---
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+  <meta charset="UTF-8">
+  <RlBootstrap {...tracking} />
+  <Gtm />
+  <script src="/js/rl-tracking.js" defer is:inline></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{title}</title>
+  {description && <meta name="description" content={description}>}
+  {canonical && <link rel="canonical" href={canonical}>}
+  {robots && <meta name="robots" content={robots}>}
+  <slot name="head" />
+</head>
+<body>
+  <GtmNoscript />
+  <slot />
+</body>
+</html>

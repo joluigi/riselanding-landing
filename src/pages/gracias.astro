@@ -1,0 +1,16 @@
+---
+// PROVISIONAL (PR0): envuelve gracias.html de la raíz en Base (noindex viene de su head).
+// La versión definitiva (sitemap §5, WhatsApp real) llega en PR5.
+import Base from '../layouts/Base.astro';
+import { partirHtmlLegado } from '../legado/html-legado.js';
+import legado from '../../gracias.html?raw';
+
+const { head, body } = partirHtmlLegado(legado);
+---
+<Base
+  title="¡Recibido! Te contactamos pronto | Riselanding"
+  tracking={{ template: 'gracias_v1', type: 'gracias', serviceLine: 'paquete_integral', isLandingPage: false }}
+>
+  <Fragment slot="head" set:html={head} />
+  <Fragment set:html={body} />
+</Base>

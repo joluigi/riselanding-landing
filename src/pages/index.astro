@@ -1,0 +1,16 @@
+---
+// PROVISIONAL (PR0): envuelve la home actual (index.html de la raíz) en Base con el formulario intacto.
+// La home nueva llega en PR3 (docs/wireframes/home.md).
+import Base from '../layouts/Base.astro';
+import { partirHtmlLegado } from '../legado/html-legado.js';
+import legado from '../../index.html?raw';
+
+const { head, body } = partirHtmlLegado(legado);
+---
+<Base
+  title="Marketing Digital para Empresas en México | Riselanding"
+  tracking={{ template: 'home_v2', type: 'home', serviceLine: 'paquete_integral' }}
+>
+  <Fragment slot="head" set:html={head} />
+  <Fragment set:html={body} />
+</Base>

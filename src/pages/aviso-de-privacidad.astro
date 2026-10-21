@@ -1,0 +1,21 @@
+---
+// PROVISIONAL (PR0): envuelve el aviso vigente (aviso-de-privacidad.html de la raíz) en Base.
+// La fecha de última actualización sale de src/data/legal.js (la verifica scripts/check-release.js).
+// La versión definitiva llega en PR5.
+import Base from '../layouts/Base.astro';
+import { partirHtmlLegado } from '../legado/html-legado.js';
+import { legal } from '../data/legal.js';
+import legado from '../../aviso-de-privacidad.html?raw';
+
+const partes = partirHtmlLegado(legado);
+const fecha = /(ÚLTIMA ACTUALIZACIÓN · )[^<]*/;
+if (!fecha.test(partes.body)) throw new Error('aviso-de-privacidad.html: no se encontró la fecha de última actualización');
+const body = partes.body.replace(fecha, '$1' + legal.ultimaActualizacion);
+---
+<Base
+  title="Aviso de Privacidad | Riselanding"
+  tracking={{ template: 'legal_v1', type: 'legal', serviceLine: 'paquete_integral', isLandingPage: false }}
+>
+  <Fragment slot="head" set:html={partes.head} />
+  <Fragment set:html={body} />
+</Base>

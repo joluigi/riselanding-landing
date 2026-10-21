@@ -1,12 +1,23 @@
 {
   "name": "riselanding-page",
   "private": true,
+  "engines": {
+    "node": "24.x"
+  },
   "scripts": {
+    "dev": "astro dev",
+    "build": "astro build && node scripts/copiar-estaticos.js",
+    "preview": "astro preview",
     "test": "node --test",
-    "check:release": "node scripts/check-release.js"
+    "test:dist": "npm run build && node --test \"tests/dist/*.test.js\"",
+    "check:release": "node scripts/check-release.js",
+    "verificar": "npm run build && npm test && npm run check:release"
   },
   "dependencies": {
     "@vercel/functions": "^3.7.7",
     "libphonenumber-js": "^1.13.14"
+  },
+  "devDependencies": {
+    "astro": "^7.3.8"
   }
 }
