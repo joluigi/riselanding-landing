@@ -1,25 +1,62 @@
 [
- {"nombre":"A texto / fondo","fg":"#1A202C","bg":"#F7F8FA"},
- {"nombre":"A texto / superficie","fg":"#1A202C","bg":"#FFFFFF"},
- {"nombre":"A cuerpo / fondo","fg":"#4A5568","bg":"#F7F8FA"},
- {"nombre":"A cuerpo / superficie","fg":"#4A5568","bg":"#FFFFFF"},
- {"nombre":"A sutil / fondo","fg":"#5F6B7A","bg":"#F7F8FA"},
- {"nombre":"A texto boton / acento","fg":"#1A202C","bg":"#FF5A1F"},
- {"nombre":"A enlace / superficie","fg":"#CC4618","bg":"#FFFFFF"},
- {"nombre":"A enlace / fondo","fg":"#B83F14","bg":"#F7F8FA"},
- {"nombre":"A error / superficie","fg":"#B42318","bg":"#FFFFFF"},
- {"nombre":"A exito / superficie","fg":"#067647","bg":"#FFFFFF"},
- {"nombre":"A footer texto / carbon oscuro","fg":"#F7F8FA","bg":"#1A202C"},
- {"nombre":"A footer secundario / carbon oscuro","fg":"#9CA3AF","bg":"#1A202C"},
- {"nombre":"B texto / fondo","fg":"#F7F8FA","bg":"#12161F"},
- {"nombre":"B texto / superficie","fg":"#F7F8FA","bg":"#1A202C"},
- {"nombre":"B cuerpo / fondo","fg":"#C3C9D3","bg":"#12161F"},
- {"nombre":"B secundario / fondo","fg":"#9CA3AF","bg":"#12161F"},
- {"nombre":"B secundario / superficie","fg":"#9CA3AF","bg":"#1A202C"},
- {"nombre":"B secundario / superficie elevada","fg":"#9CA3AF","bg":"#2D3748"},
- {"nombre":"B texto boton / acento","fg":"#12161F","bg":"#FF5A1F"},
- {"nombre":"B enlace acento / fondo","fg":"#FF5A1F","bg":"#12161F"},
- {"nombre":"B enlace acento / superficie","fg":"#FF6B35","bg":"#1A202C"},
- {"nombre":"B error / superficie","fg":"#F97066","bg":"#1A202C"},
- {"nombre":"B exito / superficie","fg":"#32D583","bg":"#1A202C"}
+ {
+  "nombre": "A texto / fondo",
+  "fg": "#1A202C",
+  "bg": "#F7F8FA"
+ },
+ {
+  "nombre": "A texto / superficie",
+  "fg": "#1A202C",
+  "bg": "#FFFFFF"
+ },
+ {
+  "nombre": "A cuerpo / fondo",
+  "fg": "#4A5568",
+  "bg": "#F7F8FA"
+ },
+ {
+  "nombre": "A cuerpo / superficie",
+  "fg": "#4A5568",
+  "bg": "#FFFFFF"
+ },
+ {
+  "nombre": "A sutil / fondo",
+  "fg": "#5F6B7A",
+  "bg": "#F7F8FA"
+ },
+ {
+  "nombre": "A texto boton / acento",
+  "fg": "#1A202C",
+  "bg": "#FF5A1F"
+ },
+ {
+  "nombre": "A enlace / superficie",
+  "fg": "#CC4618",
+  "bg": "#FFFFFF"
+ },
+ {
+  "nombre": "A enlace / fondo",
+  "fg": "#B83F14",
+  "bg": "#F7F8FA"
+ },
+ {
+  "nombre": "A error / superficie",
+  "fg": "#B42318",
+  "bg": "#FFFFFF"
+ },
+ {
+  "nombre": "A exito / superficie",
+  "fg": "#067647",
+  "bg": "#FFFFFF"
+ },
+ {
+  "nombre": "A footer texto / carbon oscuro",
+  "fg": "#F7F8FA",
+  "bg": "#1A202C"
+ },
+ {
+  "nombre": "A footer secundario / carbon oscuro",
+  "fg": "#9CA3AF",
+  "bg": "#1A202C"
+ }
 ]

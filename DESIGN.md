@@ -1,9 +1,9 @@
 # DESIGN.md · Riselanding · riselanding.com
 
-Versión: v0.1 (dos variantes en exploración) · Aprobado por: pendiente (gate F1)
+Versión: v1.0 · Aprobado por: José Luis Vázquez, 2026-10-20 (gate F1, variante A clara)
 Toda decisión visual del sitio sale de este archivo. Un color, tamaño, espaciado o radio que no esté aquí es un defecto.
 
-Estructura, ritmo, escala y componentes son comunes. Las variantes A (clara, fiel al manual) y B (oscura, evolución del sitio actual) solo cambian la paleta y la profundidad (sección 3 y sección 11). Al aprobar F1 se elige una y la otra se elimina de este archivo.
+Se exploraron dos variantes sobre la misma estructura (A clara y B oscura, prototipo en `docs/prototipos/home-variantes.html`). José eligió la A el 2026-10-20; la B se retiró de este archivo.
 
 Marca de origen: `Riselanding/DESIGN.md` y Manual de Marca v1.1 con addendum v1.2. Donde este archivo se aparta del manual, lo dice en la sección 13.
 
@@ -13,7 +13,7 @@ Marca de origen: `Riselanding/DESIGN.md` y Manual de Marca v1.1 con addendum v1.
 |---|---|---|---|
 | Principal | https://www.mangomint.com (elegida por José el 2026-10-20) | Hero centrado con titular corto y maqueta de producto debajo; pestañas tipo píldora que cambian la maqueta; escala tipográfica con titulares compactos (interlineado 1.1, tracking negativo); tarjetas translúcidas con sombra difusa; muro de logos con calificaciones; sección de una columna centrada para el "por qué"; índice de funciones agrupado por categoría con chips de ícono; CTA final en tarjeta; footer oscuro en contenedor redondeado; motion por opacidad, sin desplazamientos largos | Paleta lavanda, magenta y azul marino; tipografías TT Commons Pro y Mono; ilustraciones, fotografías, logos, textos y la flecha dibujada a mano; video testimonial (no hay testimonios con permiso) |
 | Secundaria | https://www.siegemedia.com | Plantilla única para todas las páginas de servicio; acento cálido solo en acciones | Todo lo demás |
-| Secundaria | https://www.blendb2b.com | Para la variante B: modo oscuro sobrio, titular grande en peso regular, estructura de página de servicio (problema, enfoque, entregables, FAQ, CTA) | Chat flotante que tapa el CTA en móvil |
+| Secundaria | https://www.blendb2b.com | Estructura de página de servicio (problema, enfoque, entregables, FAQ, CTA) | Modo oscuro, chat flotante que tapa el CTA en móvil |
 
 Tokens extraídos: `docs/referencias/mangomint-1440.json` y `docs/referencias/mangomint-390.json`.
 
@@ -40,8 +40,6 @@ Prueba de diferenciación (método F1, sección 6), 2026-10-20:
 
 ## 3. Paleta
 
-### Variante A · Clara (fiel al manual)
-
 | Token | Valor | Rol | Contraste |
 |---|---|---|---|
 | `--color-bg` | #F7F8FA | Fondo general (Casi Blanco) | |
@@ -62,27 +60,7 @@ Prueba de diferenciación (método F1, sección 6), 2026-10-20:
 
 Aura de fondo A: dos gradientes radiales grandes y muy difusos, Naranja Suave #FFB59F al 35% y Gris Claro #E5E7EB al 60%, sobre #F7F8FA. Solo detrás del hero y del CTA final.
 
-### Variante B · Oscura (evolución del sitio actual)
-
-| Token | Valor | Rol | Contraste |
-|---|---|---|---|
-| `--color-bg` | #12161F | Fondo general | |
-| `--color-surface` | #1A202C | Tarjetas y paneles (Dark UI) | |
-| `--color-surface-raised` | #2D3748 | Elementos elevados, chips activos | |
-| `--color-surface-glass` | rgba(26, 32, 44, 0.7) | Header al hacer scroll | |
-| `--color-text` | #F7F8FA | Titulares | 17.03:1 sobre bg |
-| `--color-text-body` | #C3C9D3 | Cuerpo | 10.87:1 sobre bg |
-| `--color-text-muted` | #9CA3AF | Etiquetas y notas | 7.13:1 sobre bg · 4.72:1 sobre surface-raised |
-| `--color-accent` | #FF5A1F | Fondo de botón primario y foco | |
-| `--color-accent-contrast` | #12161F | Texto sobre acento | 5.8:1 |
-| `--color-accent-text` | #FF6B35 | Enlaces y texto de acento | 5.76:1 sobre surface |
-| `--color-border` | rgba(255, 255, 255, 0.08) | Bordes y divisores | |
-| `--color-success` | #32D583 | Estados de formulario | 8.53:1 sobre surface |
-| `--color-error` | #F97066 | Estados de formulario | 5.86:1 sobre surface |
-
-Aura de fondo B: un brillo radial Naranja Fuego al 12% detrás del hero y uno gris azulado al 8%; nunca detrás de texto largo.
-
-Validación: `docs/contraste.json`, 23 pares, todos AA (`contraste.py` sale con 0).
+Validación: `docs/contraste.json` (pares de la variante A), todos AA (`contraste.py` sale con 0).
 
 ## 4. Tipografía
 
@@ -124,10 +102,8 @@ La escala de Mangomint (54/36/22) se ajusta a Montserrat, más ancha que TT Comm
 | `--radius-md` | 24px | Tarjetas y maquetas de producto |
 | `--radius-lg` | 40px | Contenedores de sección, CTA final, footer |
 | `--radius-pill` | 999px | Botones y pestañas |
-| `--shadow-1` | 0 5px 30px rgba(26, 32, 44, 0.07) | Tarjetas en reposo (A) |
-| `--shadow-2` | 0 10px 30px rgba(26, 32, 44, 0.10) | Hover y elementos flotantes (A) |
-
-En B las sombras se sustituyen por borde `--color-border` y un brillo interior `inset 0 1px 0 rgba(255, 255, 255, 0.06)`.
+| `--shadow-1` | 0 5px 30px rgba(26, 32, 44, 0.07) | Tarjetas en reposo |
+| `--shadow-2` | 0 10px 30px rgba(26, 32, 44, 0.10) | Hover y elementos flotantes |
 
 ## 7. Componentes
 
@@ -136,9 +112,9 @@ En B las sombras se sustituyen por borde `--color-border` y un brillo interior `
 | Botón primario | Píldora, fondo `--color-accent`, texto `--color-accent-contrast`, Montserrat 700 16 px, alto 48 px, padding 0 24 px. Hover: sube 1 px y `--shadow-2`. Focus: anillo de 2 px `--color-accent` con separación de 2 px. Disabled al 40%. Loading con spinner y texto "Enviando" |
 | Botón secundario | Píldora con borde de 1.5 px `--color-text`, texto `--color-text`, mismo alto. Uso: WhatsApp y acciones de segundo nivel |
 | Enlace de acción | Texto `--color-accent-text` con ícono a la derecha; subrayado al hover |
-| Pestañas de pilar | Píldoras con eyebrow (Atraer, Convertir, Medir, Automatizar). Activa: fondo `--color-surface` con `--shadow-1` (A) o `--color-surface-raised` (B). Rol `tablist`; clase `.svc-tab` para conservar la señal de interacción de `rl-tracking.js` |
+| Pestañas de pilar | Píldoras con eyebrow (Atraer, Convertir, Medir, Automatizar). Activa: fondo `--color-surface` con `--shadow-1`. Rol `tablist`; clase `.svc-tab` para conservar la señal de interacción de `rl-tracking.js` |
 | Maqueta de producto | Tarjeta `--radius-md` con marco de ventana o teléfono, construida en HTML y CSS (CRM, flujo de automatización, tablero). Leyenda "Ejemplo ilustrativo" siempre visible |
-| Tarjeta | Fondo `--color-surface` (A) o `--color-surface` con borde (B), `--radius-md`, padding 32 (móvil 24) |
+| Tarjeta | Fondo `--color-surface`, `--radius-md`, `--shadow-1`, padding 32 (móvil 24) |
 | Chip de servicio | Ícono en cuadro `--radius-sm` + nombre; enlace a la página del servicio. Se agrupan en columnas por pilar (índice de servicios) |
 | Muro de prueba | Solo logos de clientes con permiso escrito o herramientas que operamos (Google Ads, Meta, HubSpot, Zoho, n8n, Notion, GA4). Sin calificaciones de terceros mientras no existan |
 | Input | Alto 48 px, font-size 16 px, `--radius-sm`, etiqueta visible siempre, error debajo con `aria-describedby`. Conserva los ids del contrato (`docs/contrato-integraciones.md`) |
@@ -146,7 +122,7 @@ En B las sombras se sustituyen por borde `--color-border` y un brillo interior `
 | Navegación | Header transparente sobre el aura que pasa a `--color-surface-glass` con desenfoque de 16 px al hacer scroll. Escritorio: menú Servicios con panel por pilar, Nosotros, Diagnóstico; a la derecha botón secundario WhatsApp y primario "Agenda tu diagnóstico". Móvil: logo, botón primario compacto y menú de pantalla completa |
 | Barra CTA fija móvil | Sí, en páginas de más de 3 pantallas: botón primario y botón de WhatsApp, aparece después del hero |
 | CTA final | Tarjeta `--radius-lg` sobre aura, titular H2 centrado, botón primario y enlace de WhatsApp |
-| Footer | Contenedor `--color-inverse-bg` (A) o `--color-surface` (B) con `--radius-lg` y margen de 20 px; columnas por pilar, contacto, legales. Logo blanco |
+| Footer | Contenedor `--color-inverse-bg` con `--radius-lg` y margen de 20 px; columnas por pilar, contacto, legales. Logo blanco |
 | Componente interactivo | Diagnóstico de madurez: 8 a 10 preguntas en tarjeta, barra de progreso, resultado con barras por pilar y botón que precarga el formulario (ola 2) |
 
 ## 8. Imágenes
@@ -192,7 +168,6 @@ Reglas: máximo una animación de entrada por sección, solo opacidad y desplaza
   --container: 1200px;
   --measure: 640px;
 
-  /* Variante A · Clara */
   --color-bg: #F7F8FA;
   --color-surface: #FFFFFF;
   --color-surface-glass: rgba(255, 255, 255, 0.65);
@@ -205,30 +180,12 @@ Reglas: máximo una animación de entrada por sección, solo opacidad y desplaza
   --color-accent-soft: #FFB59F;
   --color-border: #E5E7EB;
   --color-inverse-bg: #1A202C;
+  --color-inverse-text: #F7F8FA;
+  --color-inverse-text-muted: #9CA3AF;
   --color-success: #067647;
   --color-error: #B42318;
   --shadow-1: 0 5px 30px rgba(26, 32, 44, 0.07);
   --shadow-2: 0 10px 30px rgba(26, 32, 44, 0.10);
-}
-
-/* Variante B · Oscura (en exploración: se activa con data-theme="b") */
-:root[data-theme="b"] {
-  --color-bg: #12161F;
-  --color-surface: #1A202C;
-  --color-surface-raised: #2D3748;
-  --color-surface-glass: rgba(26, 32, 44, 0.7);
-  --color-text: #F7F8FA;
-  --color-text-body: #C3C9D3;
-  --color-text-muted: #9CA3AF;
-  --color-accent: #FF5A1F;
-  --color-accent-contrast: #12161F;
-  --color-accent-text: #FF6B35;
-  --color-border: rgba(255, 255, 255, 0.08);
-  --color-inverse-bg: #1A202C;
-  --color-success: #32D583;
-  --color-error: #F97066;
-  --shadow-1: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  --shadow-2: inset 0 1px 0 rgba(255, 255, 255, 0.10);
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -249,11 +206,11 @@ Reglas: máximo una animación de entrada por sección, solo opacidad y desplaza
 | Texto de botón en carbón oscuro sobre naranja | Texto blanco sobre Naranja Fuego (3.12:1, no cumple AA) |
 | Gradiente de aura difuso detrás del hero y del CTA final | Gradientes morado y azul genéricos, degradados en el logo |
 
-## 13. Desviaciones del manual de marca (requieren aprobación)
+## 13. Desviaciones del manual de marca (aprobadas por José el 2026-10-20)
 
 | Manual dice | Este archivo propone | Motivo |
 |---|---|---|
 | CTA "Blanco / Naranja Fuego" (DESIGN.md de marca, línea 93) | Texto carbón oscuro sobre Naranja Fuego | Blanco sobre #FF5A1F da 3.12:1 y no cumple WCAG AA en texto de botón |
-| Header carbón oscuro con logo blanco (línea 168) | Variante A: header translúcido claro con logo a color; el carbón pasa al footer | Patrón de la referencia elegida; el header carbón partiría el aura del hero. En la variante B el header ya es oscuro |
+| Header carbón oscuro con logo blanco (línea 168) | Header translúcido claro con logo a color; el carbón pasa al footer | Patrón de la referencia elegida; el header carbón partiría el aura del hero |
 | Texto secundario en Gris Medio #9CA3AF | En fondo claro, #5F6B7A | #9CA3AF sobre #F7F8FA da 2.39:1 |
 | Sin degradados (aplica al logo) | Aura de fondo difusa detrás del hero y del CTA | El logo nunca se coloca sobre el degradado sin una superficie sólida debajo |

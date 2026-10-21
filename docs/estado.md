@@ -1,6 +1,6 @@
 # Estado del proyecto · Rediseño de riselanding.com
 
-Fase actual: F1 (ADN de diseño) en paralelo con F7a (keywords) · Lanzamiento escalonado: ola 1 el 2026-10-27, ola 2 a más tardar el 2026-11-03
+Fase actual: F2 (arquitectura: sitemap y wireframes) · Lanzamiento escalonado: ola 1 el 2026-10-27, ola 2 a más tardar el 2026-11-03
 Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 
 ## Gates
@@ -9,8 +9,8 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 |---|---|---|---|
 | F0 Brief | Aprobado | José Luis Vázquez | 2026-10-20 |
 | F7a Investigación de keywords | Mapa provisional (sin volúmenes) | | |
-| F1 ADN de diseño | DESIGN.md v0.1 con dos variantes; prototipo en curso | | |
-| F2 Arquitectura | No iniciada | | |
+| F1 ADN de diseño | Aprobado (variante A clara y 3 desviaciones del manual) | José Luis Vázquez | 2026-10-20 |
+| F2 Arquitectura | En curso | | |
 | F3 a F10 | No iniciadas | | |
 
 ## Entregables de F0
