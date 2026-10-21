@@ -12,7 +12,7 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 | F1 ADN de diseño | Aprobado (variante A clara y 3 desviaciones del manual) | José Luis Vázquez | 2026-10-20 |
 | F2 Arquitectura | Aprobado (sitemap, wireframes de ola 1 y diagnóstico de madurez) | José Luis Vázquez | 2026-10-20 |
 | F3 Assets | Inventario listo (`docs/assets-inventario.md`); faltan logo vector y fotos | | |
-| F4 Construcción | Plan en `docs/plan-f4.md`; PR0 (scaffold Astro) en curso | | |
+| F4 Construcción | PR0 integrado y verificado en preview (2026-10-20); PR1, PR2 y PR6 en curso | | |
 | F5 a F10 | No iniciadas | | |
 
 ## Entregables de F0
