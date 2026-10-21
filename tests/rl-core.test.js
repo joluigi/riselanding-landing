@@ -221,7 +221,7 @@ test('rl-taxonomy.json: JSON válido, v2.2.0 y misma versión que el bootstrap',
   const boot = fs.readFileSync(path.join(RAIZ, 'src', 'tracking', 'rl-bootstrap.js'), 'utf8');
   assert.match(boot, /rl_schema_version:\s*'2\.2\.0'/);
   assert.ok(Array.isArray(t.changelog) && t.changelog.some(function (c) { return c.version === '2.2.0'; }));
-  assert.strictEqual(TAXO_RAW.indexOf('—'), -1, 'sin guion largo');
+  assert.strictEqual(TAXO_RAW.indexOf('\u2014'), -1, 'sin guion largo');
 });
 
 test('rl-taxonomy.json: documenta cada evento rl_* que publica el código, con estado válido', function () {
