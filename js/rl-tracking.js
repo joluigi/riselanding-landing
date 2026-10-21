@@ -208,6 +208,18 @@
   if (typeof global.document === 'undefined') return; // Node: solo el núcleo
 
   // --- Listeners DOM ---
+
+  // service_line de la página: lo publica el bootstrap en window.__rl.page.serviceLine (prop
+  // serviceLine del layout). Respaldo: window.__rlPage.service_line; sin ninguno, el valor
+  // previo a la taxonomía 2.2.0. Se lee al disparar el evento, no al cargar.
+  function pageServiceLine() {
+    var p = global.__rl && global.__rl.page;
+    if (p && typeof p.serviceLine === 'string' && p.serviceLine) return p.serviceLine;
+    var raw = global.__rlPage;
+    if (raw && typeof raw.service_line === 'string' && raw.service_line) return raw.service_line;
+    return 'paquete_integral';
+  }
+
   function initDom() {
     var state = { maxScroll: 0, interactions: 0, engagedFired: false, visibleMs: 0 };
 
@@ -243,7 +255,9 @@
       if (e.target && e.target.closest && e.target.closest('a, button, input, select, textarea, label, .svc-tab, .faq-q')) state.interactions++;
     }, { passive: true, capture: true });
 
-    // rl_scroll_depth (25/50/75/90) + rl_case_study_view (#resultados al 75%)
+    // rl_scroll_depth (25/50/75/90) + rl_case_study_view (#resultados al 75%).
+    // rl_case_study_view está dormido desde 2.2.0: el rediseño no tiene #resultados (no hay casos
+    // verificables). Se reactiva con casos reales; ver docs/tracking/rl-taxonomy.json.
     var resEl = document.getElementById('resultados');
     var resFired = false;
     function checkCaseStudy() {
@@ -276,9 +290,10 @@
       });
     }, { passive: true });
 
-    // rl_service_view: 20 s acumulados con #servicios visible (pausa fuera de viewport/pestaña)
+    // rl_service_view (taxonomía 2.2.0): 20 s acumulados con la sección de servicio visible
+    // (pausa fuera de viewport/pestaña). Home e índice: #servicios; páginas de servicio: #enfoque.
     (function watchServicios() {
-      var el = document.getElementById('servicios');
+      var el = document.getElementById('servicios') || document.getElementById('enfoque');
       if (!el || !('IntersectionObserver' in window)) return;
       var visible = false, acc = 0, done = false;
       var io = new IntersectionObserver(function (es) {
@@ -294,7 +309,7 @@
         if (acc >= 20000) {
           done = true; clearInterval(t); io.disconnect();
           pushEvent('rl_service_view', {
-            service_line: 'paquete_integral', assigned_partner: 'ambos',
+            service_line: pageServiceLine(), assigned_partner: 'ambos',
             dwell_time_sec: Math.round(acc / 1000)
           });
         }
@@ -325,7 +340,7 @@
         pushEvent('rl_whatsapp_click', {
           transaction_id: ctx.leadId || null, prefilled_ref: ref,
           cta_location: a.closest('footer') ? 'footer' : 'body',
-          service_line: 'paquete_integral'
+          service_line: pageServiceLine()
         });
       }
     }, true);

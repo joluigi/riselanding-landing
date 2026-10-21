@@ -1,6 +1,6 @@
 # Contrato de integraciones para el rediseño
 
-Versión: v1.0 · Fecha: 2026-10-20 · Base: `main` en `28e9073` (release del filtro de calidad, mergeada el 2026-10-08)
+Versión: v1.1 · Fecha: 2026-10-20 · Base: `main` en `28e9073` (release del filtro de calidad, mergeada el 2026-10-08) · Taxonomía de tracking: 2.2.0 (`docs/tracking/rl-taxonomy.json`)
 
 Este documento fija qué debe respetar cualquier frontend nuevo para que el formulario, el filtro de calidad de leads y el tracking sigan funcionando sin tocar el backend ni GTM. Es requisito de entrada de F4 (construcción) y criterio de salida de F8 (medición).
 
@@ -78,8 +78,8 @@ Clases y atributos requeridos: `.field` (contenedor del error), `.checks input:c
 
 | Selector | Evento |
 |---|---|
-| `#servicios` visible 20 s | `rl_service_view` |
-| `#resultados` al 75% | `rl_case_study_view` |
+| `#servicios` (home e índice) o `#enfoque` (páginas de servicio) visible 20 s | `rl_service_view` |
+| `#resultados` al 75% | `rl_case_study_view` (dormido desde 2.2.0: el rediseño no tiene `#resultados`) |
 | `#lead-form` primer focus | `rl_form_start` |
 | `a[href^="tel:"]` | `rl_phone_click` |
 | `a[href*="wa.me"]` | `rl_whatsapp_click` (agrega token `[RL-xxxxxxxx]` al texto) |
@@ -87,6 +87,23 @@ Clases y atributos requeridos: `.field` (contenedor del error), `.checks input:c
 | `.svc-tab`, `.faq-q` | Cuentan como interacción para `rl_engaged_session` |
 
 Si el rediseño elimina o renombra una sección (por ejemplo, ya no hay bloque de resultados), el evento se remapea en `rl-tracking.js`, se documenta en la taxonomía y se sube la versión. Los nombres `rl_*` y las claves de `rl_event_data`, `user` y `site` no cambian: GTM depende de ellos.
+
+### 5.1 Versión de la taxonomía y remapeo (2.2.0, 2026-10-20)
+
+La fuente de verdad de eventos, parámetros, selectores por plantilla, estados y huecos de GTM es `docs/tracking/rl-taxonomy.json`. `rl_context_ready.rl_schema_version` debe coincidir con su `schema_version`; `tests/rl-core.test.js` lo verifica y falla si el código publica un evento `rl_*` que la taxonomía no documenta.
+
+Cambios de 2.1.0 a 2.2.0:
+
+| Pieza | Antes (2.1.0) | Ahora (2.2.0) |
+|---|---|---|
+| `page.template`, `page.service_line`, `page.type` | Fijos: `lp_home_v1`, `paquete_integral`, `landing` | Por página, como props de `RlBootstrap.astro` (valores en `values.page_template` de la taxonomía); el bootstrap los expone en `window.__rl.page` |
+| `rl_service_view` | Observa `#servicios`; `service_line: 'paquete_integral'` fijo | Observa `#servicios` o, si no existe, `#enfoque`; `service_line` de `window.__rl.page.serviceLine`, con respaldo `window.__rlPage.service_line` y luego `paquete_integral` |
+| `rl_whatsapp_click` | `service_line: 'paquete_integral'` fijo | Mismo `service_line` de la página que `rl_service_view` |
+| `rl_case_study_view` | Activo en `#resultados` | Dormido, sin cambio de código (no-op si falta `#resultados`); se reactiva con casos reales |
+| `form_location` | `contacto` | Sigue `contacto` fijo en todas las páginas con formulario; la página se distingue por `page.template` |
+| `rl_tool_start`, `rl_tool_complete` | No existían | Planeados para `/diagnostico` (ola 2); sin activador en GTM todavía |
+
+Nombres `rl_*` y claves existentes sin cambios: GTM sigue funcionando sin publicar una versión nueva. Lo que queda para F8 en GTM está en `gtm_gaps` de la taxonomía.
 
 ## 6. Variables de entorno (solo nombres)
 
@@ -103,7 +120,7 @@ Si el rediseño elimina o renombra una sección (por ejemplo, ya no hay bloque d
 | Google Ads y Meta Pixel con placeholders (`AW-REEMPLAZAR`, `REEMPLAZAR_PIXEL_ID`) | GTM | José captura los IDs reales |
 | Enhanced Conversions y advanced matching sin conectar (las variables `sha256_*` existen) | GTM | Conectar en la publicación por etapas |
 | Sin CMP ni `consent update`; etiquetas con `consentStatus NOT_SET` | GTM y sitio | Banner de cookies en F8 |
-| No existe `rl-taxonomy.json` versionado | repo | Crearlo en F8 |
+| No existe `rl-taxonomy.json` versionado | repo | Resuelto: `docs/tracking/rl-taxonomy.json` v2.2.0 (ver §5.1) |
 | `/gracias` no se usa (el éxito es inline) y su WhatsApp es de relleno (`wa.me/521XXXXXXXXXX`) | `gracias.html:494` | Decidir: redirigir a `/gracias` tras el éxito o eliminarla |
 | `Form/` (embed Zoho) e `index-legacy.html` marcados para baja | `docs/RELEASE-SHADOW.md:23` | Eliminar en el rediseño con redirección si tienen tráfico |
 | Inputs con `font-size: 14.5px` (zoom automático en iOS) | `index.html:648` | 16 px mínimo en el rediseño |
