@@ -1,16 +1,94 @@
 ---
-// PROVISIONAL (PR0): envuelve gracias.html de la raíz en Base (noindex viene de su head).
-// La versión definitiva (sitemap §5, WhatsApp real) llega en PR5.
+// Página de confirmación tras un envío exitoso del formulario (sitemap §5).
+// - noindex, nofollow y fuera de sitemap.xml. Sin header de navegación completa: solo el logo.
+// - Las conversiones cuelgan de rl_lead_submit, nunca de la vista de esta página.
+// - WhatsApp real; rl-tracking.js agrega el token [RL-xxxxxxxx] al texto y empuja rl_whatsapp_click.
+// - Sin temporizador de redirección.
+// [VERIFICAR: tiempo de respuesta comprometido] Mientras no esté confirmado, el texto no promete plazo.
 import Base from '../layouts/Base.astro';
-import { partirHtmlLegado } from '../legado/html-legado.js';
-import legado from '../../gracias.html?raw';
+import Tarjeta from '../components/ui/Tarjeta.astro';
+import Boton from '../components/ui/Boton.astro';
+import EnlaceAccion from '../components/ui/EnlaceAccion.astro';
+import Eyebrow from '../components/ui/Eyebrow.astro';
+import Icono from '../components/ui/Icono.astro';
+import { WHATSAPP_URL } from '../data/servicios.js';
 
-const { head, body } = partirHtmlLegado(legado);
+const whatsapp = WHATSAPP_URL + '?text=' + encodeURIComponent('Hola, acabo de enviar el formulario de Riselanding.');
 ---
 <Base
-  title="¡Recibido! Te contactamos pronto | Riselanding"
+  title="Recibimos tu solicitud | Riselanding"
+  description="Confirmación de tu solicitud a Riselanding."
+  robots="noindex, nofollow"
+  header={false}
+  ctaHref="/#contacto"
   tracking={{ template: 'gracias_v1', type: 'gracias', serviceLine: 'paquete_integral', isLandingPage: false }}
 >
-  <Fragment slot="head" set:html={head} />
-  <Fragment set:html={body} />
+  <header class="gracias__top">
+    <div class="container">
+      <a class="brand" href="/" aria-label="Riselanding, inicio">
+        <img src="/Assets/logo-naranja.png" alt="Riselanding" width="210" height="32" decoding="async">
+      </a>
+    </div>
+  </header>
+
+  <main id="contenido" class="gracias aura">
+    <div class="container">
+      <Tarjeta class="gracias__card">
+        <span class="gracias__check" aria-hidden="true"><Icono nombre="check" tamano="lg" /></span>
+        <Eyebrow>Solicitud recibida</Eyebrow>
+        <h1>Recibimos tu solicitud.</h1>
+        <p class="lead">Te escribimos al correo o al teléfono que nos dejaste. Si prefieres adelantar la conversación, escríbenos por WhatsApp.</p>
+        <Boton variante="secundario" whatsapp href={whatsapp}>Escríbenos por WhatsApp</Boton>
+        <div class="gracias__enlaces">
+          <EnlaceAccion href="/servicios">Conoce nuestros servicios</EnlaceAccion>
+          <EnlaceAccion href="/" icono="home">Ir al inicio</EnlaceAccion>
+        </div>
+      </Tarjeta>
+    </div>
+  </main>
 </Base>
+
+<style>
+  .gracias__top {
+    padding-block: var(--space-6);
+  }
+  .gracias {
+    display: grid;
+    align-content: center;
+    min-height: calc(100vh - var(--space-12));
+    padding-block: var(--space-9) var(--section-y);
+  }
+  .gracias :global(.gracias__card) {
+    max-width: calc(var(--measure) + 2 * var(--space-9));
+    margin-inline: auto;
+    padding-block: var(--space-9);
+    text-align: center;
+    display: grid;
+    gap: var(--space-4);
+    justify-items: center;
+  }
+  .gracias .lead {
+    max-width: var(--measure);
+    margin-bottom: var(--space-2);
+  }
+  .gracias__check {
+    display: inline-grid;
+    place-items: center;
+    width: var(--space-10);
+    height: var(--space-10);
+    border-radius: var(--radius-pill);
+    background: color-mix(in srgb, var(--color-success) 12%, transparent);
+    color: var(--color-success);
+    margin-bottom: var(--space-2);
+  }
+  .gracias__enlaces {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-2);
+  }
+  @media (min-width: 640px) {
+    .gracias__enlaces { flex-direction: row; gap: var(--space-6); }
+  }
+</style>

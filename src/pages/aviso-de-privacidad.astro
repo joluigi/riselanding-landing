@@ -1,21 +1,364 @@
 ---
-// PROVISIONAL (PR0): envuelve el aviso vigente (aviso-de-privacidad.html de la raíz) en Base.
-// La fecha de última actualización sale de src/data/legal.js (la verifica scripts/check-release.js).
-// La versión definitiva llega en PR5.
+// Aviso de privacidad integral (LFPDPPP), en vigor desde el 2026-10-07.
+// El texto legal es el de aviso-de-privacidad.html (raíz) sin cambios de contenido: aquí solo cambia
+// la maquetación (tokens, header y footer de Base, medida de 640 px e índice de secciones).
+// La fecha de última actualización sale de src/data/legal.js; scripts/check-release.js verifica que
+// dist/aviso-de-privacidad.html muestre "ÚLTIMA ACTUALIZACIÓN · <fecha>" seguido de "<".
 import Base from '../layouts/Base.astro';
-import { partirHtmlLegado } from '../legado/html-legado.js';
+import Eyebrow from '../components/ui/Eyebrow.astro';
 import { legal } from '../data/legal.js';
-import legado from '../../aviso-de-privacidad.html?raw';
 
-const partes = partirHtmlLegado(legado);
-const fecha = /(ÚLTIMA ACTUALIZACIÓN · )[^<]*/;
-if (!fecha.test(partes.body)) throw new Error('aviso-de-privacidad.html: no se encontró la fecha de última actualización');
-const body = partes.body.replace(fecha, '$1' + legal.ultimaActualizacion);
+const titulo = 'Aviso de privacidad | Riselanding';
+const descripcion = 'Aviso de privacidad de Riselanding conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP). Conoce qué datos recabamos, con qué finalidades y cómo ejercer tus derechos ARCO.';
+const url = 'https://riselanding.com/aviso-de-privacidad';
+
+// Índice: id del ancla, número visible (el texto remite a "sección 05", "sección 08") y etiqueta corta
+const indice = [
+  ['responsable', '01', 'Identidad y domicilio del responsable'],
+  ['datos', '02', 'Datos personales que recabamos'],
+  ['finalidades', '03', 'Finalidades del tratamiento'],
+  ['negativa', '04', 'Negativa a finalidades secundarias'],
+  ['transferencias', '05', 'Transferencias y encargados'],
+  ['arco', '06', 'Derechos ARCO'],
+  ['revocacion', '07', 'Revocación y limitación de uso'],
+  ['cookies', '08', 'Cookies y tecnologías de rastreo'],
+  ['seguridad', '09', 'Medidas de seguridad'],
+  ['cambios', '10', 'Cambios a este aviso y autoridad']
+];
+
+const jsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebPage',
+  '@id': url + '#webpage',
+  url,
+  name: titulo,
+  description: 'Aviso de privacidad de Riselanding conforme a la LFPDPPP.',
+  inLanguage: 'es-MX',
+  isPartOf: { '@id': 'https://riselanding.com/#organization' },
+  dateModified: '2026-10-07',
+  breadcrumb: {
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: 'https://riselanding.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Aviso de privacidad', item: url }
+    ]
+  }
+};
 ---
 <Base
-  title="Aviso de Privacidad | Riselanding"
+  title={titulo}
+  description={descripcion}
+  path="/aviso-de-privacidad"
+  og={{ descripcion: 'Cómo tratamos y protegemos tus datos personales conforme a la LFPDPPP.' }}
+  twitterCard="summary"
+  jsonLd={jsonLd}
+  ctaHref="/#contacto"
   tracking={{ template: 'legal_v1', type: 'legal', serviceLine: 'paquete_integral', isLandingPage: false }}
 >
-  <Fragment slot="head" set:html={partes.head} />
-  <Fragment set:html={body} />
+  <main id="contenido" class="aviso">
+    <header class="aviso__hero aura">
+      <div class="container">
+        <div class="aviso__intro">
+          <Eyebrow>Legal · Protección de datos</Eyebrow>
+          <h1>Aviso de privacidad</h1>
+          <p class="aviso__fecha">ÚLTIMA ACTUALIZACIÓN · {legal.ultimaActualizacion}</p>
+          <p class="lead">En Riselanding nos tomamos en serio la protección de tus datos personales. Este aviso de privacidad integral se emite en cumplimiento de la <strong>Ley Federal de Protección de Datos Personales en Posesión de los Particulares</strong> (LFPDPPP) y describe qué datos recabamos, para qué los usamos, con quién los compartimos y cómo puedes ejercer tus derechos.</p>
+        </div>
+      </div>
+    </header>
+
+    <div class="container aviso__cuerpo">
+      <nav class="aviso__indice" aria-labelledby="aviso-indice">
+        <h2 id="aviso-indice" class="aviso__indice-titulo">Índice</h2>
+        <ol role="list">
+          {indice.map(([id, num, etiqueta]) => (
+            <li><a href={'#' + id}><span class="aviso__n" aria-hidden="true">{num}</span>{etiqueta}</a></li>
+          ))}
+        </ol>
+      </nav>
+
+      <article class="aviso__texto">
+        <section id="responsable">
+          <h2><span class="aviso__num">01</span>Identidad y domicilio del responsable</h2>
+          <p><strong>Riselanding</strong> (en adelante, el "Responsable") es el responsable del tratamiento de los datos personales que nos proporcionas a través del sitio web <a href="https://riselanding.com">riselanding.com</a>, con domicilio en Ciudad de México, México.</p>
+          <div class="aviso__recuadro">
+            <p>Correo para asuntos de privacidad:<br><a href="mailto:contacto@riselanding.com">contacto@riselanding.com</a></p>
+          </div>
+        </section>
+
+        <section id="datos">
+          <h2><span class="aviso__num">02</span>Datos personales que recabamos</h2>
+          <h3>Datos que nos proporcionas directamente</h3>
+          <p>Cuando llenas el formulario de contacto para solicitar un diagnóstico, recabamos:</p>
+          <ul>
+            <li>Para quién es la solicitud (tu empresa o negocio, un emprendimiento, un proyecto personal o escolar, búsqueda de empleo o prácticas, o si eres proveedor o agencia)</li>
+            <li>Nombre y apellido</li>
+            <li>Correo electrónico de trabajo</li>
+            <li>Número de teléfono / WhatsApp y su país</li>
+            <li>Nombre de tu empresa o negocio (obligatorio si la solicitud es para una empresa o un emprendimiento)</li>
+            <li>Sitio web o cuenta de Instagram de la empresa (opcional)</li>
+            <li>Tamaño del equipo de la empresa</li>
+            <li>Servicios de tu interés</li>
+            <li>Presupuesto mensual estimado</li>
+            <li>La descripción de lo que quieres resolver</li>
+          </ul>
+          <h3>Datos que se recaban automáticamente</h3>
+          <p>Al navegar por el sitio o enviar el formulario se recaban de manera automática ciertos datos técnicos:</p>
+          <ul>
+            <li>Dirección IP y datos del navegador o dispositivo (con fines de seguridad y prevención de abuso)</li>
+            <li>Parámetros de origen de la visita (por ejemplo, campaña o medio por el que llegaste al sitio)</li>
+            <li>Datos de navegación mediante cookies y tecnologías similares (ver sección 08)</li>
+            <li>Señales técnicas de la verificación de seguridad de Cloudflare Turnstile, que confirma que el formulario lo envía una persona (ver sección 05)</li>
+            <li>El resultado de verificar que el dominio de tu correo puede recibir mensajes. Para ello consultamos los registros MX de ese dominio en el sistema de nombres de dominio (DNS) público; no te enviamos ningún correo en ese momento</li>
+          </ul>
+          <p><strong>No recabamos datos personales sensibles</strong> (como estado de salud, origen étnico, creencias religiosas o datos biométricos) ni datos de menores de edad. Te pedimos no incluir este tipo de información en el formulario.</p>
+          <h3>Solicitudes que no se registran en nuestro CRM</h3>
+          <p>Si indicas que tu solicitud es para un proyecto personal o escolar, que buscas empleo o prácticas, o que eres proveedor o agencia, <strong>no te pedimos datos de contacto y no se almacena ningún dato personal tuyo</strong>.</p>
+          <p>Si nuestros mecanismos de protección identifican el envío como automatizado o abusivo, <strong>la solicitud no se almacena en nuestro CRM ni en ningún otro sistema</strong>; solo queda, por un tiempo limitado en los registros técnicos de nuestro proveedor de alojamiento, una huella irreversible (hash) de tu correo y de tu teléfono, sin esos datos en claro, con el único fin de proteger el formulario contra abusos.</p>
+        </section>
+
+        <section id="finalidades">
+          <h2><span class="aviso__num">03</span>Finalidades del tratamiento</h2>
+          <h3>Finalidades primarias (necesarias para la relación contigo)</h3>
+          <ol>
+            <li>Atender tu solicitud de diagnóstico digital gratuito y darle seguimiento.</li>
+            <li>Contactarte por correo electrónico, teléfono o WhatsApp para agendar llamadas y dar respuesta a tus consultas.</li>
+            <li>Elaborar propuestas comerciales y presupuestos personalizados.</li>
+            <li>Gestionar la relación comercial y, en su caso, la prestación de nuestros servicios.</li>
+            <li>Proteger el sitio y el formulario contra spam, fraude y usos abusivos. Esto incluye verificaciones automáticas (validación de los datos, del dominio de tu correo y la verificación de Cloudflare Turnstile) y una evaluación automatizada de la solicitud para distinguir solicitudes comerciales de envíos no válidos; el seguimiento comercial de cada solicitud lo decide una persona de nuestro equipo.</li>
+            <li>Cumplir obligaciones legales aplicables.</li>
+          </ol>
+          <h3>Finalidades secundarias (no necesarias, pero útiles)</h3>
+          <ol>
+            <li>Enviarte comunicaciones sobre nuestros servicios, novedades y contenido que pueda interesarte.</li>
+            <li>Elaborar estadísticas y análisis internos para mejorar nuestro sitio, servicios y campañas.</li>
+          </ol>
+        </section>
+
+        <section id="negativa">
+          <h2><span class="aviso__num">04</span>Negativa al tratamiento para finalidades secundarias</h2>
+          <p>Si no deseas que tus datos se utilicen para las finalidades secundarias, puedes manifestarlo en cualquier momento enviando un correo a <a href="mailto:contacto@riselanding.com">contacto@riselanding.com</a> con el asunto <strong>"Negativa a finalidades secundarias"</strong>, indicando tu nombre y el correo con el que te registraste.</p>
+          <p>La negativa al uso de tus datos para estas finalidades no será motivo para negarte la atención de tu solicitud ni los servicios que contrates con nosotros.</p>
+        </section>
+
+        <section id="transferencias">
+          <h2><span class="aviso__num">05</span>Transferencias y encargados del tratamiento</h2>
+          <p><strong>No vendemos, rentamos ni compartimos tus datos personales con terceros para sus propios fines.</strong></p>
+          <p>Para operar el sitio y gestionar tu solicitud utilizamos proveedores de servicios tecnológicos que tratan los datos por cuenta y bajo las instrucciones del Responsable (encargados), tales como servicios de alojamiento web, gestión de relaciones con clientes (CRM), automatización de procesos y analítica. Algunos de estos proveedores pueden estar ubicados fuera de México (por ejemplo, en Estados Unidos o la Unión Europea), por lo que tus datos pueden ser objeto de remisiones internacionales necesarias para la prestación de estos servicios.</p>
+          <p>Para proteger el formulario utilizamos <strong>Cloudflare Turnstile</strong>, servicio de Cloudflare, Inc. (Estados Unidos), que actúa como encargado: al cargar y enviar el formulario, Cloudflare procesa por cuenta nuestra datos técnicos de tu navegador y dispositivo (por ejemplo, tu dirección IP, características del navegador y señales de interacción) para verificar que el envío lo hace una persona y prevenir abusos. Cloudflare no recibe el contenido de los campos del formulario. Adicionalmente, Cloudflare puede utilizar esas señales técnicas, en forma agregada o anonimizada, para mejorar sus servicios de detección de bots y seguridad, conforme a su propio aviso de privacidad (<a href="https://www.cloudflare.com/privacypolicy/" target="_blank" rel="noopener">cloudflare.com/privacypolicy</a>); en esa medida actúa como tercero receptor.</p>
+          <p>En todos los casos, exigimos a nuestros proveedores condiciones de confidencialidad y de protección de datos consistentes con este aviso y con la LFPDPPP. Fuera de estos supuestos, solo transferiremos tus datos cuando la ley lo exija o lo permita (por ejemplo, a autoridades competentes en cumplimiento de una obligación legal).</p>
+        </section>
+
+        <section id="arco">
+          <h2><span class="aviso__num">06</span>Derechos ARCO: acceso, rectificación, cancelación y oposición</h2>
+          <p>Tienes derecho a <strong>acceder</strong> a tus datos personales, <strong>rectificarlos</strong> cuando sean inexactos o incompletos, <strong>cancelarlos</strong> cuando consideres que no se requieren para alguna de las finalidades de este aviso, y <strong>oponerte</strong> a su tratamiento para fines específicos.</p>
+          <h3>Cómo ejercerlos</h3>
+          <p>Envía tu solicitud a <a href="mailto:contacto@riselanding.com">contacto@riselanding.com</a> con el asunto <strong>"Solicitud de derechos ARCO"</strong>, incluyendo:</p>
+          <ul>
+            <li>Tu nombre completo y un medio para comunicarte la respuesta (correo electrónico).</li>
+            <li>Copia de un documento que acredite tu identidad (o de tu representante legal, en su caso).</li>
+            <li>La descripción clara y precisa de los datos respecto de los cuales deseas ejercer tus derechos y del derecho que deseas ejercer.</li>
+            <li>Cualquier elemento que facilite la localización de tus datos (por ejemplo, la fecha aproximada en que llenaste el formulario).</li>
+          </ul>
+          <div class="aviso__recuadro">
+            <p>Te responderemos en un plazo máximo de <strong>20 días hábiles</strong> contados desde la recepción de tu solicitud. Si resulta procedente, la haremos efectiva dentro de los <strong>15 días hábiles</strong> siguientes a la respuesta. Estos plazos podrán ampliarse en los casos que la ley lo permite, lo cual te será notificado.</p>
+          </div>
+        </section>
+
+        <section id="revocacion">
+          <h2><span class="aviso__num">07</span>Revocación del consentimiento y limitación de uso o divulgación</h2>
+          <p>Puedes <strong>revocar tu consentimiento</strong> para el tratamiento de tus datos personales en cualquier momento, así como solicitar que <strong>limitemos su uso o divulgación</strong>, mediante el mismo procedimiento descrito en la sección 06 (correo a <a href="mailto:contacto@riselanding.com">contacto@riselanding.com</a>).</p>
+          <p>Toma en cuenta que la revocación no tendrá efectos retroactivos y que en algunos casos no podremos concluir el tratamiento de forma inmediata, por ejemplo cuando exista una obligación legal que nos exija conservar ciertos datos.</p>
+        </section>
+
+        <section id="cookies">
+          <h2><span class="aviso__num">08</span>Cookies y tecnologías de rastreo</h2>
+          <p>Este sitio utiliza cookies y tecnologías similares (a través de herramientas como Google Tag Manager y servicios de analítica y publicidad asociados) para:</p>
+          <ul>
+            <li>Medir el uso del sitio y entender cómo interactúan los visitantes con nuestras páginas.</li>
+            <li>Atribuir el origen de las visitas y medir la efectividad de nuestras campañas.</li>
+          </ul>
+          <p>Puedes deshabilitar o eliminar las cookies en cualquier momento desde la configuración de tu navegador (en las opciones de privacidad de Chrome, Safari, Firefox o Edge). Si las deshabilitas, el sitio seguirá funcionando, aunque algunas mediciones dejarán de registrarse.</p>
+        </section>
+
+        <section id="seguridad">
+          <h2><span class="aviso__num">09</span>Medidas de seguridad</h2>
+          <p>Aplicamos medidas de seguridad administrativas, técnicas y físicas razonables para proteger tus datos personales contra daño, pérdida, alteración, destrucción o uso, acceso o tratamiento no autorizados. Entre ellas: transmisión cifrada de la información (HTTPS), controles de acceso a los sistemas donde se almacenan los datos y mecanismos de protección del formulario contra envíos automatizados y abusivos (entre ellos Cloudflare Turnstile y límites de envíos por conexión). En nuestros registros técnicos no guardamos tu correo ni tu teléfono en claro, solo una huella irreversible (hash).</p>
+        </section>
+
+        <section id="cambios">
+          <h2><span class="aviso__num">10</span>Cambios a este aviso y autoridad competente</h2>
+          <p>Este aviso de privacidad puede ser modificado para atender novedades legislativas, cambios en nuestras prácticas de tratamiento o en los servicios que ofrecemos. Cualquier cambio se publicará en esta misma página (<a href="https://riselanding.com/aviso-de-privacidad">riselanding.com/aviso-de-privacidad</a>), actualizando la fecha de "última actualización" que aparece al inicio. Te recomendamos revisarla periódicamente.</p>
+          <p>Si consideras que tu derecho a la protección de datos personales ha sido vulnerado, puedes acudir ante la autoridad competente en materia de protección de datos personales en México, en términos de la LFPDPPP y su normativa aplicable.</p>
+          <p>Al marcar la casilla de aceptación y enviar nuestro formulario, confirmas que has leído este aviso de privacidad y consientes el tratamiento de tus datos personales conforme al mismo.</p>
+        </section>
+      </article>
+    </div>
+  </main>
 </Base>
+
+<style>
+  .aviso {
+    --aviso-offset: calc(var(--header-h) + var(--space-6));
+    padding-bottom: var(--section-y);
+  }
+
+  /* Encabezado sobre el aura; el header fijo de Base ocupa var(--header-h) */
+  .aviso__hero {
+    padding-top: calc(var(--header-h) + var(--space-9));
+    padding-bottom: var(--space-9);
+  }
+  .aviso__intro {
+    max-width: var(--measure);
+    display: grid;
+    gap: var(--space-4);
+  }
+  .aviso__fecha {
+    font-size: var(--fs-small);
+    line-height: var(--lh-small);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+  }
+
+  .aviso__cuerpo {
+    display: grid;
+    gap: var(--space-9);
+  }
+
+  /* Índice: tarjeta al inicio en móvil; columna fija a la izquierda desde 1024 px */
+  .aviso__indice {
+    background: var(--color-surface);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-1);
+    padding: var(--space-6);
+    max-width: var(--measure);
+  }
+  .aviso__indice-titulo {
+    font-family: var(--font-body);
+    font-size: var(--fs-eyebrow);
+    line-height: var(--lh-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-3);
+  }
+  .aviso__indice ol {
+    display: grid;
+    gap: var(--space-1);
+  }
+  .aviso__indice a {
+    display: flex;
+    gap: var(--space-3);
+    align-items: baseline;
+    min-height: var(--tap-min);
+    padding-block: var(--space-2);
+    font-size: var(--fs-small);
+    line-height: var(--lh-small);
+    color: var(--color-text);
+    text-decoration: none;
+  }
+  .aviso__indice a:hover {
+    color: var(--color-accent-text);
+    text-decoration: underline;
+  }
+  .aviso__n {
+    flex: none;
+    min-width: 2ch;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+  }
+
+  /* Texto legal: medida de 640 px */
+  .aviso__texto {
+    max-width: var(--measure);
+    min-width: 0;
+  }
+  .aviso__texto section + section {
+    margin-top: var(--space-9);
+    padding-top: var(--space-9);
+    border-top: 1px solid var(--color-border);
+  }
+  .aviso__texto section {
+    scroll-margin-top: var(--aviso-offset);
+  }
+  .aviso__texto h2 {
+    font-size: 24px;
+    line-height: 1.25;
+    margin-bottom: var(--space-4);
+  }
+  .aviso__num {
+    display: block;
+    margin-bottom: var(--space-2);
+    font-family: var(--font-body);
+    font-size: var(--fs-eyebrow);
+    line-height: var(--lh-eyebrow);
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-muted);
+  }
+  .aviso__texto h3 {
+    font-size: 18px;
+    line-height: 1.4;
+    margin-top: var(--space-7);
+    margin-bottom: var(--space-3);
+  }
+  .aviso__texto p + p,
+  .aviso__texto p + ul,
+  .aviso__texto p + ol,
+  .aviso__texto ul + p,
+  .aviso__texto ol + p {
+    margin-top: var(--space-4);
+  }
+  .aviso__texto ul,
+  .aviso__texto ol {
+    padding-left: var(--space-6);
+    display: grid;
+    gap: var(--space-2);
+  }
+  .aviso__texto li::marker {
+    color: var(--color-text-muted);
+  }
+  .aviso__texto strong {
+    color: var(--color-text);
+    font-weight: 600;
+  }
+  .aviso__texto a {
+    color: var(--color-accent-text);
+    overflow-wrap: anywhere;
+  }
+  .aviso__recuadro {
+    margin-top: var(--space-6);
+    padding: var(--space-5) var(--space-6);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+  }
+
+  @media (min-width: 1024px) {
+    .aviso { --aviso-indice: 240px; --aviso-gap: var(--space-9); }
+    .aviso__texto h2 { font-size: 28px; line-height: 1.2; }
+    .aviso__texto h3 { font-size: 20px; }
+    .aviso__cuerpo {
+      grid-template-columns: var(--aviso-indice) minmax(0, var(--measure));
+      justify-content: start;
+      align-items: start;
+      column-gap: var(--aviso-gap);
+    }
+    .aviso__indice {
+      position: sticky;
+      top: var(--aviso-offset);
+      padding: 0;
+      background: none;
+      box-shadow: none;
+    }
+    .aviso__intro {
+      margin-left: calc(var(--aviso-indice) + var(--aviso-gap));
+    }
+  }
+  @media (min-width: 1280px) {
+    .aviso { --aviso-indice: 280px; --aviso-gap: var(--space-11); }
+  }
+</style>
