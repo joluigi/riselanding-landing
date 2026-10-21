@@ -26,4 +26,8 @@ import Contacto from '../components/forms/Contacto.astro';
   <main>
     <Contacto servicio="Implementación de CRM" />
   </main>
+  <!-- TEMPORAL: la Base de feat/f4-scaffold no tiene la prop formulario de PR1; al integrar PR1,
+       quitar estas dos líneas y pasar formulario={true} a Base -->
+  <script src="/lib/lead-quality/schema.js" defer is:inline></script>
+  <script src="/js/rl-form.js" defer is:inline></script>
 </Base>
