@@ -33,6 +33,13 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 - Diagnóstico: precarga `necesidad` con el resumen y el motor de calidad solo suma los +10 de mensaje si el usuario escribe texto propio (cambio en `lib/lead-quality/engine.js` con pruebas, ola 2).
 - Preguntas y ponderación del diagnóstico aprobadas.
 
+## Decisiones de F3 (José, 2026-10-20)
+
+- Logo: José entrega el original en vector (lo deja en `Assets/`). Mientras llega, se construye con PNG a 2x.
+- Sección Nosotros con fotos de José y Rut, con consentimiento, a más tardar el 2026-10-24.
+- Herramientas que operamos: solo texto, sin logos de terceros.
+- WhatsApp: ícono oficial en monocromo.
+
 ## Pendientes
 
 - Campañas: se activan con el sitio completo (después de la ola 2). Antes, F8 debe dejar Google Ads y Meta medidos en GTM.
@@ -40,3 +47,6 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 - Fuera del rediseño, heredados de la release del filtro de calidad (`docs/RELEASE-SHADOW.md`): activación de Turnstile, revisión antes de `enforce`, deduplicación en n8n por `x-rl-event-id`, baja de `Form/` e `index-legacy.html`.
 - Rut: corregir el typo "Reediseño" en el valor de servicio, a la vez en `lib/lead-quality/schema.js`, n8n y Notion.
 - José: resolver las marcas [VERIFICAR] del copy (cuestionario en F6).
+- José: logo en vector en `Assets/`.
+- José y Rut: fotos para Nosotros a más tardar el 2026-10-24 (misma luz y fondo neutro).
+- José: responder `docs/copy/cuestionario-verificar.md` a más tardar el 2026-10-23.
