@@ -250,7 +250,7 @@
 :where(.nav-desktop, .header-actions) { display: none; }
 :where(.menu-toggle) {
   display: inline-flex; align-items: center; justify-content: center;
-  width: var(--tap-min); height: var(--tap-min); padding: 0;
+  width: var(--tap-min); height: var(--tap-min); padding: 0; flex-shrink: 0;
   border: 0; border-radius: var(--radius-pill); background: transparent; cursor: pointer;
   color: var(--color-text);
 }

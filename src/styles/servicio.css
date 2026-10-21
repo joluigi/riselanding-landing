@@ -51,7 +51,8 @@
 .breadcrumb li { display: inline-flex; align-items: center; gap: var(--space-2); }
 .breadcrumb li + li::before { content: "·"; color: var(--color-text-muted); }
 .breadcrumb a {
-  display: inline-flex; align-items: center; min-height: var(--tap-min);
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: var(--tap-min); min-width: var(--tap-min);
   color: var(--color-text-body); text-decoration: none;
 }
 .breadcrumb a:hover { color: var(--color-accent-text); text-decoration: underline; }
