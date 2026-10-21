@@ -22,6 +22,6 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 ## Pendientes
 
 - José: aprobar por escrito las preguntas y la ponderación del diagnóstico de madurez (Claude entrega el borrador en F2).
-- José: confirmar qué grupos de anuncios del CSV están activos (definen las páginas de servicio de la ola 1 del 27-oct).
+- Campañas: se activan con el sitio completo (después de la ola 2). Antes, F8 debe dejar Google Ads y Meta medidos en GTM.
 - José: el CSV entregado es de Google Ads Editor y no trae volúmenes. Para priorizar por volumen, exportar desde Keyword Planner (Descubrir nuevas palabras clave o Ver volumen de búsqueda y previsiones) con las mismas keywords.
 - Fuera del rediseño, heredados de la release del filtro de calidad (`docs/RELEASE-SHADOW.md`): activación de Turnstile, revisión antes de `enforce`, deduplicación en n8n por `x-rl-event-id`, baja de `Form/` e `index-legacy.html`.

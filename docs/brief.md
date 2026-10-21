@@ -145,5 +145,6 @@ Proyecto interno: el equipo ya tiene acceso a Vercel, GitHub, GTM, GA4, n8n y No
 
 1. WhatsApp: +52 55 4821 3439, visible como conversión secundaria.
 2. Componente interactivo: diagnóstico de madurez digital (8 a 10 preguntas, puntaje por pilar Atraer, Convertir, Medir y Automatizar, siguientes pasos y precarga del formulario). Claude redacta preguntas y ponderación; José las aprueba por escrito antes de F4.
-3. Lanzamiento escalonado. 2026-10-27: home, páginas de servicio de las campañas activas, legales y formulario. 2026-10-28 a 2026-11-03: resto de servicios y diagnóstico de madurez. Meta: 50 leads calificados a 90 días.
+3. Lanzamiento escalonado. 2026-10-27: home, legales, formulario y las páginas de servicio de mayor prioridad estratégica (no hay campañas activas). 2026-10-28 a 2026-11-03: resto de servicios y diagnóstico de madurez. Meta: 50 leads calificados a 90 días.
+   Los grupos de anuncios del CSV se activan cuando el sitio esté completo (después de la ola 2). Requisito previo: medición de Google Ads y Meta lista en GTM (IDs reales, conversiones mejoradas) y validada en F8.
 4. Keywords: `docs/seo/keywords-google-ads-editor.csv` (estructura de campañas de Google Ads Editor con 12 grupos corporativos y 1 local). No trae volumen ni dificultad: la priorización por volumen queda pendiente de un export de Keyword Planner con métricas.
