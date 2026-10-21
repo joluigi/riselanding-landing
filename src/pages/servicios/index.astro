@@ -1,0 +1,139 @@
+---
+// /servicios: índice por pilar (docs/wireframes/servicios-indice.md). Sin keyword primaria (hub de
+// navegación con canonical propio). #servicios dispara rl_service_view como en la home.
+// Los servicios de ola 2 se describen sin enlace a su URL (todavía no existe): llevan a #contacto.
+// Afirmaciones con [VERIFICAR] fuera: ver docs/copy/pendientes-servicios.md.
+import Base from '../../layouts/Base.astro';
+import Boton from '../../components/ui/Boton.astro';
+import Tarjeta from '../../components/ui/Tarjeta.astro';
+import Eyebrow from '../../components/ui/Eyebrow.astro';
+import Icono from '../../components/ui/Icono.astro';
+import EnlaceAccion from '../../components/ui/EnlaceAccion.astro';
+import Contacto from '../../components/forms/Contacto.astro';
+import { PILARES, serviciosDePilar, serviciosPublicados, publicado } from '../../data/servicios.js';
+import '../../styles/servicio.css';
+
+const SITIO = 'https://riselanding.com';
+
+// Líneas propias de esta página donde el borrador tiene [VERIFICAR alcance de la oferta] (pregunta 18):
+// se publican genéricas hasta que José defina el alcance.
+const LINEA: Record<string, string> = {
+  'tienda-en-linea': 'Tienda en línea para tu empresa. El alcance lo definimos contigo en el diagnóstico.',
+  'software-a-la-medida': 'Herramientas hechas para tu operación. El alcance lo definimos contigo en el diagnóstico.'
+};
+
+const mayusculaInicial = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+const pilares = PILARES.map((p) => ({ ...p, servicios: serviciosDePilar(p.id) }));
+
+const PASOS = [
+  { titulo: 'Diagnóstico', texto: 'Revisamos tus campañas, sitio, CRM y medición actuales para ubicar dónde se pierden prospectos.' },
+  { titulo: 'Plan', texto: 'Priorizamos acciones por impacto y esfuerzo, con presupuesto, responsables y fechas.' },
+  { titulo: 'Implementación', texto: 'Configuramos campañas, páginas, CRM y automatizaciones, con medición desde el primer día.' },
+  { titulo: 'Optimización', texto: 'Revisamos resultados de forma periódica, ajustamos lo que rinde menos y compartimos contigo los datos completos.' }
+];
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: SITIO + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Servicios', item: SITIO + '/servicios' }
+    ]
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    name: 'Servicios de Riselanding',
+    itemListElement: serviciosPublicados().map((s, i) => ({
+      '@type': 'ListItem',
+      position: i + 1,
+      name: s.nombre,
+      url: SITIO + s.href
+    }))
+  }
+];
+---
+<Base
+  title="Servicios de marketing, CRM y automatización | Riselanding"
+  description="Google Ads, Meta Ads, SEO, sitios web, CRM, medición y automatización para empresas B2B en México, ordenados por etapa. Agenda tu diagnóstico sin costo."
+  path="/servicios"
+  tracking={{ template: 'servicios_indice_v1', type: 'indice', serviceLine: 'paquete_integral' }}
+  jsonLd={jsonLd}
+  barraCta={true}
+  formulario={true}
+>
+  <main id="contenido" class="servicio">
+    <section class="servicio-hero indice-hero aura" id="hero" aria-labelledby="hero-titulo">
+      <div class="container">
+        <div class="servicio-hero__copy">
+          <Eyebrow>Servicios</Eyebrow>
+          <h1 id="hero-titulo">Servicios de marketing, CRM y automatización</h1>
+          <p class="lead">Organizamos el trabajo en cuatro etapas: atraer prospectos, convertirlos en oportunidades, medir cada peso invertido y automatizar el seguimiento. Puedes contratar una etapa o el recorrido completo.</p>
+          <div class="servicio-hero__acciones">
+            <Boton href="#contacto">Agenda tu diagnóstico</Boton>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="servicios" aria-labelledby="servicios-titulo">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="servicios-titulo">Elige por etapa o por servicio.</h2>
+        </div>
+        <div class="indice-pilares">
+          {pilares.map((p) => (
+            <Tarjeta as="article" class="indice-pilar" id={p.id} aria-labelledby={'pilar-' + p.id}>
+              <Eyebrow>{p.nombre}</Eyebrow>
+              <h2 id={'pilar-' + p.id}>{p.descripcion}</h2>
+              <ul class="indice-lista" role="list">
+                {p.servicios.map((s) => (
+                  <li class="indice-servicio">
+                    <span class="chip__icon"><Icono nombre={s.icono as any} /></span>
+                    <h3>{s.nombre}</h3>
+                    <p>{LINEA[s.slug] || s.linea}</p>
+                    {publicado(s)
+                      ? <EnlaceAccion href={s.href}>{mayusculaInicial(s.anclaje)}</EnlaceAccion>
+                      : <EnlaceAccion href="#contacto">Pregúntanos por este servicio</EnlaceAccion>}
+                  </li>
+                ))}
+              </ul>
+            </Tarjeta>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--corta" id="por-donde-empezar" aria-labelledby="empezar-titulo">
+      <div class="container">
+        <Tarjeta class="indice-empezar">
+          <h2 id="empezar-titulo">¿No sabes por dónde empezar?</h2>
+          <p>Es lo más común. En el diagnóstico revisamos tu operación completa y te decimos qué etapa conviene atender primero.</p>
+          <EnlaceAccion href="#contacto">Agenda tu diagnóstico</EnlaceAccion>
+        </Tarjeta>
+      </div>
+    </section>
+
+    <section class="section servicio-seccion--superficie" id="proceso" aria-labelledby="proceso-titulo">
+      <div class="container">
+        <div class="section-head">
+          <Eyebrow>Cómo trabajamos</Eyebrow>
+          <h2 id="proceso-titulo">Cuatro pasos, con entregables claros en cada uno.</h2>
+        </div>
+        <ol class="pasos" role="list">
+          {PASOS.map((paso, i) => (
+            <Tarjeta as="li" class="paso">
+              <span class="paso__num" aria-hidden="true">{i + 1}</span>
+              <h3>{paso.titulo}</h3>
+              <p>{paso.texto}</p>
+            </Tarjeta>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <Contacto titulo="Cuéntanos qué necesitas y te ayudamos a ordenar las prioridades." servicio={null} />
+  </main>
+</Base>
