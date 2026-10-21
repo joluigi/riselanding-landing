@@ -1,6 +1,6 @@
 # Estado del proyecto · Rediseño de riselanding.com
 
-Fase actual: F2 (arquitectura: sitemap y wireframes) · Lanzamiento escalonado: ola 1 el 2026-10-27, ola 2 a más tardar el 2026-11-03
+Fase actual: F3 (assets) en paralelo con F4 (construcción en Astro) · Lanzamiento escalonado: ola 1 el 2026-10-27, ola 2 a más tardar el 2026-11-03
 Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 
 ## Gates
@@ -10,7 +10,7 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 | F0 Brief | Aprobado | José Luis Vázquez | 2026-10-20 |
 | F7a Investigación de keywords | Mapa provisional (sin volúmenes) | | |
 | F1 ADN de diseño | Aprobado (variante A clara y 3 desviaciones del manual) | José Luis Vázquez | 2026-10-20 |
-| F2 Arquitectura | En curso | | |
+| F2 Arquitectura | Aprobado (sitemap, wireframes de ola 1 y diagnóstico de madurez) | José Luis Vázquez | 2026-10-20 |
 | F3 a F10 | No iniciadas | | |
 
 ## Entregables de F0
@@ -26,9 +26,17 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 - Ola 2 (a más tardar 3-nov): `/servicios/meta-ads`, `/seo`, `/landing-pages`, `/medicion`, `/software-a-la-medida` (G10, sí es oferta), `/tienda-en-linea` (G07, sí es oferta) y diagnóstico de madurez.
 - Fase 2: `/negocios-locales` (L01).
 
+## Decisiones de F2 (José, 2026-10-20)
+
+- H1 de la home con keyword: "Generación de leads B2B, de la campaña al cierre."
+- Tienda en línea se registra en el formulario como "Reediseño / Desarrollo página web" y Software a la medida como "Automatización de procesos" (sin tocar backend ni Notion).
+- Diagnóstico: precarga `necesidad` con el resumen y el motor de calidad solo suma los +10 de mensaje si el usuario escribe texto propio (cambio en `lib/lead-quality/engine.js` con pruebas, ola 2).
+- Preguntas y ponderación del diagnóstico aprobadas.
+
 ## Pendientes
 
-- José: aprobar por escrito las preguntas y la ponderación del diagnóstico de madurez (Claude entrega el borrador en F2).
 - Campañas: se activan con el sitio completo (después de la ola 2). Antes, F8 debe dejar Google Ads y Meta medidos en GTM.
 - José: el CSV entregado es de Google Ads Editor y no trae volúmenes. Para priorizar por volumen, exportar desde Keyword Planner (Descubrir nuevas palabras clave o Ver volumen de búsqueda y previsiones) con las mismas keywords.
 - Fuera del rediseño, heredados de la release del filtro de calidad (`docs/RELEASE-SHADOW.md`): activación de Turnstile, revisión antes de `enforce`, deduplicación en n8n por `x-rl-event-id`, baja de `Form/` e `index-legacy.html`.
+- Rut: corregir el typo "Reediseño" en el valor de servicio, a la vez en `lib/lead-quality/schema.js`, n8n y Notion.
+- José: resolver las marcas [VERIFICAR] del copy (cuestionario en F6).
