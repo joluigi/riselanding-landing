@@ -1,5 +1,6 @@
-// Extrae el <script id="rl-bootstrap"> de index.html y lo ejecuta en un
-// sandbox de node:vm con document/location/sessionStorage falsos.
+// Ejecuta el bootstrap (src/tracking/rl-bootstrap.js, el mismo archivo que RlBootstrap.astro
+// inyecta inline) en un sandbox de node:vm con document/location/sessionStorage falsos.
+// El orden bootstrap < GTM < rl-tracking en el HTML generado se prueba en tests/dist/paginas.test.js.
 'use strict';
 const { test } = require('node:test');
 const assert = require('node:assert');
@@ -7,8 +8,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const html = fs.readFileSync(path.join(__dirname, '..', 'index.html'), 'utf8');
-const match = html.match(/<script id="rl-bootstrap">([\s\S]*?)<\/script>/);
+const codigo = fs.readFileSync(path.join(__dirname, '..', 'src', 'tracking', 'rl-bootstrap.js'), 'utf8');
 
 function run(opts) {
   opts = opts || {};
@@ -41,9 +41,10 @@ function run(opts) {
     URLSearchParams, URL, Date, Math, JSON, RegExp, Array, Object, Uint8Array,
     encodeURIComponent, decodeURIComponent
   };
+  if (opts.page) sandbox.__rlPage = opts.page;
   sandbox.window = sandbox;
   vm.createContext(sandbox);
-  vm.runInContext(match[1], sandbox);
+  vm.runInContext(codigo, sandbox);
   return { dl: sandbox.dataLayer, jar, rl: sandbox.__rl, stored, attrs };
 }
 
@@ -57,17 +58,11 @@ function consentArgs(dl) {
 }
 function seed(obj) { return encodeURIComponent(JSON.stringify(obj)); }
 
-test('script rl-bootstrap existe en index.html antes del snippet GTM', function () {
-  assert.ok(match, 'falta <script id="rl-bootstrap"> en index.html');
-  assert.ok(html.indexOf('id="rl-bootstrap"') < html.indexOf('googletagmanager.com/gtm.js'),
-    'el bootstrap debe ir ANTES del snippet GTM');
-});
-
 test('primera visita directa: contexto completo, sesión 1, touch directo', function () {
   const r = run();
   const ctx = ctxEvent(r.dl);
   assert.ok(ctx, 'no se empujó rl_context_ready');
-  assert.strictEqual(ctx.rl_schema_version, '2.1.0');
+  assert.strictEqual(ctx.rl_schema_version, '2.2.0');
   assert.match(ctx.user.lead_id, /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/);
   assert.strictEqual(ctx.user.session_count, 1);
   assert.strictEqual(ctx.user.is_returning, false);
@@ -200,4 +195,27 @@ test('Fase 6: referrer interno o ausente → null; un first_touch viejo (sin las
   const ctx = ctxEvent(r.dl);
   assert.deepStrictEqual(ctx.traffic.first_touch, viejo, 'first_touch intacto');
   assert.strictEqual(ctx.traffic.last_touch.utm_id, '99');
+});
+
+test('F4: window.__rlPage parametriza page de rl_context_ready y el handoff __rl.page', function () {
+  const r = run({ page: { template: 'servicio_crm_v1', service_line: 'crm_automatizacion', type: 'servicio', publish_date: '2026-10-27', is_landing_page: false } });
+  const ctx = ctxEvent(r.dl);
+  assert.strictEqual(ctx.page.template, 'servicio_crm_v1');
+  assert.strictEqual(ctx.page.service_line, 'crm_automatizacion');
+  assert.strictEqual(ctx.page.type, 'servicio');
+  assert.strictEqual(ctx.page.publish_date, '2026-10-27');
+  assert.strictEqual(ctx.page.is_landing_page, false);
+  assert.strictEqual(ctx.page.target_segment, 'general_b2b_mx', 'lo no definido conserva su default');
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(r.rl.page)), { template: 'servicio_crm_v1', serviceLine: 'crm_automatizacion' });
+});
+
+test('F4: sin window.__rlPage se conservan los valores previos al rediseño', function () {
+  const r = run();
+  const page = ctxEvent(r.dl).page;
+  assert.strictEqual(page.template, 'lp_home_v1');
+  assert.strictEqual(page.service_line, 'paquete_integral');
+  assert.strictEqual(page.type, 'landing');
+  assert.strictEqual(page.publish_date, '2026-07-06');
+  assert.strictEqual(page.is_landing_page, true);
+  assert.deepStrictEqual(JSON.parse(JSON.stringify(r.rl.page)), { template: 'lp_home_v1', serviceLine: 'paquete_integral' });
 });

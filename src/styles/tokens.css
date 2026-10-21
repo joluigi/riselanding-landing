@@ -1,0 +1,39 @@
+:root {
+  /* Comunes */
+  --font-display: "Montserrat", system-ui, sans-serif;
+  --font-body: "Inter", system-ui, sans-serif;
+  --radius-sm: 10px;
+  --radius-md: 24px;
+  --radius-lg: 40px;
+  --radius-pill: 999px;
+  --duration-fast: 200ms;
+  --duration-base: 300ms;
+  --duration-slow: 500ms;
+  --ease-standard: ease;
+  --ease-out: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --container: 1200px;
+  --measure: 640px;
+
+  --color-bg: #F7F8FA;
+  --color-surface: #FFFFFF;
+  --color-surface-glass: rgba(255, 255, 255, 0.65);
+  --color-text: #1A202C;
+  --color-text-body: #4A5568;
+  --color-text-muted: #5F6B7A;
+  --color-accent: #FF5A1F;
+  --color-accent-contrast: #1A202C;
+  --color-accent-text: #B83F14;
+  --color-accent-soft: #FFB59F;
+  --color-border: #E5E7EB;
+  --color-inverse-bg: #1A202C;
+  --color-inverse-text: #F7F8FA;
+  --color-inverse-text-muted: #9CA3AF;
+  --color-success: #067647;
+  --color-error: #B42318;
+  --shadow-1: 0 5px 30px rgba(26, 32, 44, 0.07);
+  --shadow-2: 0 10px 30px rgba(26, 32, 44, 0.10);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root { --duration-fast: 0ms; --duration-base: 0ms; --duration-slow: 0ms; }
+}

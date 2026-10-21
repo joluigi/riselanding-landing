@@ -1,0 +1,36 @@
+---
+// Inyecta inline el bootstrap de tracking (src/tracking/rl-bootstrap.js) precedido de window.__rlPage.
+// set:html en <script> implica is:inline: Astro no lo procesa, no lo agrupa ni lo mueve.
+// Debe renderizarse antes de <Gtm /> (docs/contrato-integraciones.md §2).
+import bootstrap from '../../tracking/rl-bootstrap.js?raw';
+
+interface Props {
+  template: string;
+  serviceLine?: string;
+  type?: string;
+  publishDate?: string;
+  isLandingPage?: boolean;
+  targetSegment?: string;
+}
+
+const {
+  template,
+  serviceLine = 'paquete_integral',
+  type = 'landing',
+  publishDate,
+  isLandingPage = true,
+  targetSegment = 'general_b2b_mx'
+} = Astro.props;
+
+const page = {
+  template,
+  service_line: serviceLine,
+  type,
+  publish_date: publishDate,
+  is_landing_page: isLandingPage,
+  target_segment: targetSegment
+};
+// < evita que un valor cierre el <script> por accidente
+const pagina = JSON.stringify(page).replace(/</g, '\\u003c');
+---
+<script id="rl-bootstrap" set:html={`window.__rlPage=${pagina};\n${bootstrap}`}></script>
