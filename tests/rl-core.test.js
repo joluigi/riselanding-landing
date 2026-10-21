@@ -211,3 +211,51 @@ test('rl_case_study_view: dormido sin #resultados; rl_scroll_depth sigue activo'
   assert.deepStrictEqual(p.eventos('rl_scroll_depth').map(function (e) { return e.threshold; }), [25, 50, 75, 90]);
 });
 
+// --- Taxonomía versionada: docs/tracking/rl-taxonomy.json ---
+const RAIZ = path.join(__dirname, '..');
+const TAXO_RAW = fs.readFileSync(path.join(RAIZ, 'docs', 'tracking', 'rl-taxonomy.json'), 'utf8');
+
+test('rl-taxonomy.json: JSON válido, v2.2.0 y misma versión que el bootstrap', function () {
+  const t = JSON.parse(TAXO_RAW);
+  assert.strictEqual(t.schema_version, '2.2.0');
+  const boot = fs.readFileSync(path.join(RAIZ, 'src', 'tracking', 'rl-bootstrap.js'), 'utf8');
+  assert.match(boot, /rl_schema_version:\s*'2\.2\.0'/);
+  assert.ok(Array.isArray(t.changelog) && t.changelog.some(function (c) { return c.version === '2.2.0'; }));
+  assert.strictEqual(TAXO_RAW.indexOf('—'), -1, 'sin guion largo');
+});
+
+test('rl-taxonomy.json: documenta cada evento rl_* que publica el código, con estado válido', function () {
+  const t = JSON.parse(TAXO_RAW);
+  const ESTADOS = ['activo', 'dormido', 'planeado'];
+  const porNombre = {};
+  t.events.forEach(function (e) {
+    assert.ok(ESTADOS.indexOf(e.status) !== -1, e.name + ': estado ' + e.status);
+    assert.strictEqual(typeof e.gtm_trigger, 'boolean', e.name + ': gtm_trigger');
+    porNombre[e.name] = e;
+  });
+  // index.html (legado) sale al final de ola 1 y js/rl-form.js llega con PR2: se leen los que existan
+  const fuentes = ['js/rl-tracking.js', 'src/tracking/rl-bootstrap.js', 'js/rl-form.js', 'index.html']
+    .filter(function (f) { return fs.existsSync(path.join(RAIZ, f)); })
+    .map(function (f) { return fs.readFileSync(path.join(RAIZ, f), 'utf8'); }).join('\n');
+  const emitidos = new Set();
+  const re = /(?:pushEvent|pushEvento|event:)\s*\(?\s*'(rl_[a-z_]+)'/g;
+  let m;
+  while ((m = re.exec(fuentes))) emitidos.add(m[1]);
+  assert.ok(emitidos.size >= 10, 'el extractor encontró ' + emitidos.size + ' eventos');
+  emitidos.forEach(function (n) { assert.ok(porNombre[n], n + ' falta en la taxonomía'); });
+  assert.strictEqual(porNombre.rl_case_study_view.status, 'dormido');
+  assert.strictEqual(porNombre.rl_tool_start.status, 'planeado');
+  assert.strictEqual(porNombre.rl_tool_complete.status, 'planeado');
+  assert.deepStrictEqual(porNombre.rl_service_view.dom_selector_by_template.servicio, '#enfoque');
+});
+
+test('rl-taxonomy.json: service_line y page.template coinciden con el código', function () {
+  const t = JSON.parse(TAXO_RAW);
+  Object.keys({ 'Bundle Completo': 1, 'Google Ads': 1, 'Sitio Web + SEO': 1, 'CRM + Automatización': 1 }).forEach(function (pilar) {
+    assert.ok(t.values.service_line.indexOf(RL.serviceLineFromPilar(pilar)) !== -1, pilar);
+  });
+  ['home_v2', 'servicios_indice_v1', 'servicio_crm_v1', 'servicio_automatizacion_v1', 'servicio_google_ads_v1',
+    'servicio_sitio_web_v1', 'legal_v1', 'gracias_v1', 'error_404_v1', 'lp_home_v1'].forEach(function (tpl) {
+    assert.ok(t.values.page_template.some(function (v) { return v.template === tpl; }), tpl);
+  });
+});

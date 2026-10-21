@@ -1,0 +1,386 @@
+{
+  "schema_version": "2.2.0",
+  "updated": "2026-10-20",
+  "owner": "Riselanding",
+  "description": "Taxonomía versionada de eventos rl_* de riselanding.com. Fuente de verdad para js/rl-tracking.js, src/tracking/rl-bootstrap.js, el formulario y el contenedor GTM. Los nombres rl_* y las claves de rl_event_data, page, user, site y traffic no cambian sin subir la versión.",
+  "sources": {
+    "bootstrap": "src/tracking/rl-bootstrap.js (inline, antes de GTM; publica rl_context_ready y window.__rl)",
+    "dom_listeners": "js/rl-tracking.js líneas 209 en adelante",
+    "core": "js/rl-tracking.js líneas 1 a 208 (window.RL.pushEvent, buildLeadSubmit, pushFormError, pushNonCommercialSubmit)",
+    "form": "js/rl-form.js (camino A; hoy index.html legado)",
+    "contract": "docs/contrato-integraciones.md",
+    "gtm_container": "GTM-P3WZC7MV",
+    "gtm_export_reviewed": "GTM_riselanding_tracking_v2.1.1.json (export 2026-08-03 22:30, sin versionar en el repo)"
+  },
+  "conventions": {
+    "reset": "Antes de cada evento se empuja {rl_event_data: null} (C-13).",
+    "event_id": "UUID v4 en rl_event_data.event_id; si no viene, pushEvent lo genera (C-15). Sirve de deduplicación GA4, Ads y Meta.",
+    "empty_values": "Las claves null o undefined se omiten, nunca se mandan vacías.",
+    "pii": "Ningún evento lleva PII en claro. user_data solo con hashes SHA-256 (C-14); ningún texto libre del formulario.",
+    "once_per_load": "Los eventos de interacción (service_view, case_study_view, phone_click, whatsapp_click, form_start, form_step) se disparan una vez por carga de página.",
+    "form_location": "form_location es 'contacto' fijo en todas las páginas con formulario (home, índice y servicios), porque el formulario vive siempre en la sección #contacto. La página se distingue con page.template y page.path de rl_context_ready. En /diagnostico (ola 2) se recomienda parametrizar 'diagnostico'.",
+    "page_context": "page.template y page.service_line los define cada página como props de RlBootstrap.astro; el bootstrap los publica en rl_context_ready.page y en window.__rl.page {template, serviceLine}. js/rl-tracking.js lee window.__rl.page.serviceLine, con respaldo window.__rlPage.service_line y luego 'paquete_integral'."
+  },
+  "values": {
+    "service_line": ["paquete_integral", "publicidad_digital", "web_seo", "crm_automatizacion"],
+    "service_line_from_form_pilar": {
+      "Bundle Completo": "paquete_integral",
+      "Google Ads": "publicidad_digital",
+      "Sitio Web + SEO": "web_seo",
+      "CRM + Automatización": "crm_automatizacion",
+      "otro valor": "paquete_integral"
+    },
+    "page_type": ["home", "indice", "servicio", "legal", "gracias", "error"],
+    "page_template": [
+      { "template": "home_v2", "path": "/", "type": "home", "service_line": "paquete_integral", "is_landing_page": true, "has_form": true, "ola": 1 },
+      { "template": "servicios_indice_v1", "path": "/servicios", "type": "indice", "service_line": "paquete_integral", "is_landing_page": true, "has_form": true, "ola": 1 },
+      { "template": "servicio_crm_v1", "path": "/servicios/crm", "type": "servicio", "service_line": "crm_automatizacion", "is_landing_page": true, "has_form": true, "ola": 1 },
+      { "template": "servicio_automatizacion_v1", "path": "/servicios/automatizacion", "type": "servicio", "service_line": "crm_automatizacion", "is_landing_page": true, "has_form": true, "ola": 1 },
+      { "template": "servicio_google_ads_v1", "path": "/servicios/google-ads", "type": "servicio", "service_line": "publicidad_digital", "is_landing_page": true, "has_form": true, "ola": 1 },
+      { "template": "servicio_sitio_web_v1", "path": "/servicios/sitio-web", "type": "servicio", "service_line": "web_seo", "is_landing_page": true, "has_form": true, "ola": 1 },
+      { "template": "legal_v1", "path": "/aviso-de-privacidad", "type": "legal", "service_line": "paquete_integral", "is_landing_page": false, "has_form": false, "ola": 1 },
+      { "template": "gracias_v1", "path": "/gracias", "type": "gracias", "service_line": "paquete_integral", "is_landing_page": false, "has_form": false, "ola": 1, "note": "noindex, nofollow" },
+      { "template": "error_404_v1", "path": "404", "type": "error", "service_line": "paquete_integral", "is_landing_page": false, "has_form": false, "ola": 1 },
+      { "template": "lp_home_v1", "path": "/", "type": "landing", "service_line": "paquete_integral", "is_landing_page": true, "has_form": true, "ola": 0, "deprecated": true, "note": "Valor histórico (taxonomía 2.1.0) y default del bootstrap cuando falta window.__rlPage. Ninguna página del rediseño debe publicarlo." }
+    ],
+    "page_template_ola2": "Las 6 páginas de servicio de ola 2 y /diagnostico definen template y service_line en src/data/servicios.js al publicarse; se agregan aquí con un cambio de versión menor.",
+    "form_id": ["agenda_diagnostico"],
+    "form_location": ["contacto"],
+    "assigned_partner": ["ambos"],
+    "cta_location": ["body", "footer"]
+  },
+  "dom_templates": {
+    "home": { "templates": ["home_v2"], "sections": ["#servicios", "#contacto", "#lead-form"] },
+    "indice": { "templates": ["servicios_indice_v1"], "sections": ["#servicios", "#contacto", "#lead-form"] },
+    "servicio": { "templates": ["servicio_crm_v1", "servicio_automatizacion_v1", "servicio_google_ads_v1", "servicio_sitio_web_v1"], "sections": ["#enfoque", "#relacionados", "#contacto", "#lead-form"] },
+    "legal": { "templates": ["legal_v1"], "sections": [] },
+    "gracias": { "templates": ["gracias_v1"], "sections": [] },
+    "error": { "templates": ["error_404_v1"], "sections": [] }
+  },
+  "events": [
+    {
+      "name": "rl_context_ready",
+      "status": "activo",
+      "source": "bootstrap",
+      "trigger": "Carga de cada página, antes del snippet de GTM.",
+      "params": {
+        "rl_schema_version": "string, '2.2.0'",
+        "site": "{environment: production|staging|development, domains, currency: 'MXN'}",
+        "page": "{type, service_line, vertical_fit, target_segment, language, template, path, publish_date, is_landing_page, experiment_id, variant_id}",
+        "user": "{lead_id, session_id, user_type, consent_state, is_internal, is_returning, session_count}",
+        "traffic": "{gclid, gbraid, wbraid, fbclid, msclkid, first_touch, last_touch, network_meta, touch_count, days_since_first_touch}"
+      },
+      "dom_selector_by_template": { "home": null, "indice": null, "servicio": null, "legal": null, "gracias": null, "error": null },
+      "gtm_trigger": false,
+      "gtm_note": "Sin activador por diseño: es el contexto que leen las variables DLV - page.*, user.*, site.* y traffic.*. Ver hueco gtm_no_ga4_config.",
+      "ga4_event": null
+    },
+    {
+      "name": "rl_scroll_depth",
+      "status": "activo",
+      "source": "dom_listeners",
+      "trigger": "Primer cruce de 25, 50, 75 y 90 % de scroll de la página.",
+      "params": { "threshold": "integer: 25 | 50 | 75 | 90" },
+      "dom_selector_by_template": { "home": "window", "indice": "window", "servicio": "window", "legal": "window", "gracias": "window", "error": "window" },
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_scroll_depth", "CE - rl_scroll_depth (50 y 90)"],
+      "gtm_tags": ["GA4 - scroll (solo 50 y 90)"],
+      "ga4_event": "scroll"
+    },
+    {
+      "name": "rl_engaged_session",
+      "status": "activo",
+      "source": "dom_listeners",
+      "trigger": "45 s visibles, scroll de 50 % o más y 2 interacciones o más; una vez por carga.",
+      "params": { "engagement_time_sec": "integer", "max_scroll_pct": "integer 0 a 100", "interaction_count": "integer" },
+      "dom_selector_by_template": {
+        "home": "a, button, input, select, textarea, label, .svc-tab, .faq-q",
+        "indice": "a, button, input, select, textarea, label, .svc-tab, .faq-q",
+        "servicio": "a, button, input, select, textarea, label, .svc-tab, .faq-q",
+        "legal": "a, button, input, select, textarea, label, .svc-tab, .faq-q",
+        "gracias": "a, button, input, select, textarea, label, .svc-tab, .faq-q",
+        "error": "a, button, input, select, textarea, label, .svc-tab, .faq-q"
+      },
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_engaged_session"],
+      "gtm_tags": ["GA4 - engaged_session", "Meta - ViewContent (engaged session)"],
+      "ga4_event": "engaged_session"
+    },
+    {
+      "name": "rl_service_view",
+      "status": "activo",
+      "source": "dom_listeners",
+      "trigger": "20 s acumulados con la sección de servicio visible (50 % del elemento o media pantalla), con la pestaña visible; una vez por carga. Observa #servicios y, si no existe, #enfoque.",
+      "params": {
+        "service_line": "string de values.service_line, tomado de window.__rl.page.serviceLine (respaldo window.__rlPage.service_line, luego 'paquete_integral')",
+        "assigned_partner": "'ambos'",
+        "dwell_time_sec": "integer, 20"
+      },
+      "dom_selector_by_template": { "home": "#servicios", "indice": "#servicios", "servicio": "#enfoque", "legal": null, "gracias": null, "error": null },
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_service_view", "CE - Micro compuesta"],
+      "gtm_tags": ["GA4 - view_service", "Meta - ViewContent (servicio)", "Ads - Micro (Interes cualificado) [PRIMARIA meses 1-6]"],
+      "ga4_event": "view_service",
+      "changed_in": "2.2.0"
+    },
+    {
+      "name": "rl_case_study_view",
+      "status": "dormido",
+      "source": "dom_listeners",
+      "trigger": "75 % de #resultados leído; una vez por carga.",
+      "params": { "case_id": "'resultados_home'", "case_segment": "'general_b2b_mx'", "read_depth_pct": "integer 75 a 100" },
+      "dom_selector_by_template": { "home": null, "indice": null, "servicio": null, "legal": null, "gracias": null, "error": null },
+      "dormant_reason": "El rediseño no tiene #resultados: no hay resultados verificables y las cifras se retiraron (transparencia radical). El código sigue en js/rl-tracking.js como no-op y se reactiva con casos reales con permiso escrito del cliente (/casos, fase 2), remapeando el selector y case_id.",
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_case_study_view", "CE - Micro compuesta"],
+      "gtm_tags": ["GA4 - view_case_study", "Meta - ViewContent (servicio)", "Ads - Micro (Interes cualificado) [PRIMARIA meses 1-6]"],
+      "ga4_event": "view_case_study",
+      "changed_in": "2.2.0"
+    },
+    {
+      "name": "rl_phone_click",
+      "status": "activo",
+      "source": "dom_listeners",
+      "trigger": "Primer clic en un enlace tel: por carga.",
+      "params": { "cta_location": "'footer' | 'body'" },
+      "dom_selector_by_template": { "home": "a[href^=\"tel:\"]", "indice": "a[href^=\"tel:\"]", "servicio": "a[href^=\"tel:\"]", "legal": "a[href^=\"tel:\"]", "gracias": "a[href^=\"tel:\"]", "error": "a[href^=\"tel:\"]" },
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_phone_click"],
+      "gtm_tags": ["GA4 - contact_phone"],
+      "ga4_event": "contact_phone"
+    },
+    {
+      "name": "rl_whatsapp_click",
+      "status": "activo",
+      "source": "dom_listeners",
+      "trigger": "Primer clic en un enlace wa.me por carga. Agrega [RL-xxxxxxxx] al texto prellenado antes de navegar.",
+      "params": {
+        "transaction_id": "lead_id de window.__rl (se omite si no existe)",
+        "prefilled_ref": "'RL-' + primeros 8 caracteres del lead_id",
+        "cta_location": "'footer' | 'body'",
+        "service_line": "igual que rl_service_view: window.__rl.page.serviceLine, respaldo window.__rlPage.service_line, luego 'paquete_integral'"
+      },
+      "dom_selector_by_template": { "home": "a[href*=\"wa.me\"]", "indice": "a[href*=\"wa.me\"]", "servicio": "a[href*=\"wa.me\"]", "legal": "a[href*=\"wa.me\"]", "gracias": "a[href*=\"wa.me\"]", "error": "a[href*=\"wa.me\"]" },
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_whatsapp_click"],
+      "gtm_tags": ["GA4 - contact_whatsapp", "Ads - Contacto WhatsApp", "Meta - Contact (WhatsApp)"],
+      "ga4_event": "contact_whatsapp",
+      "changed_in": "2.2.0"
+    },
+    {
+      "name": "rl_form_start",
+      "status": "activo",
+      "source": "dom_listeners",
+      "trigger": "Primer focus dentro de #lead-form por carga.",
+      "params": { "form_id": "'agenda_diagnostico'", "form_location": "'contacto'" },
+      "dom_selector_by_template": { "home": "#lead-form", "indice": "#lead-form", "servicio": "#lead-form", "legal": null, "gracias": null, "error": null },
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_form_start", "CE - Micro compuesta"],
+      "gtm_tags": ["GA4 - form_start", "Meta - InitiateCheckout (form start)", "Ads - Micro (Interes cualificado) [PRIMARIA meses 1-6]"],
+      "ga4_event": "form_start"
+    },
+    {
+      "name": "rl_form_step",
+      "status": "activo",
+      "source": "form",
+      "trigger": "Primera vez que se muestra el paso 2 del formulario por carga.",
+      "params": { "form_id": "'agenda_diagnostico'", "form_location": "'contacto'", "step_number": "2", "step_name": "'contacto'" },
+      "dom_selector_by_template": { "home": "#f-paso-2", "indice": "#f-paso-2", "servicio": "#f-paso-2", "legal": null, "gracias": null, "error": null },
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_form_step"],
+      "gtm_tags": ["GA4 - form_step"],
+      "ga4_event": "form_step"
+    },
+    {
+      "name": "rl_form_submit_attempt",
+      "status": "activo",
+      "source": "form",
+      "trigger": "Cada envío del paso 2, antes de validar.",
+      "params": { "form_id": "'agenda_diagnostico'", "form_location": "'contacto'" },
+      "dom_selector_by_template": { "home": "#lead-form", "indice": "#lead-form", "servicio": "#lead-form", "legal": null, "gracias": null, "error": null },
+      "gtm_trigger": false,
+      "gtm_note": "Sin activador en GTM: hoy solo vive en el dataLayer. Ver hueco gtm_missing_triggers.",
+      "ga4_event": null
+    },
+    {
+      "name": "rl_form_error",
+      "status": "activo",
+      "source": "core",
+      "trigger": "Error de validación del cliente o fallo del envío (RL.pushFormError, RL.classifySubmitError).",
+      "params": {
+        "form_id": "'agenda_diagnostico'",
+        "error_type": "'client_validation' | 'server_error' | 'network_error'",
+        "error_field": "id del campo o código de fricción (turnstile_unavailable, network, rate_limited, form_expired, destination_error)",
+        "step_number": "1 | 2"
+      },
+      "dom_selector_by_template": { "home": "#lead-form", "indice": "#lead-form", "servicio": "#lead-form", "legal": null, "gracias": null, "error": null },
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_form_error"],
+      "gtm_tags": ["GA4 - form_error"],
+      "ga4_event": "form_error"
+    },
+    {
+      "name": "rl_non_commercial_submit",
+      "status": "activo",
+      "source": "core",
+      "trigger": "Envío de un solicitante no comercial (empleo, proveedor, personal). Nunca es rl_lead_submit.",
+      "params": { "event_id": "uuid", "applicant_type": "string", "form_id": "'agenda_diagnostico'", "form_location": "'contacto'", "attribution": "click IDs y first/last touch de rl_attr, sin PII" },
+      "dom_selector_by_template": { "home": "#lead-form", "indice": "#lead-form", "servicio": "#lead-form", "legal": null, "gracias": null, "error": null },
+      "gtm_trigger": false,
+      "gtm_note": "Sin activador en GTM a propósito para conversiones; ninguna etiqueta de conversión debe escucharlo. Se puede agregar un evento GA4 no clave. Ver hueco gtm_missing_triggers.",
+      "ga4_event": null
+    },
+    {
+      "name": "rl_lead_submit",
+      "status": "activo",
+      "source": "core",
+      "trigger": "Respuesta 200 de /api/lead con veredicto del servidor. Sin veredicto no se publica. En el rediseño se publica con eventCallback antes de navegar a /gracias.",
+      "params": {
+        "event_id": "uuid confirmado por el servidor",
+        "transaction_id": "igual a lead_id",
+        "lead_id": "uuid",
+        "form_id": "'agenda_diagnostico'",
+        "form_location": "'contacto'",
+        "lead_source_channel": "'form'",
+        "service_line": "serviceLineFromPilar(pilar del formulario); no depende de la página",
+        "assigned_partner": "'ambos'",
+        "company_size_bucket": "'1_10' | '11_50' | '51_200' | '200_plus'",
+        "email_domain_type": "del veredicto",
+        "lead_quality_flag": "del veredicto",
+        "lead_score": "del veredicto",
+        "lead_tier": "del veredicto",
+        "vertical_fit": "'horizontal'",
+        "time_to_convert_sec": "integer",
+        "touch_count": "integer",
+        "days_since_first_touch": "integer",
+        "has_message": "boolean",
+        "attribution": "click IDs y first/last touch, sin PII",
+        "user_data": "{sha256_email_address, sha256_phone_number, address: {sha256_first_name, sha256_last_name}}"
+      },
+      "dom_selector_by_template": { "home": "#lead-form", "indice": "#lead-form", "servicio": "#lead-form", "legal": null, "gracias": null, "error": null },
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_lead_submit"],
+      "gtm_tags": ["GA4 - generate_lead", "Ads - Lead Riselanding [SECUNDARIA meses 1-6]", "Meta - Lead"],
+      "ga4_event": "generate_lead"
+    },
+    {
+      "name": "rl_pricing_view",
+      "status": "dormido",
+      "source": "ninguno",
+      "trigger": "Sin emisor en el sitio: el rediseño no tiene sección de precios.",
+      "params": { "package_expanded": "string (definido en GTM)" },
+      "dom_selector_by_template": { "home": null, "indice": null, "servicio": null, "legal": null, "gracias": null, "error": null },
+      "dormant_reason": "Existe en GTM desde 2.1.0, pero ninguna página publica el evento.",
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_pricing_view", "CE - Micro compuesta"],
+      "gtm_tags": ["GA4 - view_pricing", "Meta - AddToCart (pricing)", "Ads - Micro (Interes cualificado) [PRIMARIA meses 1-6]"],
+      "ga4_event": "view_pricing"
+    },
+    {
+      "name": "rl_content_download",
+      "status": "dormido",
+      "source": "ninguno",
+      "trigger": "Sin emisor en el sitio: no hay descargables.",
+      "params": { "asset_id": "string (definido en GTM)", "asset_topic": "string (definido en GTM)" },
+      "dom_selector_by_template": { "home": null, "indice": null, "servicio": null, "legal": null, "gracias": null, "error": null },
+      "dormant_reason": "Existe en GTM desde 2.1.0, pero ninguna página publica el evento.",
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_content_download", "CE - Micro compuesta"],
+      "gtm_tags": ["GA4 - content_download", "Meta - CompleteRegistration (descarga)", "Ads - Micro (Interes cualificado) [PRIMARIA meses 1-6]"],
+      "ga4_event": "content_download"
+    },
+    {
+      "name": "rl_meeting_booked",
+      "status": "dormido",
+      "source": "ninguno",
+      "trigger": "Sin emisor en el sitio: requiere integrar la herramienta de agenda.",
+      "params": { "meeting_type": "string (definido en GTM)" },
+      "dom_selector_by_template": { "home": null, "indice": null, "servicio": null, "legal": null, "gracias": null, "error": null },
+      "dormant_reason": "Existe en GTM desde 2.1.0, pero ninguna página publica el evento.",
+      "gtm_trigger": true,
+      "gtm_trigger_name": ["CE - rl_meeting_booked"],
+      "gtm_tags": ["GA4 - meeting_booked", "Meta - Schedule (meeting)"],
+      "ga4_event": "meeting_booked"
+    },
+    {
+      "name": "rl_tool_start",
+      "status": "planeado",
+      "source": "componente /diagnostico (ola 2), vía window.RL.pushEvent",
+      "trigger": "Al responder la primera pregunta del diagnóstico de madurez; una vez por carga.",
+      "params": { "tool_id": "'diagnostico_madurez'", "question_count": "10" },
+      "dom_selector_by_template": { "diagnostico": "componente del diagnóstico en /diagnostico" },
+      "gtm_trigger": false,
+      "gtm_note": "Pendiente en F8: activador de evento personalizado, variables DLV y etiqueta GA4. Ver docs/diagnostico-madurez.md §6.",
+      "ga4_event": null,
+      "planned_for": "ola 2 (a más tardar 2026-11-03)"
+    },
+    {
+      "name": "rl_tool_complete",
+      "status": "planeado",
+      "source": "componente /diagnostico (ola 2), vía window.RL.pushEvent",
+      "trigger": "La primera vez que se muestra el resultado en esa carga; si la persona cambia respuestas después, no se reenvía.",
+      "params": {
+        "tool_id": "'diagnostico_madurez'",
+        "score_atraer": "integer 0 a 10",
+        "score_convertir": "integer 0 a 10",
+        "score_medir": "integer 0 a 10",
+        "score_automatizar": "integer 0 a 10",
+        "pilar_oportunidad": "'atraer' | 'convertir' | 'medir' | 'automatizar' | 'ninguno'",
+        "question_count": "10"
+      },
+      "dom_selector_by_template": { "diagnostico": "componente del diagnóstico en /diagnostico" },
+      "gtm_trigger": false,
+      "gtm_note": "Pendiente en F8: activador, variables DLV, etiqueta GA4; tool_id y pilar_oportunidad como dimensiones, score_* como métricas. Evento clave secundario en GA4, no conversión de Ads ni Meta. Ver docs/diagnostico-madurez.md §6.",
+      "ga4_event": null,
+      "planned_for": "ola 2 (a más tardar 2026-11-03)"
+    }
+  ],
+  "gtm_gaps": [
+    { "id": "gtm_no_ga4_config", "status": "abierto", "where": "GTM", "gap": "No hay etiqueta de configuración de Google (Google tag) ni page_view de GA4.", "action": "Agregar la etiqueta de configuración con el ID de medición, disparada en rl_context_ready o en Inicialización.", "source": "contrato §7" },
+    { "id": "gtm_missing_triggers", "status": "abierto", "where": "GTM", "gap": "rl_form_submit_attempt y rl_non_commercial_submit no tienen activador.", "action": "Agregar activadores y eventos GA4 no clave, o documentarlos como solo dataLayer. Ninguna conversión debe escuchar rl_non_commercial_submit.", "source": "contrato §7" },
+    { "id": "gtm_meta_prospect_segment", "status": "abierto", "where": "GTM", "gap": "Meta - Lead envía prospect_segment como texto 'undefined' (el formulario no lo captura y la clave se omite).", "action": "Quitar el parámetro o darle valor por defecto en la variable.", "source": "contrato §7" },
+    { "id": "gtm_placeholders", "status": "abierto", "where": "GTM", "gap": "Google Ads y Meta Pixel con placeholders (AW-REEMPLAZAR, REEMPLAZAR_PIXEL_ID).", "action": "José captura los IDs reales.", "source": "contrato §7" },
+    { "id": "gtm_enhanced_conversions", "status": "abierto", "where": "GTM", "gap": "Enhanced Conversions y advanced matching sin conectar; las variables sha256_* existen.", "action": "Conectarlas en la publicación por etapas.", "source": "contrato §7" },
+    { "id": "gtm_consent", "status": "abierto", "where": "GTM y sitio", "gap": "Sin CMP ni consent update; etiquetas con consentStatus NOT_SET.", "action": "Banner de cookies en F8.", "source": "contrato §7" },
+    { "id": "gtm_tool_events", "status": "abierto", "where": "GTM y GA4", "gap": "rl_tool_start y rl_tool_complete (ola 2) sin activadores, variables ni etiquetas.", "action": "Crear 2 activadores, variables DLV rl_event_data.* y etiquetas GA4; registrar dimensiones y métricas.", "source": "docs/diagnostico-madurez.md §6" },
+    { "id": "gtm_page_template_unused", "status": "abierto", "where": "GTM", "gap": "La variable DLV - page.template existe pero ninguna etiqueta la envía; con varias páginas no se puede segmentar por plantilla en GA4.", "action": "Agregar page_template (y page_path si hace falta) a las etiquetas GA4 o a la configuración compartida de eventos.", "source": "revisión del export v2.1.1, taxonomía 2.2.0" },
+    { "id": "gtm_micro_volume", "status": "decisión", "where": "GTM y Google Ads", "gap": "rl_service_view ahora también dispara en las páginas de servicio (#enfoque) y alimenta CE - Micro compuesta, conversión PRIMARIA de Ads en los meses 1 a 6.", "action": "Confirmar en GTM Preview y decidir si el volumen extra es aceptable o si la Micro compuesta debe filtrar por page.type.", "source": "taxonomía 2.2.0" },
+    { "id": "site_bootstrap_all_pages", "status": "resuelto en F4", "where": "sitio", "gap": "gracias y aviso de privacidad sin bootstrap.", "action": "Base.astro inyecta el bootstrap en las 9 páginas.", "source": "contrato §7" },
+    { "id": "repo_taxonomy", "status": "resuelto en 2.2.0", "where": "repo", "gap": "No existía rl-taxonomy.json versionado.", "action": "Este archivo.", "source": "contrato §7" }
+  ],
+  "changelog": [
+    {
+      "version": "2.2.0",
+      "date": "2026-10-20",
+      "changes": [
+        "rl_schema_version de rl_context_ready pasa de 2.1.0 a 2.2.0.",
+        "page.template, page.service_line, page.type, page.publish_date, page.is_landing_page y page.target_segment pasan a ser parámetros por página (antes fijos en lp_home_v1 y paquete_integral). Nuevos valores de page.template en values.page_template; lp_home_v1 queda obsoleto.",
+        "El bootstrap expone window.__rl.page {template, serviceLine}.",
+        "rl_service_view observa #servicios (home e índice) o #enfoque (páginas de servicio) y manda el service_line de la página en lugar de 'paquete_integral' fijo.",
+        "rl_whatsapp_click manda el service_line de la página.",
+        "rl_case_study_view pasa a dormido: el rediseño no tiene #resultados.",
+        "form_location se documenta como 'contacto' fijo en todas las páginas con formulario.",
+        "Se documentan rl_tool_start y rl_tool_complete como planeados (ola 2), rl_pricing_view, rl_content_download y rl_meeting_booked como dormidos sin emisor, y los huecos de GTM.",
+        "Sin cambios en nombres rl_* ni en claves existentes: GTM sigue funcionando sin cambios."
+      ]
+    },
+    {
+      "version": "2.1.1",
+      "date": "2026-08-03",
+      "scope": "solo contenedor GTM",
+      "changes": [
+        "Reexport del contenedor GTM-P3WZC7MV con IDs de activadores renumerados y carpetas reordenadas; mismos 19 activadores, 26 etiquetas y 73 variables.",
+        "Ads - Conversion Linker pasa a respetar las exclusiones G1 (tráfico interno) y G5 (entorno no producción).",
+        "El esquema del dataLayer sigue en 2.1.0."
+      ]
+    },
+    {
+      "version": "2.1.0",
+      "date": "2026-08-03",
+      "changes": [
+        "Línea base: Guía de Tracking v2.1 (spec 2026-08-03). Bootstrap con rl_lid, rl_attr, rl_internal, Consent Mode v2 por rl_geo y rl_context_ready con page.template lp_home_v1 fijo.",
+        "Eventos rl_* con reset de rl_event_data y event_id; exclusiones G1, G2, G3 y G5 en GTM; Micro compuesta como conversión primaria de Ads en los meses 1 a 6."
+      ]
+    }
+  ]
+}
