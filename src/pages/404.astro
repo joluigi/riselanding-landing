@@ -1,36 +1,72 @@
 ---
-// PROVISIONAL (PR0): 404 mínima con tokens. La definitiva (sitemap §6) llega en PR1.
+// Página 404 (sitemap §6): Navegación, Tarjeta, Chip de servicio y Footer.
+// Sin formulario: el CTA lleva a /#contacto.
 import Base from '../layouts/Base.astro';
+import Tarjeta from '../components/ui/Tarjeta.astro';
+import ChipServicio from '../components/ui/ChipServicio.astro';
+import Boton from '../components/ui/Boton.astro';
+import EnlaceAccion from '../components/ui/EnlaceAccion.astro';
+import Eyebrow from '../components/ui/Eyebrow.astro';
+import { serviciosPublicados } from '../data/servicios.js';
+
+const servicios = serviciosPublicados();
 ---
 <Base
   title="Página no encontrada | Riselanding"
+  description="La página que buscas no existe o cambió de dirección."
   robots="noindex"
+  ctaHref="/#contacto"
   tracking={{ template: 'error_404_v1', type: 'error', serviceLine: 'paquete_integral', isLandingPage: false }}
 >
-  <main class="container error-404">
-    <p class="eyebrow">Error 404</p>
-    <h1>Esta página no existe</h1>
-    <p class="lead">Puede que el enlace haya cambiado. Vuelve al inicio o escríbenos y te ayudamos.</p>
-    <p><a class="error-404__cta" href="/">Volver al inicio</a></p>
+  <main id="contenido" class="error-404 aura">
+    <div class="container">
+      <Tarjeta class="error-404__card">
+        <Eyebrow>Error 404</Eyebrow>
+        <h1>No encontramos esta página.</h1>
+        <p class="lead">Puede que el enlace haya cambiado. Estos son los lugares más visitados del sitio.</p>
+        <ul class="chips chips--fila" aria-label="Servicios">
+          {servicios.map((s) => <li><ChipServicio slug={s.slug} nombre="largo" /></li>)}
+        </ul>
+        <div class="error-404__acciones">
+          <Boton href="/#contacto">Agenda tu diagnóstico</Boton>
+          <EnlaceAccion href="/" icono="home">Ir al inicio</EnlaceAccion>
+        </div>
+      </Tarjeta>
+    </div>
   </main>
 </Base>
 
 <style>
   .error-404 {
     display: grid;
-    gap: 16px;
     align-content: center;
     min-height: 100vh;
-    padding-block: 72px;
+    padding-top: calc(var(--header-h) + var(--space-9));
+    padding-bottom: var(--section-y);
   }
-  .error-404__cta {
-    display: inline-block;
-    padding: 14px 24px;
-    border-radius: var(--radius-pill);
-    background: var(--color-accent);
-    color: var(--color-accent-contrast);
-    font-family: var(--font-display);
-    font-weight: 700;
-    text-decoration: none;
+  .error-404 :global(.error-404__card) {
+    max-width: calc(var(--measure) + 2 * var(--space-12));
+    margin-inline: auto;
+    padding-block: var(--space-9);
+    text-align: center;
+    display: grid;
+    gap: var(--space-4);
+    justify-items: center;
+  }
+  .error-404 .lead {
+    max-width: var(--measure);
+  }
+  .error-404 .chips {
+    margin-top: var(--space-2);
+  }
+  .error-404__acciones {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-2);
+    margin-top: var(--space-4);
+  }
+  @media (min-width: 640px) {
+    .error-404__acciones { flex-direction: row; gap: var(--space-6); }
   }
 </style>

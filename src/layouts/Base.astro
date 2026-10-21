@@ -1,12 +1,23 @@
 ---
-// Layout base (mínimo, PR0). Orden del <head> obligatorio (docs/contrato-integraciones.md §2, plan F4 §3):
-// charset, bootstrap rl, GTM, /js/rl-tracking.js; después el resto. Astro agrega sus <link rel=stylesheet>
-// al final del head, así que no alteran ese orden. PR1 completa SEO (OG, favicons, JSON-LD), Header y Footer.
+// Layout base de todas las páginas.
+// Orden del <head> obligatorio (docs/contrato-integraciones.md §2, plan F4 §3): charset, bootstrap rl,
+// GTM y /js/rl-tracking.js; después viewport, title, description, canonical, robots, Open Graph,
+// Twitter, favicons, JSON-LD, fuentes y el slot "head". Astro agrega sus <link rel=stylesheet> al final
+// del head, así que no alteran ese orden.
+//
+// Contrato para las páginas:
+// - El contenido va en <main id="contenido"> (destino del enlace "Saltar al contenido").
+// - El header es fijo: la primera sección reserva var(--header-h) arriba (ver .hero del prototipo).
+// - Open Graph y Twitter solo se emiten si la página pasa `path` (las provisionales de PR0 traen los suyos).
 import RlBootstrap from '../components/tracking/RlBootstrap.astro';
 import Gtm from '../components/tracking/Gtm.astro';
 import GtmNoscript from '../components/tracking/GtmNoscript.astro';
+import Header from '../components/layout/Header.astro';
+import Footer from '../components/layout/Footer.astro';
+import BarraCta from '../components/layout/BarraCta.astro';
 import '../styles/tokens.css';
 import '../styles/base.css';
+import '../styles/componentes.css';
 
 interface Tracking {
   template: string;
@@ -17,20 +28,73 @@ interface Tracking {
   targetSegment?: string;
 }
 
+interface OpenGraph {
+  /** Por omisión, title */
+  titulo?: string;
+  /** Por omisión, description */
+  descripcion?: string;
+  /** Ruta absoluta en el sitio ("/Assets/og-image.png") o URL completa */
+  imagen?: string;
+  imagenAlt?: string;
+  imagenAncho?: number;
+  imagenAlto?: number;
+  tipo?: 'website' | 'article';
+}
+
 interface Props {
   title: string;
   description?: string;
-  /** Ruta pública sin .html ni barra final ("/", "/aviso-de-privacidad"). Nunca Astro.url.pathname. */
+  /** Ruta pública sin .html ni barra final ("/", "/servicios/crm"). Nunca Astro.url.pathname. */
   path?: string;
   robots?: string;
   tracking: Tracking;
+  og?: OpenGraph;
+  /** summary_large_image por omisión */
+  twitterCard?: 'summary' | 'summary_large_image';
+  /** Uno o varios objetos schema.org; también se puede usar el slot "jsonld" */
+  jsonLd?: Record<string, unknown> | Record<string, unknown>[];
+  /** Header con navegación completa (false en /gracias y landings de campaña) */
+  header?: boolean;
+  footer?: boolean;
+  /** Barra CTA fija en móvil: solo en páginas de más de 3 pantallas (home, /servicios, servicios) */
+  barraCta?: boolean;
+  /** Destino de "Agenda tu diagnóstico": "#contacto" si la página tiene formulario, "/#contacto" si no */
+  ctaHref?: string;
+  /** La página incluye el formulario: carga /lib/lead-quality/schema.js y /js/rl-form.js al final del body */
+  formulario?: boolean;
 }
 
-const { title, description, path, robots, tracking } = Astro.props;
+const {
+  title,
+  description,
+  path,
+  robots,
+  tracking,
+  og = {},
+  twitterCard = 'summary_large_image',
+  jsonLd,
+  header = true,
+  footer = true,
+  barraCta = false,
+  ctaHref = '#contacto',
+  formulario = false
+} = Astro.props;
+
 // La home conserva la barra ("https://riselanding.com/"); el resto va sin barra final
 const canonical = !path ? null
   : path === '/' ? new URL('/', Astro.site).href
   : new URL(path, Astro.site).href.replace(/\/$/, '');
+
+const ogTitulo = og.titulo || title;
+const ogDescripcion = og.descripcion || description;
+const ogImagen = new URL(og.imagen || '/Assets/og-image.png', Astro.site).href;
+const ogImagenAlt = og.imagenAlt || 'Riselanding: campañas, CRM, automatización y medición para empresas B2B en México';
+const ogAncho = og.imagenAncho || 1200;
+const ogAlto = og.imagenAlto || 630;
+
+// JSON-LD: < escapado para que ningún texto cierre el <script>
+const bloquesJsonLd = (jsonLd ? (Array.isArray(jsonLd) ? jsonLd : [jsonLd]) : [])
+  .map((d) => JSON.stringify(d).replace(/</g, '\\u003c'));
 ---
 <!DOCTYPE html>
 <html lang="es-MX">
@@ -44,10 +108,46 @@ const canonical = !path ? null
   {description && <meta name="description" content={description}>}
   {canonical && <link rel="canonical" href={canonical}>}
   {robots && <meta name="robots" content={robots}>}
+  {canonical && (
+    <>
+      <meta property="og:type" content={og.tipo || 'website'}>
+      <meta property="og:site_name" content="Riselanding">
+      <meta property="og:locale" content="es_MX">
+      <meta property="og:title" content={ogTitulo}>
+      {ogDescripcion && <meta property="og:description" content={ogDescripcion}>}
+      <meta property="og:url" content={canonical}>
+      <meta property="og:image" content={ogImagen}>
+      <meta property="og:image:width" content={String(ogAncho)}>
+      <meta property="og:image:height" content={String(ogAlto)}>
+      <meta property="og:image:alt" content={ogImagenAlt}>
+      <meta name="twitter:card" content={twitterCard}>
+      <meta name="twitter:site" content="@riselanding">
+      <meta name="twitter:title" content={ogTitulo}>
+      {ogDescripcion && <meta name="twitter:description" content={ogDescripcion}>}
+      <meta name="twitter:image" content={ogImagen}>
+    </>
+  )}
+  <link rel="icon" href="/Assets/favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="icon" href="/Assets/favicon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" sizes="180x180" href="/Assets/apple-touch-icon.png">
+  {bloquesJsonLd.map((codigo) => <script type="application/ld+json" set:html={codigo} />)}
+  <slot name="jsonld" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
   <slot name="head" />
 </head>
-<body>
+<body class:list={[barraCta && 'has-cta-bar']}>
   <GtmNoscript />
+  {header && <a class="skip-link" href="#contenido">Saltar al contenido</a>}
+  {header && <Header ctaHref={ctaHref} />}
   <slot />
+  {footer && <Footer ctaHref={ctaHref} />}
+  {barraCta && <BarraCta ctaHref={ctaHref} />}
+  {formulario && <script src="/lib/lead-quality/schema.js" defer is:inline></script>}
+  {formulario && <script src="/js/rl-form.js" defer is:inline></script>}
+  <script>
+    import '../scripts/ui.js';
+  </script>
 </body>
 </html>
