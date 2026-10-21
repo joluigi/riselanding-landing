@@ -1,0 +1,11 @@
+---
+// Eyebrow (DESIGN.md §4): Inter 600, mayúsculas, tracking 0.08em. Nombra el pilar o la sección.
+// Uso: <Eyebrow>Servicios</Eyebrow>  ·  <Eyebrow as="h2">Herramientas que operamos</Eyebrow>
+interface Props {
+  as?: 'p' | 'span' | 'h2' | 'h3' | 'div';
+  id?: string;
+  class?: string;
+}
+const { as: Etiqueta = 'p', id, class: clase } = Astro.props;
+---
+<Etiqueta class:list={['eyebrow', clase]} id={id}><slot /></Etiqueta>

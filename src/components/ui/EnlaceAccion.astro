@@ -1,0 +1,20 @@
+---
+// Enlace de acción (DESIGN.md §7): texto --color-accent-text con ícono a la derecha.
+// Uso: <EnlaceAccion href="#proceso">Ver cómo trabajamos</EnlaceAccion>
+import Icono from './Icono.astro';
+import type { NombreIcono } from './Icono.astro';
+
+interface Props {
+  href: string;
+  /** Ícono a la derecha (flecha por omisión); false para omitirlo */
+  icono?: NombreIcono | false;
+  externo?: boolean;
+  class?: string;
+  [atributo: string]: unknown;
+}
+
+const { href, icono = 'arrow-right', externo = false, class: clase, ...resto } = Astro.props;
+---
+<a class:list={['link-action', clase]} href={href} target={externo ? '_blank' : undefined} rel={externo ? 'noopener' : undefined} {...resto}>
+  <slot />{icono && <Icono nombre={icono} tamano="sm" />}
+</a>
