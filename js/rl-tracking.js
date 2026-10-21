@@ -1,4 +1,4 @@
-// js/rl-tracking.js — Capa 1 de tracking rl_* (Guía v2.1, spec 2026-08-03).
+// js/rl-tracking.js: Capa 1 de tracking rl_* (Guía v2.1, spec 2026-08-03).
 // Núcleo puro window.RL + listeners DOM. En Node exporta el núcleo para tests.
 (function (global) {
   'use strict';
