@@ -1,33 +1,77 @@
 ---
-// TEMPORAL (PR2): home mínima para probar el formulario nuevo en dist/ y en el preview
-// (precarga de "Implementación de CRM", redirección a /gracias, no comercial inline).
-// PR3 reescribe esta página con la home definitiva (docs/wireframes/home.md), sin servicio
-// precargado; al hacerlo, regresar a null la expectativa de index.html en tests/dist/paginas.test.js.
+// Home (docs/wireframes/home.md, prototipo variante A). Orden: hero con pestañas, herramientas,
+// por qué Riselanding y equipo, servicios (#servicios, dispara rl_service_view), proceso, FAQ y
+// #contacto con el formulario sin servicio precargado. El diagnóstico de madurez llega en la ola 2.
 import Base from '../layouts/Base.astro';
+import Hero from '../components/home/Hero.astro';
+import Herramientas from '../components/home/Herramientas.astro';
+import Nosotros from '../components/home/Nosotros.astro';
+import Servicios from '../components/home/Servicios.astro';
+import Proceso from '../components/home/Proceso.astro';
+import PreguntasFrecuentes from '../components/home/PreguntasFrecuentes.astro';
+import Aparicion from '../components/home/Aparicion.astro';
 import Contacto from '../components/forms/Contacto.astro';
+import { TITULO, DESCRIPCION, PREGUNTAS } from '../components/home/contenido.js';
+import { WHATSAPP_URL, CORREO } from '../data/servicios.js';
+import '../styles/home.css';
+
+const SITIO = 'https://riselanding.com';
+
+// Solo datos confirmados: sin sameAs ni teléfono fijo hasta que José responda la pregunta 2
+// del cuestionario (docs/copy/pendientes-home.md).
+const organizacion = {
+  '@context': 'https://schema.org',
+  '@type': 'ProfessionalService',
+  '@id': SITIO + '/#organization',
+  name: 'Riselanding',
+  url: SITIO,
+  logo: {
+    '@type': 'ImageObject',
+    url: SITIO + '/Assets/logo-horizontal.png',
+    width: 640,
+    height: 296
+  },
+  image: SITIO + '/Assets/og-image.png',
+  description: 'Campañas, CRM, automatización y medición para empresas B2B en México, operados por un solo equipo.',
+  areaServed: { '@type': 'Country', name: 'México', identifier: 'MX' },
+  contactPoint: {
+    '@type': 'ContactPoint',
+    contactType: 'sales',
+    telephone: '+52-55-4821-3439',
+    url: WHATSAPP_URL,
+    email: CORREO,
+    areaServed: 'MX',
+    availableLanguage: 'es'
+  }
+};
+
+const preguntasFrecuentes = {
+  '@context': 'https://schema.org',
+  '@type': 'FAQPage',
+  mainEntity: PREGUNTAS.map((p) => ({
+    '@type': 'Question',
+    name: p.pregunta,
+    acceptedAnswer: { '@type': 'Answer', text: p.respuesta }
+  }))
+};
 ---
 <Base
-  title="Marketing Digital para Empresas en México | Riselanding"
-  description="Campañas, CRM, automatización y medición para empresas B2B en México. Agenda tu diagnóstico sin costo."
+  title={TITULO}
+  description={DESCRIPCION}
   path="/"
   tracking={{ template: 'home_v2', type: 'home', serviceLine: 'paquete_integral' }}
+  jsonLd={[organizacion, preguntasFrecuentes]}
+  formulario={true}
+  barraCta={true}
 >
-  <Fragment slot="head">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
-    <!-- TEMPORAL: botón mínimo hasta que llegue src/styles/componentes.css (PR1) -->
-    <style is:inline>
-      .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border:0;border-radius:var(--radius-pill);font-family:var(--font-display);font-weight:700;font-size:16px;line-height:1;cursor:pointer}
-      .btn--primary{background:var(--color-accent);color:var(--color-accent-contrast)}
-      .btn[disabled]{opacity:.4;pointer-events:none}
-    </style>
-  </Fragment>
-  <main>
-    <Contacto servicio="Implementación de CRM" />
+  <main id="contenido" class="home">
+    <Hero />
+    <Herramientas />
+    <Nosotros />
+    <Servicios />
+    <Proceso />
+    <PreguntasFrecuentes />
+    <Contacto servicio={null} />
   </main>
-  <!-- TEMPORAL: la Base de feat/f4-scaffold no tiene la prop formulario de PR1; al integrar PR1,
-       quitar estas dos líneas y pasar formulario={true} a Base -->
-  <script src="/lib/lead-quality/schema.js" defer is:inline></script>
-  <script src="/js/rl-form.js" defer is:inline></script>
+  <Aparicion />
 </Base>

@@ -1,0 +1,41 @@
+---
+// Por qué Riselanding (docs/wireframes/home.md §3): una columna centrada y el equipo con nombre y rol.
+//
+// Fotos del equipo (docs/estado.md, decisiones de F3; docs/assets-inventario.md H06):
+//   /Assets/equipo/jose.webp  y  /Assets/equipo/rut.webp  (4:5, se muestran a unos 280×350)
+// Mientras los archivos no existan en Assets/equipo/, no se pinta ningún hueco: solo nombre y rol.
+// Cuando lleguen, este componente los detecta al construir y muestra la foto.
+// OJO: scripts/copiar-estaticos.js copia Assets/ con una lista explícita; hay que agregar
+// 'equipo/jose.webp' y 'equipo/rut.webp' a esa lista para que se publiquen en dist/.
+import fs from 'node:fs';
+import path from 'node:path';
+import EnlaceAccion from '../ui/EnlaceAccion.astro';
+import { EQUIPO } from './contenido.js';
+
+const RAIZ = process.cwd();
+const equipo = EQUIPO.map((p) => {
+  const existe = fs.existsSync(path.join(RAIZ, 'Assets', 'equipo', p.foto));
+  return { ...p, src: existe ? `/Assets/equipo/${p.foto}` : null };
+});
+---
+<section class="section why" id="nosotros" aria-labelledby="why-title">
+  <div class="container">
+    <div class="why__copy reveal">
+      <p class="eyebrow">Por qué Riselanding</p>
+      <h2 id="why-title">Un solo equipo responsable de atraer, convertir, medir y automatizar.</h2>
+      <p class="lead">Cuando las campañas, el sitio y el CRM quedan en manos de proveedores distintos, cada quien cuida su parte y el recorrido completo del cliente se queda sin dueño. En Riselanding el mismo equipo diseña, opera y mide todo tu sistema comercial, así sabes quién responde, qué se hizo y con qué datos se tomó cada decisión.</p>
+      <ul class="team" role="list" aria-label="Equipo de Riselanding">
+        {equipo.map((p) => (
+          <li class="team__persona">
+            {p.src && (
+              <img class="team__foto" src={p.src} alt={`Fotografía de ${p.nombre}`} width="280" height="350" loading="lazy" decoding="async">
+            )}
+            <p class="team__nombre">{p.nombre}</p>
+            <p class="team__rol">{p.rol}</p>
+          </li>
+        ))}
+      </ul>
+      <p><EnlaceAccion href="#proceso">Conoce nuestro proceso</EnlaceAccion></p>
+    </div>
+  </div>
+</section>

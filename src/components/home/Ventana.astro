@@ -1,0 +1,17 @@
+---
+// Marco de ventana de las maquetas de producto (DESIGN.md §7): tarjeta --radius-md con barra de título.
+// Las maquetas son decorativas para lectores de pantalla salvo su título; los datos son ficticios.
+interface Props {
+  titulo: string;
+}
+const { titulo } = Astro.props;
+---
+<div class="window">
+  <div class="window__bar">
+    <div class="window__dots" aria-hidden="true"><span></span><span></span><span></span></div>
+    <p class="window__title">{titulo}</p>
+  </div>
+  <div class="window__body">
+    <slot />
+  </div>
+</div>

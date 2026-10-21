@@ -1,0 +1,46 @@
+---
+// Maqueta Medir: tablero de leads por canal. Datos ficticios (leyenda en Hero.astro).
+import Ventana from './Ventana.astro';
+
+const KPIS = [
+  { etiqueta: 'Prospectos', valor: '126' },
+  { etiqueta: 'Oportunidades', valor: '41' },
+  { etiqueta: 'Ventas cerradas', valor: '9' }
+];
+const SEMANAS = [34, 42, 38, 51, 47, 58, 55, 66, 61, 72, 78, 86];
+const ORIGENES = [
+  { canal: 'Google Ads', pct: 46 },
+  { canal: 'Meta Ads', pct: 31 },
+  { canal: 'Orgánico', pct: 15 },
+  { canal: 'Referidos', pct: 8 }
+];
+---
+<Ventana titulo="Tablero comercial · GA4 y CRM">
+  <div class="kpis">
+    {KPIS.map((k) => (
+      <div class="kpi"><p class="kpi__label">{k.etiqueta}</p><p class="kpi__value">{k.valor}</p></div>
+    ))}
+  </div>
+  <div class="dash">
+    <div class="panel">
+      <p class="panel__title">Prospectos por semana</p>
+      <div class="chart" aria-hidden="true">
+        {SEMANAS.map((h, i) => (
+          <span class:list={[i === SEMANAS.length - 1 && 'is-strong']} style={`--h: ${h}%`}></span>
+        ))}
+      </div>
+      <div class="chart-axis" aria-hidden="true"><span>Sem 1</span><span>Sem 6</span><span>Sem 12</span></div>
+    </div>
+    <div class="panel">
+      <p class="panel__title">Origen de prospectos</p>
+      <ul class="sources" role="list">
+        {ORIGENES.map((o) => (
+          <li>
+            <div class="sources__row"><span>{o.canal}</span><strong>{o.pct}%</strong></div>
+            <div class="bar" aria-hidden="true"><span style={`--w: ${o.pct}%`}></span></div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</Ventana>

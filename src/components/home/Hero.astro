@@ -1,0 +1,66 @@
+---
+// Hero de la home (docs/wireframes/home.md §1, prototipo variante A): aura, H1 con la keyword
+// primaria, bajada, CTA y pestañas de pilar .svc-tab con una maqueta por pilar.
+// Las pestañas las maneja src/scripts/ui.js ([data-tabs]); rl-tracking.js cuenta los clics en
+// .svc-tab como interacción. Ni el H1 ni la maqueta se animan (LCP, DESIGN.md §10).
+import Boton from '../ui/Boton.astro';
+import EnlaceAccion from '../ui/EnlaceAccion.astro';
+import IconoHome from './IconoHome.astro';
+import MaquetaCampanas from './MaquetaCampanas.astro';
+import MaquetaCrm from './MaquetaCrm.astro';
+import MaquetaTablero from './MaquetaTablero.astro';
+import MaquetaFlujo from './MaquetaFlujo.astro';
+
+const PESTANAS = [
+  { id: 'atraer', nombre: 'Atraer', bajada: 'Campañas en Google y Meta con presupuesto, búsquedas y anuncios bajo control.', Maqueta: MaquetaCampanas },
+  { id: 'convertir', nombre: 'Convertir', bajada: 'Cada prospecto entra a tu CRM con etapa, responsable y siguiente paso.', Maqueta: MaquetaCrm },
+  { id: 'medir', nombre: 'Medir', bajada: 'Un tablero con lo que importa: costo por prospecto, oportunidades y ventas.', Maqueta: MaquetaTablero },
+  { id: 'automatizar', nombre: 'Automatizar', bajada: 'Flujos que califican, registran y avisan sin captura manual.', Maqueta: MaquetaFlujo }
+];
+---
+<section class="hero aura" id="hero" aria-labelledby="hero-title">
+  <div class="container">
+    <div class="hero__copy">
+      <p class="eyebrow">Elevamos tu marca. Aterrizamos tus ventas.</p>
+      <h1 id="hero-title">Generación de leads B2B, de la campaña al cierre.</h1>
+      <p class="lead">Campañas, CRM, automatización y medición para empresas B2B en México, operados por un solo equipo que responde por cada etapa.</p>
+    </div>
+    <div class="hero__actions" data-cta-bar-start>
+      <Boton href="#contacto">Agenda tu diagnóstico</Boton>
+      <EnlaceAccion href="#proceso">Ver cómo trabajamos</EnlaceAccion>
+    </div>
+
+    <div class="showcase" data-tabs>
+      <h2 class="sr-only">Qué hacemos en cada etapa</h2>
+      <div class="svc-tabs" role="tablist" aria-label="Pilares de servicio">
+        {PESTANAS.map((p, i) => (
+          <button
+            class="svc-tab"
+            type="button"
+            role="tab"
+            id={`tab-${p.id}`}
+            aria-controls={`panel-${p.id}`}
+            aria-selected={i === 0 ? 'true' : 'false'}
+            tabindex={i === 0 ? undefined : '-1'}
+          >{p.nombre}</button>
+        ))}
+      </div>
+
+      <div class="tab-stage mock-stage">
+        {PESTANAS.map(({ Maqueta, ...p }, i) => (
+          <div
+            class:list={['tab-panel', i === 0 && 'is-active']}
+            role="tabpanel"
+            id={`panel-${p.id}`}
+            aria-labelledby={`tab-${p.id}`}
+            tabindex="0"
+          >
+            <p class="mock-caption">{p.bajada}</p>
+            <Maqueta />
+          </div>
+        ))}
+      </div>
+      <p class="mock-legend"><IconoHome nombre="info" tamano="sm" />Ejemplo ilustrativo con datos ficticios</p>
+    </div>
+  </div>
+</section>

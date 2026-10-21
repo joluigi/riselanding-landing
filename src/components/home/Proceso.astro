@@ -1,0 +1,22 @@
+---
+// Cómo trabajamos (docs/wireframes/home.md §5): 4 pasos en tarjetas numeradas.
+import Tarjeta from '../ui/Tarjeta.astro';
+import { PASOS } from './contenido.js';
+---
+<section class="section" id="proceso" aria-labelledby="process-title">
+  <div class="container reveal">
+    <div class="section-head">
+      <p class="eyebrow">Cómo trabajamos</p>
+      <h2 id="process-title">Cuatro pasos, con entregables claros en cada uno.</h2>
+    </div>
+    <ol class="steps" role="list">
+      {PASOS.map((p, i) => (
+        <Tarjeta as="li" class="step">
+          <span class="step__num" aria-hidden="true">{i + 1}</span>
+          <h3>{p.titulo}</h3>
+          <p>{p.texto}</p>
+        </Tarjeta>
+      ))}
+    </ol>
+  </div>
+</section>

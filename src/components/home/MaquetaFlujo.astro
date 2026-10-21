@@ -1,0 +1,37 @@
+---
+// Maqueta Automatizar: flujo de formulario, calificación, CRM y aviso al vendedor.
+// Datos ficticios (leyenda en Hero.astro).
+import Ventana from './Ventana.astro';
+import IconoHome from './IconoHome.astro';
+
+const NODOS = [
+  { icono: 'file', tipo: 'Disparador', nombre: 'Formulario web', detalle: 'Solicitud de diagnóstico recibida' },
+  { icono: 'filter', tipo: 'Condición', nombre: 'Filtro de calidad', detalle: 'Giro, tamaño de empresa y presupuesto' },
+  { icono: 'database', tipo: 'Acción', nombre: 'CRM', detalle: 'Crea contacto y oportunidad' },
+  { icono: 'bell', tipo: 'Acción', nombre: 'Aviso', detalle: 'Mensaje al vendedor asignado' }
+] as const;
+---
+<Ventana titulo="Flujo · Nuevo prospecto desde el sitio">
+  <div class="flow-canvas">
+    <div class="flow">
+      {NODOS.map((n, i) => (
+        <>
+          {i > 0 && <div class="flow-link" aria-hidden="true"></div>}
+          <div class="flow-node">
+            <span class="flow-node__icon"><IconoHome nombre={n.icono} /></span>
+            <div>
+              <p class="flow-node__type">{n.tipo}</p>
+              <p class="flow-node__name">{n.nombre}</p>
+              <p class="flow-node__detail">{n.detalle}</p>
+            </div>
+          </div>
+        </>
+      ))}
+    </div>
+  </div>
+  <div class="run-log">
+    <span><span class="dot dot--ok"></span>Última ejecución: hace 2 min</span>
+    <span>4 de 4 pasos completados</span>
+    <span>23 ejecuciones hoy</span>
+  </div>
+</Ventana>

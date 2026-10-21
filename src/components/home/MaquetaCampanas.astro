@@ -1,0 +1,47 @@
+---
+// Maqueta Atraer: panel de campañas de búsqueda y redes. Datos ficticios (leyenda en Hero.astro).
+import Ventana from './Ventana.astro';
+
+const KPIS = [
+  { etiqueta: 'Inversión', valor: '$48,200' },
+  { etiqueta: 'Prospectos', valor: '126' },
+  { etiqueta: 'Costo por prospecto', valor: '$383' }
+];
+
+const CAMPANAS = [
+  { nombre: 'Búsqueda · Servicios industriales', canal: 'Google Ads', activa: true, prospectos: 54, costo: '$312' },
+  { nombre: 'Prospección · Directores de compras', canal: 'Meta Ads', activa: true, prospectos: 38, costo: '$405' },
+  { nombre: 'Remarketing · Visitas de 30 días', canal: 'Meta Ads', activa: true, prospectos: 21, costo: '$268' },
+  { nombre: 'Búsqueda · Marca', canal: 'Google Ads', activa: false, prospectos: 13, costo: '$190' }
+];
+---
+<Ventana titulo="Campañas · Google Ads y Meta Ads">
+  <div class="mock-head">
+    <div>
+      <p class="eyebrow">Campañas activas</p>
+      <p class="mock-title">Este mes</p>
+    </div>
+    <span class="mock-chip">Últimos 30 días</span>
+  </div>
+  <div class="kpis">
+    {KPIS.map((k) => (
+      <div class="kpi"><p class="kpi__label">{k.etiqueta}</p><p class="kpi__value">{k.valor}</p></div>
+    ))}
+  </div>
+  <div class="camp-table">
+    <div class="camp-row camp-row--head" aria-hidden="true">
+      <span>Campaña</span><span class="camp-col-md">Estado</span><span class="camp-col-md">Prospectos</span><span class="camp-col-md">Costo</span>
+    </div>
+    {CAMPANAS.map((c) => (
+      <div class="camp-row">
+        <div class="camp-name">
+          <strong>{c.nombre}</strong>
+          <span class="camp-meta"><span class:list={['dot', c.activa && 'dot--ok']}></span>{c.canal}</span>
+        </div>
+        <span class="camp-col-md">{c.activa ? 'Activa' : 'En pausa'}</span>
+        <span class="camp-num">{c.prospectos}</span>
+        <span class="camp-col-md">{c.costo}</span>
+      </div>
+    ))}
+  </div>
+</Ventana>

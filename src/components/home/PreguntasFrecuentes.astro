@@ -1,0 +1,14 @@
+---
+// Preguntas frecuentes (docs/wireframes/home.md §7). Las mismas preguntas alimentan el JSON-LD
+// FAQPage de src/pages/index.astro (contenido.js).
+import Faq from '../ui/Faq.astro';
+import { PREGUNTAS } from './contenido.js';
+---
+<section class="section" id="faq" aria-labelledby="faq-title">
+  <div class="container reveal">
+    <div class="section-head">
+      <h2 id="faq-title">Preguntas frecuentes</h2>
+    </div>
+    <Faq id="faq-home" preguntas={PREGUNTAS} />
+  </div>
+</section>
