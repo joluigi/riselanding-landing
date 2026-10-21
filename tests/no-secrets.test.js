@@ -33,7 +33,7 @@ const PROHIBIDO_EN_TODO = [
 // En código de producción (no en pruebas): una variable con nombre de secreto que recibe un literal,
 // o un process.env.X_SECRET/… con valor de respaldo NO vacío ("|| 'algo'"; "|| ''" es válido:
 // equivale a "no definida").
-const CODIGO = /^(api\/|lib\/|js\/|middleware\.js$|.*\.html$)/;
+const CODIGO = /^(api\/|lib\/|js\/|src\/|public\/|scripts\/|middleware\.js$|.*\.(html|astro)$)/;
 const PROHIBIDO_EN_CODIGO = [
   { nombre: 'secreto con valor de respaldo', re: /process\.env\.[A-Z0-9_]*(?:SECRET|TOKEN|KEY|PASSWORD|WEBHOOK)[A-Z0-9_]*\s*\|\|\s*(['"`])(?!\1)/ },
   { nombre: 'secreto escrito en el código', re: /\b[A-Za-z0-9_]*(secret|password|api[_-]?key|token)[A-Za-z0-9_]*\s*[:=]\s*['"`][A-Za-z0-9_\-+/=]{16,}['"`]/i },
