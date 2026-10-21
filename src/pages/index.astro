@@ -1,16 +1,29 @@
 ---
-// PROVISIONAL (PR0): envuelve la home actual (index.html de la raíz) en Base con el formulario intacto.
-// La home nueva llega en PR3 (docs/wireframes/home.md).
+// TEMPORAL (PR2): home mínima para probar el formulario nuevo en dist/ y en el preview
+// (precarga de "Implementación de CRM", redirección a /gracias, no comercial inline).
+// PR3 reescribe esta página con la home definitiva (docs/wireframes/home.md), sin servicio
+// precargado; al hacerlo, regresar a null la expectativa de index.html en tests/dist/paginas.test.js.
 import Base from '../layouts/Base.astro';
-import { partirHtmlLegado } from '../legado/html-legado.js';
-import legado from '../../index.html?raw';
-
-const { head, body } = partirHtmlLegado(legado);
+import Contacto from '../components/forms/Contacto.astro';
 ---
 <Base
   title="Marketing Digital para Empresas en México | Riselanding"
+  description="Campañas, CRM, automatización y medición para empresas B2B en México. Agenda tu diagnóstico sin costo."
+  path="/"
   tracking={{ template: 'home_v2', type: 'home', serviceLine: 'paquete_integral' }}
 >
-  <Fragment slot="head" set:html={head} />
-  <Fragment set:html={body} />
+  <Fragment slot="head">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@600;700&display=swap" rel="stylesheet">
+    <!-- TEMPORAL: botón mínimo hasta que llegue src/styles/componentes.css (PR1) -->
+    <style is:inline>
+      .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:48px;padding:0 24px;border:0;border-radius:var(--radius-pill);font-family:var(--font-display);font-weight:700;font-size:16px;line-height:1;cursor:pointer}
+      .btn--primary{background:var(--color-accent);color:var(--color-accent-contrast)}
+      .btn[disabled]{opacity:.4;pointer-events:none}
+    </style>
+  </Fragment>
+  <main>
+    <Contacto servicio="Implementación de CRM" />
+  </main>
 </Base>
