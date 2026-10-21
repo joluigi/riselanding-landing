@@ -18,7 +18,13 @@ const ASSETS = [
   'apple-touch-icon.png',
   'favicon-192.png',
   'favicon-32.png',
+  'isotipo.svg',
+  'isotipo-blanco.svg',
+  'isotipo-blanco-mono.svg',
   'logo-horizontal.png',
+  'logo-horizontal.svg',
+  'logo-horizontal-blanco.svg',
+  'logo-horizontal-blanco-mono.svg',
   'logo-naranja.png',
   'logo-white-horizontal.png',
   'og-image.png'

@@ -242,10 +242,10 @@
 :where(.site-header__inner) { height: 100%; display: flex; align-items: center; gap: var(--space-2); }
 :where(.header-spacer) { height: var(--header-h); }
 
-/* Logo: el PNG trae márgenes amplios (área útil 1038×144 de 1080×500); object-fit lo recorta al logotipo */
+/* Logo vectorial (proporción 931:127): solo se fija la altura */
 :where(.brand) { display: inline-flex; align-items: center; min-height: var(--tap-min); margin-right: auto; }
-:where(.brand img) { width: 150px; height: 24px; object-fit: cover; object-position: 50% 51%; }
-@media (min-width: 1024px) { :where(.brand img) { width: 210px; height: 32px; } }
+:where(.brand img) { width: auto; height: 24px; }
+@media (min-width: 1024px) { :where(.brand img) { height: 32px; } }
 
 :where(.nav-desktop, .header-actions) { display: none; }
 :where(.menu-toggle) {
@@ -343,7 +343,7 @@
 :where(.site-footer :focus-visible) { outline-color: var(--color-accent); }
 :where(.footer-top) { display: grid; gap: var(--space-8); }
 @media (min-width: 1024px) { :where(.footer-top) { grid-template-columns: minmax(0, 1.4fr) minmax(0, 3fr); } }
-:where(.footer-brand img) { width: 130px; height: 24px; object-fit: contain; object-position: left center; }
+:where(.footer-brand img) { width: auto; height: 24px; }
 :where(.footer-brand__lema) { margin-top: var(--space-4); color: var(--color-inverse-text); font-weight: 500; }
 :where(.footer-brand__linea) { margin-top: var(--space-2); max-width: var(--measure); }
 :where(.footer-cols) { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-7) var(--space-6); }

@@ -22,7 +22,9 @@ const ESTATICOS = [
   'lib/lead-quality/schema.js',
   'Assets/og-image.png',
   'Assets/favicon-32.png',
-  'Assets/logo-white-horizontal.png',
+  'Assets/logo-horizontal.svg',
+  'Assets/logo-horizontal-blanco.svg',
+  'Assets/isotipo.svg',
   'sitemap.xml',
   'robots.txt'
 ];
