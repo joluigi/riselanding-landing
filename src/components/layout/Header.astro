@@ -1,0 +1,39 @@
+---
+// Header (DESIGN.md §7, sitemap §2). Transparente sobre el aura; al hacer scroll pasa a
+// --color-surface-glass con desenfoque (clase .is-scrolled, la pone src/scripts/ui.js).
+// Escritorio: logo, menú Servicios con panel por pilar, Cómo trabajamos, Nosotros, botón secundario
+// WhatsApp y primario "Agenda tu diagnóstico". Móvil: logo, primario compacto "Agendar" y menú de
+// pantalla completa. El header es fijo: la primera sección de cada página reserva var(--header-h) arriba.
+import MenuServicios from './MenuServicios.astro';
+import MenuMovil from './MenuMovil.astro';
+import Boton from '../ui/Boton.astro';
+import Icono from '../ui/Icono.astro';
+
+interface Props {
+  /** Destino del CTA: "#contacto" si la página tiene formulario, "/#contacto" si no */
+  ctaHref?: string;
+}
+
+const { ctaHref = '#contacto' } = Astro.props;
+---
+<header class="site-header" id="header" data-header>
+  <div class="container site-header__inner">
+    <a class="brand" href="/">
+      <img src="/Assets/logo-naranja.png" alt="Riselanding" width="210" height="32" decoding="async" fetchpriority="high">
+    </a>
+    <nav class="nav-desktop" aria-label="Principal">
+      <MenuServicios />
+      <a class="nav-desktop__link" href="/#proceso">Cómo trabajamos</a>
+      <a class="nav-desktop__link" href="/#nosotros">Nosotros</a>
+    </nav>
+    <div class="header-actions">
+      <Boton variante="secundario" whatsapp>WhatsApp</Boton>
+      <Boton href={ctaHref}>Agenda tu diagnóstico</Boton>
+    </div>
+    <Boton href={ctaHref} compacto class="header-compact-cta">Agendar</Boton>
+    <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-menu" aria-label="Abrir menú" data-menu-toggle>
+      <Icono nombre="menu" tamano="lg" />
+    </button>
+  </div>
+</header>
+<MenuMovil ctaHref={ctaHref} />

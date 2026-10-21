@@ -1,0 +1,17 @@
+---
+// Barra CTA fija en móvil (DESIGN.md §7, sitemap §2). Solo en páginas de más de 3 pantallas
+// (home, /servicios y cada servicio). src/scripts/ui.js la muestra cuando el inicio de la página
+// ([data-cta-bar-start] o, si no hay, el primer hijo de <main>) sale de pantalla, y la oculta mientras
+// #contacto está visible para no tapar el formulario. Oculta, sus enlaces salen del orden de tabulación.
+import Boton from '../ui/Boton.astro';
+
+interface Props {
+  ctaHref?: string;
+}
+
+const { ctaHref = '#contacto' } = Astro.props;
+---
+<div class="cta-bar" id="cta-bar" aria-hidden="true" data-cta-bar>
+  <Boton href={ctaHref} tabindex="-1">Agenda tu diagnóstico</Boton>
+  <Boton variante="secundario" whatsapp tabindex="-1" aria-label="WhatsApp"><span class="label">WhatsApp</span></Boton>
+</div>
