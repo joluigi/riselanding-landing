@@ -1,0 +1,39 @@
+---
+// Menú Servicios del header de escritorio: botón que abre un panel con una columna por pilar
+// (sitemap §2). Solo enlaza páginas publicadas; un pilar sin páginas publicadas (Medir en ola 1)
+// muestra sus servicios como enlace a /servicios#<pilar>. Cada columna cierra con
+// "Ver todos los servicios" hacia /servicios#<pilar>. Comportamiento en src/scripts/ui.js.
+import Icono from '../ui/Icono.astro';
+import ChipServicio from '../ui/ChipServicio.astro';
+import { PILARES, serviciosDePilar } from '../../data/servicios.js';
+
+const columnas = PILARES.map((p) => ({
+  ...p,
+  publicados: serviciosDePilar(p.id, { soloPublicados: true }),
+  todos: serviciosDePilar(p.id)
+}));
+---
+<button class="nav-desktop__link" type="button" aria-expanded="false" aria-controls="menu-servicios" data-menu-servicios-toggle>
+  Servicios <Icono nombre="chevron-down" tamano="sm" />
+</button>
+<div class="menu-servicios" id="menu-servicios" hidden data-menu-servicios>
+  <div class="container">
+    <div class="menu-servicios__panel">
+      {columnas.map((c) => (
+        <div class="menu-servicios__col">
+          <p class="eyebrow" id={`menu-pilar-${c.id}`}>{c.nombre}</p>
+          <p class="menu-servicios__desc">{c.descripcion}</p>
+          <ul class="chips" aria-labelledby={`menu-pilar-${c.id}`}>
+            {c.publicados.length
+              ? c.publicados.map((s) => <li><ChipServicio slug={s.slug} nombre="largo" /></li>)
+              : c.todos.map((s) => <li><ChipServicio slug={s.slug} nombre="largo" href={`/servicios#${c.id}`} /></li>)}
+          </ul>
+          <a class="link-action" href={`/servicios#${c.id}`}>
+            Ver todos los servicios<span class="sr-only"> de {c.nombre}</span>
+            <Icono nombre="arrow-right" tamano="sm" />
+          </a>
+        </div>
+      ))}
+    </div>
+  </div>
+</div>

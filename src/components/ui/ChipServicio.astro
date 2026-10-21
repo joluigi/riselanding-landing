@@ -1,0 +1,30 @@
+---
+// Chip de servicio (DESIGN.md §7): ícono en cuadro --radius-sm + nombre, enlazado a la página del servicio.
+// Si el servicio aún no está publicado (ola futura) y no se pasa href, se pinta sin enlace.
+// Va dentro de <ul class="chips"> (columna) o <ul class="chips chips--fila"> (fila centrada, p. ej. 404).
+// Uso: <li><ChipServicio slug="crm" /></li>
+//      <li><ChipServicio slug="meta-ads" href="#contacto" nombre="largo" /></li>
+import Icono from './Icono.astro';
+import type { NombreIcono } from './Icono.astro';
+import { servicioPorSlug, publicado } from '../../data/servicios.js';
+
+interface Props {
+  slug: string;
+  /** corto: "Sitio web" (por omisión) · largo: "Sitio web corporativo" */
+  nombre?: 'corto' | 'largo';
+  /** Sustituye el destino (p. ej. "#contacto" para servicios de ola 2) */
+  href?: string;
+  class?: string;
+}
+
+const { slug, nombre = 'corto', href, class: clase } = Astro.props;
+const s = servicioPorSlug(slug);
+const destino = href || (publicado(s) ? s.href : null);
+const texto = nombre === 'largo' ? s.nombre : s.nombreCorto;
+const Etiqueta = destino ? 'a' : 'span';
+---
+<Etiqueta class:list={['chip', clase]} href={destino || undefined} data-servicio={s.slug}>
+  <span class="chip__icon"><Icono nombre={s.icono as NombreIcono} /></span>
+  <span class="chip__name">{texto}</span>
+  {destino && <Icono nombre="arrow-right" tamano="sm" class="chip__arrow" />}
+</Etiqueta>

@@ -1,0 +1,66 @@
+---
+// Footer (DESIGN.md §7, sitemap §2): contenedor --color-inverse-bg con --radius-lg y margen de 20 px,
+// logo blanco, columnas por pilar (solo páginas publicadas; un pilar sin páginas no aparece),
+// Empresa, Contacto y legales.
+import Icono from '../ui/Icono.astro';
+import {
+  PILARES, serviciosDePilar, WHATSAPP_URL, WHATSAPP_VISIBLE, TELEFONO, TELEFONO_URL, CORREO
+} from '../../data/servicios.js';
+
+interface Props {
+  /** Destino del CTA: "#contacto" si la página tiene formulario, "/#contacto" si no */
+  ctaHref?: string;
+}
+
+const { ctaHref = '#contacto' } = Astro.props;
+
+const pilares = PILARES
+  .map((p) => ({ ...p, servicios: serviciosDePilar(p.id, { soloPublicados: true }) }))
+  .filter((p) => p.servicios.length > 0);
+// Contacto ocupa 2 columnas (correo y teléfono no caben en una)
+const totalColumnas = pilares.length + 3;
+const anio = new Date().getFullYear();
+---
+<footer class="site-footer" aria-labelledby="footer-title">
+  <h2 class="sr-only" id="footer-title">Pie de página</h2>
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <img src="/Assets/logo-white-horizontal.png" alt="Riselanding" width="130" height="24" loading="lazy" decoding="async">
+        <p class="footer-brand__lema">Elevamos tu marca. Aterrizamos tus ventas.</p>
+        <p class="footer-brand__linea">Campañas, CRM, automatización y medición para empresas B2B en México.</p>
+      </div>
+      <div class="footer-cols" style={`--footer-cols: ${totalColumnas}`}>
+        {pilares.map((p) => (
+          <div>
+            <h3 class="footer-title">{p.nombre}</h3>
+            <ul class="footer-links">
+              {p.servicios.map((s) => <li><a href={s.href}>{s.nombre}</a></li>)}
+            </ul>
+          </div>
+        ))}
+        <div>
+          <h3 class="footer-title">Empresa</h3>
+          <ul class="footer-links">
+            <li><a href="/servicios">Servicios</a></li>
+            <li><a href="/#proceso">Cómo trabajamos</a></li>
+            <li><a href="/#nosotros">Nosotros</a></li>
+          </ul>
+        </div>
+        <div class="footer-contacto">
+          <h3 class="footer-title">Contacto</h3>
+          <ul class="footer-links">
+            <li><a href={WHATSAPP_URL} target="_blank" rel="noopener"><Icono nombre="whatsapp" tamano="sm" />WhatsApp {WHATSAPP_VISIBLE}</a></li>
+            <li><a href={TELEFONO_URL}><Icono nombre="phone" tamano="sm" />{TELEFONO}</a></li>
+            <li><a href={`mailto:${CORREO}`}><Icono nombre="mail" tamano="sm" />{CORREO}</a></li>
+            <li><a href={ctaHref}>Agenda tu diagnóstico</a></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© {anio} Riselanding</p>
+      <a href="/aviso-de-privacidad">Aviso de privacidad</a>
+    </div>
+  </div>
+</footer>

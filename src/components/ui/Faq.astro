@@ -1,0 +1,46 @@
+---
+// Preguntas frecuentes en acordeón. Cada pregunta es un <button class="faq-q"> (rl-tracking.js cuenta
+// .faq-q como interacción) con aria-expanded y aria-controls; src/scripts/ui.js lo hace funcionar.
+// Sin JS las respuestas quedan visibles (ui.js las pliega al cargar).
+// Las mismas preguntas deben ir en el JSON-LD FAQPage de la página (sitemap §7.9).
+// Uso: <Faq id="faq-crm" preguntas={[{ pregunta: '¿...?', respuesta: '...' }]} />
+import Icono from './Icono.astro';
+
+interface Pregunta {
+  pregunta: string;
+  /** Texto plano; usa párrafos separados con una línea en blanco (\n\n) */
+  respuesta: string;
+}
+
+interface Props {
+  preguntas: Pregunta[];
+  /** Prefijo único de ids en la página */
+  id?: string;
+  /** Nivel del encabezado que envuelve cada pregunta */
+  nivel?: 'h3' | 'h4';
+  /** Índice de la pregunta abierta al cargar (ninguna por omisión) */
+  abierta?: number;
+  class?: string;
+}
+
+const { preguntas, id = 'faq', nivel: Titulo = 'h3', abierta = -1, class: clase } = Astro.props;
+---
+<div class:list={['faq', clase]} data-faq>
+  {preguntas.map((p, i) => {
+    const qId = `${id}-q-${i + 1}`;
+    const aId = `${id}-a-${i + 1}`;
+    return (
+      <div class="faq__item">
+        <Titulo class="faq__titulo">
+          <button class="faq-q" type="button" id={qId} aria-expanded="true" aria-controls={aId} data-faq-abierta={i === abierta ? '' : undefined}>
+            <span>{p.pregunta}</span>
+            <Icono nombre="plus" />
+          </button>
+        </Titulo>
+        <div class="faq__a" id={aId} role="region" aria-labelledby={qId}>
+          {p.respuesta.split(/\n\s*\n/).map((parrafo) => <p>{parrafo.trim()}</p>)}
+        </div>
+      </div>
+    );
+  })}
+</div>

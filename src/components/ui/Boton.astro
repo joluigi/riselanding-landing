@@ -1,0 +1,59 @@
+---
+// Botón de DESIGN.md §7. Renderiza <a> si recibe href y <button> si no.
+// Uso: <Boton href="#contacto">Agenda tu diagnóstico</Boton>
+//      <Boton variante="secundario" whatsapp>WhatsApp</Boton>  (href, ícono y nueva pestaña incluidos)
+import Icono from './Icono.astro';
+import type { NombreIcono } from './Icono.astro';
+import { WHATSAPP_URL } from '../../data/servicios.js';
+
+interface Props {
+  href?: string;
+  variante?: 'primario' | 'secundario';
+  compacto?: boolean;
+  bloque?: boolean;
+  /** Atajo: enlace a WhatsApp con el ícono oficial, target _blank y rel noopener */
+  whatsapp?: boolean;
+  /** Ícono Lucide a la izquierda del texto */
+  icono?: NombreIcono;
+  type?: 'button' | 'submit' | 'reset';
+  /** Abre en otra pestaña (rel noopener) */
+  externo?: boolean;
+  class?: string;
+  [atributo: string]: unknown;
+}
+
+const {
+  href,
+  variante = 'primario',
+  compacto = false,
+  bloque = false,
+  whatsapp = false,
+  icono,
+  type = 'button',
+  externo = false,
+  class: clase,
+  ...resto
+} = Astro.props;
+
+const destino = whatsapp ? (href || WHATSAPP_URL) : href;
+const nuevaPestana = whatsapp || externo;
+const clases = [
+  'btn',
+  variante === 'secundario' ? 'btn--secondary' : 'btn--primary',
+  compacto && 'btn--compact',
+  bloque && 'btn--block',
+  clase
+].filter(Boolean).join(' ');
+const nombreIcono = whatsapp ? 'whatsapp' : icono;
+---
+{destino
+  ? (
+    <a class={clases} href={destino} target={nuevaPestana ? '_blank' : undefined} rel={nuevaPestana ? 'noopener' : undefined} {...resto}>
+      {nombreIcono && <Icono nombre={nombreIcono} />}<slot />
+    </a>
+  )
+  : (
+    <button class={clases} type={type} {...resto}>
+      {nombreIcono && <Icono nombre={nombreIcono} />}<slot />
+    </button>
+  )}

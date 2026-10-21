@@ -1,0 +1,68 @@
+---
+// Menú móvil de pantalla completa (sitemap §2): Servicios como acordeón agrupado por pilar, los demás
+// enlaces y abajo los botones de diagnóstico y WhatsApp. Diálogo modal: foco atrapado, Escape cierra y
+// devuelve el foco al botón que lo abrió. Comportamiento en src/scripts/ui.js.
+import Icono from '../ui/Icono.astro';
+import Boton from '../ui/Boton.astro';
+import { PILARES, serviciosDePilar } from '../../data/servicios.js';
+
+interface Props {
+  ctaHref: string;
+}
+
+const { ctaHref } = Astro.props;
+
+const grupos = PILARES.map((p) => {
+  const publicados = serviciosDePilar(p.id, { soloPublicados: true });
+  const enlaces = publicados.length
+    ? publicados.map((s) => ({ texto: s.nombre, href: s.href }))
+    : serviciosDePilar(p.id).map((s) => ({ texto: s.nombre, href: `/servicios#${p.id}` }));
+  return { ...p, enlaces };
+});
+---
+<div class="mobile-menu" id="mobile-menu" role="dialog" aria-modal="true" aria-label="Menú" data-mobile-menu>
+  <div class="mobile-menu__top">
+    <div class="container">
+      <a class="brand" href="/" data-close-menu>
+        <img src="/Assets/logo-naranja.png" alt="Riselanding" width="210" height="32" decoding="async">
+      </a>
+      <button class="menu-toggle" type="button" data-close-menu aria-label="Cerrar menú">
+        <Icono nombre="x" tamano="lg" />
+      </button>
+    </div>
+  </div>
+  <div class="container mobile-menu__body">
+    <nav aria-label="Principal">
+      <ul class="mobile-menu__links">
+        <li>
+          <button class="mobile-menu__link" type="button" aria-expanded="false" aria-controls="mobile-menu-servicios" data-acordeon>
+            Servicios <Icono nombre="chevron-down" />
+          </button>
+          <div class="mobile-menu__servicios" id="mobile-menu-servicios" hidden>
+            {grupos.map((g) => (
+              <div class="mobile-menu__grupo">
+                <p class="eyebrow" id={`movil-pilar-${g.id}`}>{g.nombre}</p>
+                <ul class="mobile-menu__sublinks" aria-labelledby={`movil-pilar-${g.id}`}>
+                  {g.enlaces.map((e) => (
+                    <li><a href={e.href} data-close-menu>{e.texto}</a></li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+            <div class="mobile-menu__grupo">
+              <a class="link-action" href="/servicios" data-close-menu>
+                Ver todos los servicios <Icono nombre="arrow-right" tamano="sm" />
+              </a>
+            </div>
+          </div>
+        </li>
+        <li><a class="mobile-menu__link" href="/#proceso" data-close-menu>Cómo trabajamos <Icono nombre="arrow-right" /></a></li>
+        <li><a class="mobile-menu__link" href="/#nosotros" data-close-menu>Nosotros <Icono nombre="arrow-right" /></a></li>
+      </ul>
+    </nav>
+    <div class="mobile-menu__actions">
+      <Boton href={ctaHref} bloque data-close-menu>Agenda tu diagnóstico</Boton>
+      <Boton variante="secundario" whatsapp bloque>WhatsApp</Boton>
+    </div>
+  </div>
+</div>
