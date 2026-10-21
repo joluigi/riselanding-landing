@@ -1,6 +1,6 @@
 # Estado del proyecto · Rediseño de riselanding.com
 
-Fase actual: F3 (assets) en paralelo con F4 (construcción en Astro) · Lanzamiento escalonado: ola 1 el 2026-10-27, ola 2 a más tardar el 2026-11-03
+Fase actual: ola 1 construida (F4) y en preview; siguen F8 (prueba E2E del formulario) y QA de F10
 Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 
 ## Gates
@@ -12,8 +12,11 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 | F1 ADN de diseño | Aprobado (variante A clara y 3 desviaciones del manual) | José Luis Vázquez | 2026-10-20 |
 | F2 Arquitectura | Aprobado (sitemap, wireframes de ola 1 y diagnóstico de madurez) | José Luis Vázquez | 2026-10-20 |
 | F3 Assets | Inventario listo (`docs/assets-inventario.md`); faltan logo vector y fotos | | |
-| F4 Construcción | PR0 integrado y verificado en preview (2026-10-20); PR1, PR2 y PR6 en curso | | |
-| F5 a F10 | No iniciadas | | |
+| F4 Construcción | Ola 1 completa (PR0 a PR7) en preview: https://riselanding-landing-git-rediseno-f0-brief-joluigis-projects.vercel.app (2026-10-21) | | |
+| F5 Móvil | Auditoría automática sin bloqueantes (`docs/qa/movil/`); falta prueba en dispositivos físicos | | |
+| F6 Copy | Sin patrones bloqueantes; pendientes de verificar en `docs/copy/pendientes-*.md` | | |
+| F7b SEO | `seo_audit.py` sin errores; falta Search Console | | |
+| F8 a F10 | Pendientes | | |
 
 ## Entregables de F0
 

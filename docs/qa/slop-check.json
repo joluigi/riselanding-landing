@@ -1,0 +1,132 @@
+{
+  "bloqueantes": 0,
+  "revisar": 9,
+  "archivos": [
+    {
+      "archivo": "dist/404.html",
+      "idioma": "es",
+      "hallazgos": [
+        {
+          "linea": 163,
+          "contexto": "p",
+          "regla": "verbo_inflado",
+          "severidad": "R",
+          "fragmento": "Elevamos tu marca. Aterrizamos tus ventas.",
+          "sugerencia": "Verbo concreto con objeto medible (reducir, responder, entregar, cotizar)"
+        }
+      ]
+    },
+    {
+      "archivo": "dist/aviso-de-privacidad.html",
+      "idioma": "es",
+      "hallazgos": [
+        {
+          "linea": 162,
+          "contexto": "p",
+          "regla": "verbo_inflado",
+          "severidad": "R",
+          "fragmento": "Elevamos tu marca. Aterrizamos tus ventas.",
+          "sugerencia": "Verbo concreto con objeto medible (reducir, responder, entregar, cotizar)"
+        }
+      ]
+    },
+    {
+      "archivo": "dist/gracias.html",
+      "idioma": "es",
+      "hallazgos": [
+        {
+          "linea": 163,
+          "contexto": "p",
+          "regla": "verbo_inflado",
+          "severidad": "R",
+          "fragmento": "Elevamos tu marca. Aterrizamos tus ventas.",
+          "sugerencia": "Verbo concreto con objeto medible (reducir, responder, entregar, cotizar)"
+        }
+      ]
+    },
+    {
+      "archivo": "dist/index.html",
+      "idioma": "es",
+      "hallazgos": [
+        {
+          "linea": 162,
+          "contexto": "p",
+          "regla": "verbo_inflado",
+          "severidad": "R",
+          "fragmento": "Elevamos tu marca. Aterrizamos tus ventas.",
+          "sugerencia": "Verbo concreto con objeto medible (reducir, responder, entregar, cotizar)"
+        }
+      ]
+    },
+    {
+      "archivo": "dist/servicios.html",
+      "idioma": "es",
+      "hallazgos": [
+        {
+          "linea": 162,
+          "contexto": "p",
+          "regla": "verbo_inflado",
+          "severidad": "R",
+          "fragmento": "Elevamos tu marca. Aterrizamos tus ventas.",
+          "sugerencia": "Verbo concreto con objeto medible (reducir, responder, entregar, cotizar)"
+        }
+      ]
+    },
+    {
+      "archivo": "dist/servicios/automatizacion.html",
+      "idioma": "es",
+      "hallazgos": [
+        {
+          "linea": 162,
+          "contexto": "p",
+          "regla": "verbo_inflado",
+          "severidad": "R",
+          "fragmento": "Elevamos tu marca. Aterrizamos tus ventas.",
+          "sugerencia": "Verbo concreto con objeto medible (reducir, responder, entregar, cotizar)"
+        }
+      ]
+    },
+    {
+      "archivo": "dist/servicios/crm.html",
+      "idioma": "es",
+      "hallazgos": [
+        {
+          "linea": 162,
+          "contexto": "p",
+          "regla": "verbo_inflado",
+          "severidad": "R",
+          "fragmento": "Elevamos tu marca. Aterrizamos tus ventas.",
+          "sugerencia": "Verbo concreto con objeto medible (reducir, responder, entregar, cotizar)"
+        }
+      ]
+    },
+    {
+      "archivo": "dist/servicios/google-ads.html",
+      "idioma": "es",
+      "hallazgos": [
+        {
+          "linea": 162,
+          "contexto": "p",
+          "regla": "verbo_inflado",
+          "severidad": "R",
+          "fragmento": "Elevamos tu marca. Aterrizamos tus ventas.",
+          "sugerencia": "Verbo concreto con objeto medible (reducir, responder, entregar, cotizar)"
+        }
+      ]
+    },
+    {
+      "archivo": "dist/servicios/sitio-web.html",
+      "idioma": "es",
+      "hallazgos": [
+        {
+          "linea": 162,
+          "contexto": "p",
+          "regla": "verbo_inflado",
+          "severidad": "R",
+          "fragmento": "Elevamos tu marca. Aterrizamos tus ventas.",
+          "sugerencia": "Verbo concreto con objeto medible (reducir, responder, entregar, cotizar)"
+        }
+      ]
+    }
+  ]
+}

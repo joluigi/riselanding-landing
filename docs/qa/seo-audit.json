@@ -1,0 +1,90 @@
+{
+  "errores": 1,
+  "advertencias": 4,
+  "paginas": [
+    {
+      "ruta": "/aviso-de-privacidad",
+      "title": "Aviso de privacidad | Riselanding",
+      "description": "Aviso de privacidad de Riselanding conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares (LFPDPPP). Conoce qué datos recabamos, con qué finalidades y cómo ejercer tus derechos ARCO.",
+      "h1": "Aviso de privacidad",
+      "hallazgos": [
+        {
+          "regla": "description",
+          "severidad": "ADV",
+          "detalle": "219 caracteres"
+        }
+      ]
+    },
+    {
+      "ruta": "/gracias",
+      "title": "Recibimos tu solicitud | Riselanding",
+      "description": "Confirmación de tu solicitud a Riselanding.",
+      "h1": "Recibimos tu solicitud.",
+      "hallazgos": [
+        {
+          "regla": "description",
+          "severidad": "ADV",
+          "detalle": "43 caracteres"
+        },
+        {
+          "regla": "canonical",
+          "severidad": "ERROR",
+          "detalle": "sin canonical absoluto"
+        },
+        {
+          "regla": "noindex",
+          "severidad": "ADV",
+          "detalle": "meta robots noindex: confirmar que es intencional (gracias, landing duplicada)"
+        },
+        {
+          "regla": "open_graph",
+          "severidad": "ADV",
+          "detalle": "falta og:title, og:description, og:image, og:url"
+        }
+      ]
+    },
+    {
+      "ruta": "/",
+      "title": "Agencia de generación de leads B2B en México | Riselanding",
+      "description": "Generación de leads B2B en México: campañas, CRM, automatización y medición con un solo equipo responsable de cada etapa. Agenda tu diagnóstico sin costo.",
+      "h1": "Generación de leads B2B, de la campaña al cierre.",
+      "hallazgos": []
+    },
+    {
+      "ruta": "/servicios/automatizacion",
+      "title": "Automatización de procesos para empresas | Riselanding",
+      "description": "Automatización de procesos para empresas: captura, calificación y seguimiento de prospectos con n8n, conectados a tu CRM. Agenda tu diagnóstico sin costo.",
+      "h1": "Automatización de procesos para empresas",
+      "hallazgos": []
+    },
+    {
+      "ruta": "/servicios/crm",
+      "title": "Implementación de CRM con HubSpot y Zoho | Riselanding",
+      "description": "Implementación de CRM con HubSpot o Zoho a la medida de tu proceso de venta, conectado a tus formularios y campañas. Agenda tu diagnóstico sin costo.",
+      "h1": "Implementación de CRM para tu equipo de ventas",
+      "hallazgos": []
+    },
+    {
+      "ruta": "/servicios/google-ads",
+      "title": "Agencia de Google Ads para empresas B2B | Riselanding",
+      "description": "Agencia de Google Ads para empresas B2B en México: campañas de búsqueda, landing por campaña y medición hasta el lead calificado. Agenda tu diagnóstico.",
+      "h1": "Agencia de Google Ads para empresas B2B",
+      "hallazgos": []
+    },
+    {
+      "ruta": "/servicios/sitio-web",
+      "title": "Desarrollo de sitio web corporativo en México | Riselanding",
+      "description": "Desarrollo de sitio web corporativo y rediseño de página web para empresas B2B, rápido en celular y conectado a tu CRM. Agenda tu diagnóstico sin costo.",
+      "h1": "Desarrollo de sitio web corporativo para tu empresa",
+      "hallazgos": []
+    },
+    {
+      "ruta": "/servicios",
+      "title": "Servicios de marketing, CRM y automatización | Riselanding",
+      "description": "Google Ads, Meta Ads, SEO, sitios web, CRM, medición y automatización para empresas B2B en México, ordenados por etapa. Agenda tu diagnóstico sin costo.",
+      "h1": "Servicios de marketing, CRM y automatización",
+      "hallazgos": []
+    }
+  ],
+  "sitio": []
+}

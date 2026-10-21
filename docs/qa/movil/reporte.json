@@ -1,0 +1,624 @@
+{
+  "errores": 2,
+  "advertencias": 67,
+  "resultados": [
+    {
+      "url": "http://localhost:4321/index.html",
+      "ancho": 360,
+      "captura": "localhost-4321-index-html-360.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "button.menu-toggle \"Abrir menú\" 40×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/index.html",
+      "ancho": 390,
+      "captura": "localhost-4321-index-html-390.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/index.html",
+      "ancho": 768,
+      "captura": "localhost-4321-index-html-768.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/index.html",
+      "ancho": 1024,
+      "captura": "localhost-4321-index-html-1024.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/index.html",
+      "ancho": 1440,
+      "captura": "localhost-4321-index-html-1440.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios.html",
+      "ancho": 360,
+      "captura": "localhost-4321-servicios-html-360.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "button.menu-toggle \"Abrir menú\" 40×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios.html",
+      "ancho": 390,
+      "captura": "localhost-4321-servicios-html-390.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios.html",
+      "ancho": 768,
+      "captura": "localhost-4321-servicios-html-768.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios.html",
+      "ancho": 1024,
+      "captura": "localhost-4321-servicios-html-1024.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios.html",
+      "ancho": 1440,
+      "captura": "localhost-4321-servicios-html-1440.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/crm.html",
+      "ancho": 360,
+      "captura": "localhost-4321-servicios-crm-html-360.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "button.menu-toggle \"Abrir menú\" 40×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/crm.html",
+      "ancho": 390,
+      "captura": "localhost-4321-servicios-crm-html-390.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/crm.html",
+      "ancho": 768,
+      "captura": "localhost-4321-servicios-crm-html-768.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/crm.html",
+      "ancho": 1024,
+      "captura": "localhost-4321-servicios-crm-html-1024.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/crm.html",
+      "ancho": 1440,
+      "captura": "localhost-4321-servicios-crm-html-1440.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/automatizacion.html",
+      "ancho": 360,
+      "captura": "localhost-4321-servicios-automatizacion-html-360.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "button.menu-toggle \"Abrir menú\" 40×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/automatizacion.html",
+      "ancho": 390,
+      "captura": "localhost-4321-servicios-automatizacion-html-390.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/automatizacion.html",
+      "ancho": 768,
+      "captura": "localhost-4321-servicios-automatizacion-html-768.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/automatizacion.html",
+      "ancho": 1024,
+      "captura": "localhost-4321-servicios-automatizacion-html-1024.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/automatizacion.html",
+      "ancho": 1440,
+      "captura": "localhost-4321-servicios-automatizacion-html-1440.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/google-ads.html",
+      "ancho": 360,
+      "captura": "localhost-4321-servicios-google-ads-html-360.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "button.menu-toggle \"Abrir menú\" 40×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/google-ads.html",
+      "ancho": 390,
+      "captura": "localhost-4321-servicios-google-ads-html-390.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/google-ads.html",
+      "ancho": 768,
+      "captura": "localhost-4321-servicios-google-ads-html-768.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/google-ads.html",
+      "ancho": 1024,
+      "captura": "localhost-4321-servicios-google-ads-html-1024.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/google-ads.html",
+      "ancho": 1440,
+      "captura": "localhost-4321-servicios-google-ads-html-1440.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/sitio-web.html",
+      "ancho": 360,
+      "captura": "localhost-4321-servicios-sitio-web-html-360.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "button.menu-toggle \"Abrir menú\" 40×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/sitio-web.html",
+      "ancho": 390,
+      "captura": "localhost-4321-servicios-sitio-web-html-390.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/sitio-web.html",
+      "ancho": 768,
+      "captura": "localhost-4321-servicios-sitio-web-html-768.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "a \"Inicio\" 35×44px"
+        },
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "input#f-hp 195×32px"
+        },
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/sitio-web.html",
+      "ancho": 1024,
+      "captura": "localhost-4321-servicios-sitio-web-html-1024.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/servicios/sitio-web.html",
+      "ancho": 1440,
+      "captura": "localhost-4321-servicios-sitio-web-html-1440.png",
+      "hallazgos": [
+        {
+          "regla": "consola",
+          "severidad": "ADV",
+          "detalle": "Failed to load resource: the server responded with a status of 404 (Not Found)"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/aviso-de-privacidad.html",
+      "ancho": 360,
+      "captura": "localhost-4321-aviso-de-privacidad-html-360.png",
+      "hallazgos": [
+        {
+          "regla": "tactil_recomendado",
+          "severidad": "ADV",
+          "detalle": "button.menu-toggle \"Abrir menú\" 40×44px"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/aviso-de-privacidad.html",
+      "ancho": 390,
+      "captura": "localhost-4321-aviso-de-privacidad-html-390.png",
+      "hallazgos": []
+    },
+    {
+      "url": "http://localhost:4321/aviso-de-privacidad.html",
+      "ancho": 768,
+      "captura": "localhost-4321-aviso-de-privacidad-html-768.png",
+      "hallazgos": []
+    },
+    {
+      "url": "http://localhost:4321/aviso-de-privacidad.html",
+      "ancho": 1024,
+      "captura": "localhost-4321-aviso-de-privacidad-html-1024.png",
+      "hallazgos": []
+    },
+    {
+      "url": "http://localhost:4321/aviso-de-privacidad.html",
+      "ancho": 1440,
+      "captura": "localhost-4321-aviso-de-privacidad-html-1440.png",
+      "hallazgos": []
+    },
+    {
+      "url": "http://localhost:4321/gracias.html",
+      "ancho": 360,
+      "captura": "localhost-4321-gracias-html-360.png",
+      "hallazgos": [
+        {
+          "regla": "cta_ausente",
+          "severidad": "ERROR",
+          "detalle": "selector .header-compact-cta sin elemento visible"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/gracias.html",
+      "ancho": 390,
+      "captura": "localhost-4321-gracias-html-390.png",
+      "hallazgos": [
+        {
+          "regla": "cta_ausente",
+          "severidad": "ERROR",
+          "detalle": "selector .header-compact-cta sin elemento visible"
+        }
+      ]
+    },
+    {
+      "url": "http://localhost:4321/gracias.html",
+      "ancho": 768,
+      "captura": "localhost-4321-gracias-html-768.png",
+      "hallazgos": []
+    },
+    {
+      "url": "http://localhost:4321/gracias.html",
+      "ancho": 1024,
+      "captura": "localhost-4321-gracias-html-1024.png",
+      "hallazgos": []
+    },
+    {
+      "url": "http://localhost:4321/gracias.html",
+      "ancho": 1440,
+      "captura": "localhost-4321-gracias-html-1440.png",
+      "hallazgos": []
+    }
+  ]
+}
