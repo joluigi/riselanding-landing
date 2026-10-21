@@ -52,3 +52,4 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 - José: logo en vector en `Assets/`.
 - José y Rut: fotos para Nosotros a más tardar el 2026-10-24 (misma luz y fondo neutro).
 - José: responder `docs/copy/cuestionario-verificar.md` a más tardar el 2026-10-23.
+- José (F8, antes de activar campañas): en GTM crear la etiqueta de configuración de Google; activadores para `rl_form_submit_attempt`, `rl_non_commercial_submit`, `rl_tool_start` y `rl_tool_complete`; enviar `page_template` en etiquetas GA4; corregir `prospect_segment` en Meta Lead; capturar IDs reales de Google Ads y Meta; decidir si la conversión compuesta de Ads cuenta también en páginas de servicio. Detalle en `docs/tracking/rl-taxonomy.json`.
