@@ -1,0 +1,14 @@
+{
+    "url": "https://www.mangomint.com/",
+    "anchoViewport": 390,
+    "tipografia": {
+        "h1": "42px 620 46px -1.26px",
+        "h2_seccion": "42px 620 46px -1.32px",
+        "h3": "30px 620 34px -0.96px",
+        "p": "18px 500 28px normal",
+        "button": "16px 400 22.4px normal",
+        "a": "14px 500 17px -0.16px"
+    },
+    "paddingLateral": "30px (contenedor), 20px (tarjetas)",
+    "notas": "hero centrado; CTA pill magenta en header; mockup de producto en telefono bajo el hero; eyebrow en mono uppercase con flecha dibujada"
+}

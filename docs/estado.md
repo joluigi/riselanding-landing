@@ -9,7 +9,7 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 |---|---|---|---|
 | F0 Brief | Aprobado | José Luis Vázquez | 2026-10-20 |
 | F7a Investigación de keywords | Mapa provisional (sin volúmenes) | | |
-| F1 ADN de diseño | En curso (variantes clara y oscura) | | |
+| F1 ADN de diseño | DESIGN.md v0.1 con dos variantes; prototipo en curso | | |
 | F2 Arquitectura | No iniciada | | |
 | F3 a F10 | No iniciadas | | |
 
@@ -21,7 +21,7 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 
 ## Decisiones del 2026-10-20 (José)
 
-- Referencias principales de F1: Siege Media (variante clara) y Blend (variante oscura).
+- Referencia principal de F1: Mangomint para ambas variantes (cambio de José sobre Siege y Blend, que quedan como secundarias).
 - Ola 1 (27-oct): home, `/servicios`, `/servicios/crm`, `/servicios/automatizacion`, `/servicios/google-ads`, `/servicios/sitio-web`, legales y formulario.
 - Ola 2 (a más tardar 3-nov): `/servicios/meta-ads`, `/seo`, `/landing-pages`, `/medicion`, `/software-a-la-medida` (G10, sí es oferta), `/tienda-en-linea` (G07, sí es oferta) y diagnóstico de madurez.
 - Fase 2: `/negocios-locales` (L01).

@@ -168,8 +168,10 @@ Agencia B2B de demanda con fondo verde oscuro, página de precios pública ("Tra
 | n8n (n8n.io) | Cambió a fondo claro; ya no aporta a la dirección B. |
 | hey.digital | Dominio en venta. |
 
-## Siguiente paso
+## Elección (2026-10-20)
 
-1. José elige una principal por dirección (o una sola dirección) y marca qué aporta cada secundaria (paso 1.2).
-2. Se extraen tokens de la principal a 1440 y 390 px con `extraer_tokens.js` y se guardan en `docs/referencias/` (paso 1.3).
-3. Se escribe DESIGN.md adaptado y se corren las pruebas de diferenciación y contraste.
+José eligió **Mangomint** (https://www.mangomint.com) como referencia principal única para las dos variantes; las variantes A y B solo difieren en paleta y profundidad. Siege Media y Blend quedan como secundarias puntuales (ver la sección 1 de `DESIGN.md`).
+
+Mangomint queda fuera del vertical (software para salones y spas): aporta ejecución, no credibilidad del sector. La credibilidad B2B sale de las maquetas de trabajo propias y del proceso.
+
+Tokens extraídos: `docs/referencias/mangomint-1440.json` y `docs/referencias/mangomint-390.json`.
