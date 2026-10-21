@@ -1,7 +1,7 @@
 # Brief · Riselanding · Rediseño de riselanding.com
 
-Versión: v0.2 · Fecha: 2026-10-20 · Responsable Riselanding: José (medición y SEO) y Rut (implementación)
-Estado del gate F0: pendiente. Decisiones de alcance tomadas (sección 13); falta validar la conversión primaria y las preguntas abiertas de la sección 14.
+Versión: v1.0 · Fecha: 2026-10-20 · Responsable Riselanding: José (medición y SEO) y Rut (implementación)
+Estado del gate F0: aprobado por José Luis Vázquez el 2026-10-20.
 
 Proyecto interno: Riselanding es el cliente. No aplican propuesta PDF, precio ni solicitud de accesos (pasos 0.4 a 0.8 de F0).
 
@@ -20,7 +20,7 @@ Proyecto interno: Riselanding es el cliente. No aplican propuesta PDF, precio ni
 
 | Presupuesto | Autoridad | Necesidad | Tiempo |
 |---|---|---|---|
-| Interno (horas del equipo) | José y Rut | Rediseño completo conservando formulario y tracking | Sin fecha [pregunta 7] |
+| Interno (horas del equipo) | José y Rut | Rediseño completo conservando formulario y tracking | Lanzamiento objetivo: 2026-10-27 |
 
 ## 3. Objetivo de negocio y conversión
 
@@ -28,7 +28,7 @@ Proyecto interno: Riselanding es el cliente. No aplican propuesta PDF, precio ni
 - Conversión primaria (una sola): solicitud de diagnóstico digital gratuito por el formulario de 2 pasos. Evento: `rl_lead_submit` con `lead_quality_flag` del servidor.
 - Conversiones secundarias: clic en WhatsApp (`rl_whatsapp_click`, hoy sin número real en el sitio), clic en teléfono (`rl_phone_click`), interacción con el componente interactivo (evento nuevo en F8).
 - KPI principal y línea base: leads calificados por mes (`lead_tier` alto o medio). Línea base: sin línea base. El filtro de calidad corre en modo shadow desde el 2026-10-08; José puede extraer las primeras 2 semanas de GA4 o de Notion CRM.
-- Meta a 90 días: [pregunta para José]
+- Meta a 90 días: 50 leads calificados.
 
 ## 4. Audiencia
 
@@ -94,7 +94,7 @@ Se completa en F1 con 3 a 5 referencias (2 del vertical, 2 fuera del vertical, 1
 | Stack elegido | Astro estático con `api/` intacto |
 | CRM de destino de leads | Notion CRM, vía webhook de n8n |
 | Automatización | n8n en Railway (instancia 417ba en producción; 15d6 es la nueva) |
-| WhatsApp Business | [sin dato]: hoy no hay número real en el sitio |
+| WhatsApp Business | +52 55 4821 3439 (`wa.me/525548213439`) |
 | GA4 / GTM existentes | GTM-P3WZC7MV · GA4 G-Z5JP6J6NRS · Google Ads y Meta Pixel con placeholders |
 | Search Console / Google Business Profile | [sin dato] |
 | URLs actuales | `/`, `/aviso-de-privacidad`, `/gracias` (noindex), más `/Form/` e `/index-legacy` por dar de baja. Mismas URLs en el rediseño: no se requieren redirecciones salvo para las dos que se eliminan |
@@ -122,11 +122,11 @@ Auditoría rápida del sitio actual (encuadre de oportunidad):
 
 | Hito | Fecha objetivo | Aprueba |
 |---|---|---|
-| Brief (gate F0) | | José |
+| Brief (gate F0) | 2026-10-20 (aprobado) | José |
 | DESIGN.md (gate F1) | | José y Rut |
 | Sitemap y wireframes (gate F2) | | José y Rut |
 | Copy final (gate F6) | | José |
-| Go-live (gate F10) | | José y Rut |
+| Go-live (gate F10) | 2026-10-27 | José y Rut |
 
 ## 12. Accesos
 
@@ -141,8 +141,9 @@ Proyecto interno: el equipo ya tiene acceso a Vercel, GitHub, GTM, GA4, n8n y No
 | Stack | Astro estático con `api/` de Vercel intacto |
 | Cifras sin fuente | Se retiran: "-30% CPL", "8+ procesos", "45+ leads", "3 cupos", "< 3% de revenue" |
 
-## 14. Preguntas abiertas (ordenadas por impacto)
+## 14. Respuestas de José (2026-10-20)
 
-1. WhatsApp: número real y si se muestra en la home como conversión secundaria.
-2. Componente interactivo: ¿diagnóstico rápido de madurez digital, calculadora de costo por lead o configurador de paquete? Las reglas las define José por escrito.
-3. Fecha objetivo de lanzamiento y meta de leads calificados a 90 días.
+1. WhatsApp: +52 55 4821 3439, visible como conversión secundaria.
+2. Componente interactivo: José pidió opciones; se eligen en F1.
+3. Lanzamiento: 2026-10-27. Meta: 50 leads calificados a 90 días.
+4. Keywords: `docs/seo/keywords-google-ads-editor.csv` (estructura de campañas de Google Ads Editor con 12 grupos corporativos y 1 local). No trae volumen ni dificultad: la priorización por volumen queda pendiente de un export de Keyword Planner con métricas.

@@ -1,15 +1,15 @@
 # Estado del proyecto · Rediseño de riselanding.com
 
-Fase actual: F0 · Brief y alcance (proyecto interno, sin propuesta comercial)
+Fase actual: F1 (ADN de diseño) en paralelo con F7a (keywords) · Lanzamiento objetivo: 2026-10-27
 Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 
 ## Gates
 
 | Fase | Estado | Aprobó | Fecha |
 |---|---|---|---|
-| F0 Brief | Pendiente de validación | | |
-| F7a Investigación de keywords | No iniciada (corre en paralelo con F1) | | |
-| F1 ADN de diseño | No iniciada | | |
+| F0 Brief | Aprobado | José Luis Vázquez | 2026-10-20 |
+| F7a Investigación de keywords | En curso | | |
+| F1 ADN de diseño | En curso (variantes clara y oscura) | | |
 | F2 Arquitectura | No iniciada | | |
 | F3 a F10 | No iniciadas | | |
 
@@ -21,6 +21,6 @@ Rama de trabajo: `rediseno/f0-brief` (desde `main` en `28e9073`)
 
 ## Pendientes
 
-- José: validar la conversión primaria y responder las 3 preguntas abiertas (sección 14 del brief).
-- José: exportar de Google Keyword Planner los volúmenes para F7a (Claude no tiene datos de volumen propios).
+- José: elegir el componente interactivo y entregar sus reglas por escrito.
+- José: el CSV entregado es de Google Ads Editor y no trae volúmenes. Para priorizar por volumen, exportar desde Keyword Planner (Descubrir nuevas palabras clave o Ver volumen de búsqueda y previsiones) con las mismas keywords.
 - Fuera del rediseño, heredados de la release del filtro de calidad (`docs/RELEASE-SHADOW.md`): activación de Turnstile, revisión antes de `enforce`, deduplicación en n8n por `x-rl-event-id`, baja de `Form/` e `index-legacy.html`.

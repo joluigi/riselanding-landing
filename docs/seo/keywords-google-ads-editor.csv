@@ -1,0 +1,91 @@
+﻿Campaign,Ad group,Keyword,Criterion Type
+rl-brand,G01 Marca,riselanding,Exact
+rl-brand,G01 Marca,rise landing,Exact
+rl-brand,G01 Marca,riselanding,Phrase
+rl-lead-corp_intent-202610,G02 Gestión de Google Ads,agencia de google ads,Exact
+rl-lead-corp_intent-202610,G02 Gestión de Google Ads,agencia de google ads,Phrase
+rl-lead-corp_intent-202610,G02 Gestión de Google Ads,administración de google ads,Phrase
+rl-lead-corp_intent-202610,G02 Gestión de Google Ads,gestión de campañas de google ads,Phrase
+rl-lead-corp_intent-202610,G02 Gestión de Google Ads,consultor de google ads,Phrase
+rl-lead-corp_intent-202610,G02 Gestión de Google Ads,especialista en google ads,Phrase
+rl-lead-corp_intent-202610,G02 Gestión de Google Ads,campañas de google ads para empresas,Phrase
+rl-lead-corp_intent-202610,G02 Gestión de Google Ads,agencia de publicidad en google,Phrase
+rl-lead-corp_intent-202610,G02 Gestión de Google Ads,agencia sem,Phrase
+rl-lead-corp_intent-202610,G03 Meta Ads,agencia de facebook ads,Phrase
+rl-lead-corp_intent-202610,G03 Meta Ads,agencia de meta ads,Phrase
+rl-lead-corp_intent-202610,G03 Meta Ads,agencia de publicidad en facebook,Phrase
+rl-lead-corp_intent-202610,G03 Meta Ads,agencia de publicidad en instagram,Phrase
+rl-lead-corp_intent-202610,G03 Meta Ads,publicidad en facebook para empresas,Phrase
+rl-lead-corp_intent-202610,G03 Meta Ads,campañas de facebook e instagram para empresas,Phrase
+rl-lead-corp_intent-202610,G03 Meta Ads,administración de campañas de facebook,Phrase
+rl-lead-corp_intent-202610,G04 Generación de leads B2B,generación de leads b2b,Exact
+rl-lead-corp_intent-202610,G04 Generación de leads B2B,generación de leads b2b,Phrase
+rl-lead-corp_intent-202610,G04 Generación de leads B2B,agencia de generación de leads,Phrase
+rl-lead-corp_intent-202610,G04 Generación de leads B2B,generación de prospectos para empresas,Phrase
+rl-lead-corp_intent-202610,G04 Generación de leads B2B,agencia de marketing b2b,Phrase
+rl-lead-corp_intent-202610,G04 Generación de leads B2B,captación de clientes para empresas,Phrase
+rl-lead-corp_intent-202610,G04 Generación de leads B2B,leads calificados para empresas,Phrase
+rl-lead-corp_intent-202610,G05 Sitio web corporativo,desarrollo de sitio web corporativo,Exact
+rl-lead-corp_intent-202610,G05 Sitio web corporativo,sitio web corporativo,Phrase
+rl-lead-corp_intent-202610,G05 Sitio web corporativo,página web corporativa,Phrase
+rl-lead-corp_intent-202610,G05 Sitio web corporativo,desarrollo web para empresas,Phrase
+rl-lead-corp_intent-202610,G05 Sitio web corporativo,agencia de desarrollo web,Phrase
+rl-lead-corp_intent-202610,G05 Sitio web corporativo,rediseño de página web,Phrase
+rl-lead-corp_intent-202610,G05 Sitio web corporativo,cotizar página web para empresa,Phrase
+rl-lead-corp_intent-202610,G05 Sitio web corporativo,página web para empresa,Phrase
+rl-lead-corp_intent-202610,G06 Landing pages,landing page para campañas,Phrase
+rl-lead-corp_intent-202610,G06 Landing pages,landing page para google ads,Phrase
+rl-lead-corp_intent-202610,G06 Landing pages,diseño de landing page,Phrase
+rl-lead-corp_intent-202610,G06 Landing pages,desarrollo de landing page,Phrase
+rl-lead-corp_intent-202610,G06 Landing pages,agencia de landing pages,Phrase
+rl-lead-corp_intent-202610,G06 Landing pages,página de aterrizaje para empresas,Phrase
+rl-lead-corp_intent-202610,G07 Tienda en línea,desarrollo de tienda en línea,Phrase
+rl-lead-corp_intent-202610,G07 Tienda en línea,diseño de tienda en línea,Phrase
+rl-lead-corp_intent-202610,G07 Tienda en línea,tienda en línea para empresas,Phrase
+rl-lead-corp_intent-202610,G07 Tienda en línea,desarrollo de ecommerce,Phrase
+rl-lead-corp_intent-202610,G07 Tienda en línea,agencia de ecommerce,Phrase
+rl-lead-corp_intent-202610,G07 Tienda en línea,cotizar tienda en línea,Phrase
+rl-lead-corp_intent-202610,G08 CRM,implementación de crm,Exact
+rl-lead-corp_intent-202610,G08 CRM,implementación de crm,Phrase
+rl-lead-corp_intent-202610,G08 CRM,consultoría crm,Phrase
+rl-lead-corp_intent-202610,G08 CRM,consultor de crm,Phrase
+rl-lead-corp_intent-202610,G08 CRM,implementación de hubspot,Phrase
+rl-lead-corp_intent-202610,G08 CRM,implementación de zoho crm,Phrase
+rl-lead-corp_intent-202610,G08 CRM,consultor zoho crm,Phrase
+rl-lead-corp_intent-202610,G08 CRM,crm para equipos de ventas,Phrase
+rl-lead-corp_intent-202610,G08 CRM,crm para empresas de servicios,Phrase
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,automatización de procesos,Exact
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,automatización de procesos para empresas,Phrase
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,automatización de procesos empresariales,Phrase
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,automatización de ventas,Phrase
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,automatización comercial,Phrase
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,consultoría en automatización,Phrase
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,agencia de automatización,Phrase
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,integración de sistemas,Phrase
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,automatización con n8n,Phrase
+rl-lead-corp_intent-202610,G09 Automatización comercial y de procesos,automatización con inteligencia artificial para empresas,Phrase
+rl-lead-corp_intent-202610,G10 Software a la medida,desarrollo de software a la medida,Exact
+rl-lead-corp_intent-202610,G10 Software a la medida,desarrollo de software a la medida,Phrase
+rl-lead-corp_intent-202610,G10 Software a la medida,desarrollo de software a medida,Phrase
+rl-lead-corp_intent-202610,G10 Software a la medida,empresa de desarrollo de software,Phrase
+rl-lead-corp_intent-202610,G10 Software a la medida,desarrollo de sistemas a la medida,Phrase
+rl-lead-corp_intent-202610,G10 Software a la medida,sistema a la medida para empresas,Phrase
+rl-lead-corp_intent-202610,G10 Software a la medida,desarrollo de aplicaciones web a la medida,Phrase
+rl-lead-corp_intent-202610,G11 Medición,medición de conversiones,Phrase
+rl-lead-corp_intent-202610,G11 Medición,implementación de google analytics 4,Phrase
+rl-lead-corp_intent-202610,G11 Medición,configuración de ga4,Phrase
+rl-lead-corp_intent-202610,G11 Medición,consultor de google analytics,Phrase
+rl-lead-corp_intent-202610,G11 Medición,implementación de google tag manager,Phrase
+rl-lead-corp_intent-202610,G11 Medición,auditoría de google analytics,Phrase
+rl-lead-corp_intent-202610,G11 Medición,tablero de kpi para empresas,Phrase
+rl-lead-corp_intent-202610,G11 Medición,atribución de marketing,Phrase
+rl-lead-corp_intent-202610,G12 SEO,agencia seo,Phrase
+rl-lead-corp_intent-202610,G12 SEO,posicionamiento seo para empresas,Phrase
+rl-lead-corp_intent-202610,G12 SEO,consultor seo,Phrase
+rl-lead-corp_intent-202610,G12 SEO,auditoría seo,Phrase
+rl-lead-corp_intent-202610,G12 SEO,seo para empresas b2b,Phrase
+rl-lead-local_intent-202610,L01 Local,página web para negocio,Phrase
+rl-lead-local_intent-202610,L01 Local,página web para mi negocio,Phrase
+rl-lead-local_intent-202610,L01 Local,perfil de empresa en google,Phrase
+rl-lead-local_intent-202610,L01 Local,seo local,Phrase
+rl-lead-local_intent-202610,L01 Local,posicionamiento en google maps,Phrase
