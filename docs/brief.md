@@ -1,7 +1,7 @@
 # Brief · Riselanding · Rediseño de riselanding.com
 
-Versión: v0.1 (borrador para validar) · Fecha: 2026-10-20 · Responsable Riselanding: José (medición y SEO) y Rut (implementación)
-Estado del gate F0: pendiente. Falta que José valide la conversión primaria y responda las preguntas de la sección 13.
+Versión: v0.2 · Fecha: 2026-10-20 · Responsable Riselanding: José (medición y SEO) y Rut (implementación)
+Estado del gate F0: pendiente. Decisiones de alcance tomadas (sección 13); falta validar la conversión primaria y las preguntas abiertas de la sección 14.
 
 Proyecto interno: Riselanding es el cliente. No aplican propuesta PDF, precio ni solicitud de accesos (pasos 0.4 a 0.8 de F0).
 
@@ -50,7 +50,7 @@ El sitio actual habla a `general_b2b_mx`. Si hay más de un público con mensaje
 | Automatización (n8n) | Convertir | Filtro de calidad de leads de este mismo sitio (demostrable) | Repo |
 | Dashboards | Medir | [VERIFICAR] | |
 
-Cifras del sitio actual sin fuente visible, que no se publican en el rediseño hasta tener respaldo:
+Cifras del sitio actual sin fuente, retiradas por decisión de José del 2026-10-20:
 
 - "-30% CPL", "8+ procesos", "45+ leads" presentados como "métricas promedio de nuestros clientes" (`index.html:1251-1258`).
 - "3 cupos disponibles este mes" e "Inversión < 3% de tu revenue".
@@ -59,11 +59,9 @@ Se conservan porque son honestos: el caso de manufactura etiquetado como "Ejempl
 
 ## 6. Alcance
 
-Propuesta para validar (pregunta 3):
-
 | Fase 1 · MVP | Fase 2 · Mejoras |
 |---|---|
-| Páginas: home rediseñada, `/aviso-de-privacidad`, `/gracias` (si se adopta la redirección tras el éxito), 404 | Páginas por servicio con keyword propia (SEM, SEO, Web, CRM, Automatización), blog MDX, landings por segmento o industria |
+| Páginas: home, una página por servicio con keyword propia (lista final según F7a: SEM, SEO, Web, CRM, Automatización, Dashboards), `/aviso-de-privacidad`, `/gracias` (si se adopta la redirección tras el éxito), 404 | Blog MDX, landings por segmento o industria |
 | Componente interactivo: diagnóstico rápido o calculadora (reglas y rangos los define José por escrito) | Casos de estudio reales con permiso del cliente |
 | Integraciones: formulario y API actuales sin cambios (contrato en `docs/contrato-integraciones.md`), GTM-P3WZC7MV, n8n hacia Notion CRM, Turnstile | Enhanced Conversions, Meta CAPI, banner de cookies con CMP |
 | Idiomas: español (es-MX) | Inglés si hay demanda |
@@ -78,7 +76,7 @@ Se completa en F1 con 3 a 5 referencias (2 del vertical, 2 fuera del vertical, 1
 
 - Manual de marca: sí. `Riselanding/Riselanding_Manual_de_Marca_v1.pdf`, `docs_empresa/Riselanding_Manual_de_Marca_v1.1.pdf` y `Manual_de_Marca_Addendum_v1.2.md` (slogan oficial "Elevamos tu marca. Aterrizamos tus ventas.", hoy ausente del sitio; prohíbe el guion largo).
 - Tokens de marca: `Riselanding/DESIGN.md`. Carbón `#2D3748`, Naranja Fuego `#FF5A1F`, Gris `#9CA3AF`; Montserrat en títulos y CTA, Inter en cuerpo; fondo claro y header carbón.
-- Divergencia a resolver (pregunta 1): el sitio actual usa modo oscuro, Bricolage Grotesque, Geist y JetBrains Mono, y acentos verde y amarillo. No coincide con DESIGN.md.
+- Divergencia a resolver (se explora en F1 con dos variantes): el sitio actual usa modo oscuro, Bricolage Grotesque, Geist y JetBrains Mono, y acentos verde y amarillo. No coincide con DESIGN.md.
 - Logo vectorial: sí (`Assets/RISELANDING_isotipo.svg`, `RISELANDING_Isoltipo_white.svg`, carpeta "Rise Landing Logo final (1)" sin versionar).
 - Tipografías con licencia web: Montserrat e Inter (Google Fonts, licencia OFL).
 - Fotos reales disponibles: [sin dato] (equipo, socios, oficina).
@@ -93,7 +91,7 @@ Se completa en F1 con 3 a 5 referencias (2 del vertical, 2 fuera del vertical, 1
 | Registrador del dominio y titular | [sin dato] |
 | Hosting | Vercel, cuenta de Riselanding. `cleanUrls`, sin `trailingSlash` |
 | Stack actual | HTML estático de 2,114 líneas con CSS y JS inline (unos 166 KB), funciones de Vercel en `api/`, Node 2 dependencias |
-| Stack propuesto | Astro estático con `api/` intacto (pregunta 4) |
+| Stack elegido | Astro estático con `api/` intacto |
 | CRM de destino de leads | Notion CRM, vía webhook de n8n |
 | Automatización | n8n en Railway (instancia 417ba en producción; 15d6 es la nueva) |
 | WhatsApp Business | [sin dato]: hoy no hay número real en el sitio |
@@ -134,12 +132,17 @@ Auditoría rápida del sitio actual (encuadre de oportunidad):
 
 Proyecto interno: el equipo ya tiene acceso a Vercel, GitHub, GTM, GA4, n8n y Notion. Pendiente confirmar Search Console y Google Business Profile.
 
-## 13. Preguntas para José (ordenadas por impacto)
+## 13. Decisiones de José (2026-10-20)
 
-1. Dirección visual: ¿volver a la marca de DESIGN.md (claro, Montserrat e Inter, carbón y naranja) o actualizar DESIGN.md con una evolución del estilo oscuro actual?
-2. Cifras de resultados: ¿hay fuente para "-30% CPL", "8+ procesos", "45+ leads", "3 cupos" y "< 3% de revenue"? Sin fuente se retiran.
-3. Alcance MVP: ¿una home rediseñada más páginas legales, o multipágina desde el inicio con páginas por servicio?
-4. Stack: ¿Astro estático (componentes, multipágina y blog listos para fase 2) o seguir con HTML estático?
-5. WhatsApp: número real y si se muestra en la home como conversión secundaria.
-6. Componente interactivo: ¿diagnóstico rápido de madurez digital, calculadora de costo por lead o configurador de paquete? Las reglas las define José por escrito.
-7. Fecha objetivo de lanzamiento y meta de leads calificados a 90 días.
+| Tema | Decisión |
+|---|---|
+| Dirección visual | Explorar ambas en F1: una variante con la marca de DESIGN.md (clara) y otra que evoluciona el estilo oscuro actual. Se decide con las dos variantes de hero enfrente |
+| Alcance MVP | Multipágina desde el inicio: home más una página por servicio con keyword propia. F7a (investigación de keywords) pasa a ser crítica antes de F2 |
+| Stack | Astro estático con `api/` de Vercel intacto |
+| Cifras sin fuente | Se retiran: "-30% CPL", "8+ procesos", "45+ leads", "3 cupos", "< 3% de revenue" |
+
+## 14. Preguntas abiertas (ordenadas por impacto)
+
+1. WhatsApp: número real y si se muestra en la home como conversión secundaria.
+2. Componente interactivo: ¿diagnóstico rápido de madurez digital, calculadora de costo por lead o configurador de paquete? Las reglas las define José por escrito.
+3. Fecha objetivo de lanzamiento y meta de leads calificados a 90 días.
