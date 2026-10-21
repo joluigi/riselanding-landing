@@ -1,0 +1,143 @@
+---
+// Formulario "Agenda tu diagnóstico" (#lead-form), camino A del contrato
+// (docs/contrato-integraciones.md §3 y §4): mismos ids, clases y valores literales que lee
+// js/rl-form.js; solo cambian el CSS (src/styles/form.css) y las etiquetas visibles de los chips.
+// Un solo LeadForm por página (ids únicos). Los scripts van al final con defer: schema.js antes de
+// rl-form.js, y ambos después de /js/rl-tracking.js (defer en el head), así se conserva el orden.
+import '../../styles/form.css';
+import esquema from '../../../lib/lead-quality/schema.js?raw';
+
+interface Props {
+  /** Valor literal de SERVICIOS (lib/lead-quality/schema.js) que se precarga; null = sin precarga. */
+  servicio?: string | null;
+}
+
+const { servicio = null } = Astro.props;
+
+// SERVICIOS se lee del esquema compartido: los data-zoho nunca se separan del contrato con n8n
+const lista = esquema.match(/var SERVICIOS = (\[[\s\S]*?\]);/);
+if (!lista) throw new Error('LeadForm: no se encontró SERVICIOS en lib/lead-quality/schema.js');
+const SERVICIOS: string[] = JSON.parse(lista[1].replace(/'/g, '"'));
+
+// Etiquetas visibles de los chips (se pueden reescribir; data-zoho no)
+const ETIQUETAS: Record<string, string> = {
+  'Publicidad Digital': 'Publicidad digital',
+  'SEO y Posicionamiento': 'SEO',
+  'Reediseño / Desarrollo página web': 'Sitio web',
+  'Implementación de CRM': 'CRM',
+  'Automatización de procesos': 'Automatización',
+  'Dashboards y reportes': 'Tableros y reportes'
+};
+SERVICIOS.forEach(function (s) {
+  if (!ETIQUETAS[s]) throw new Error('LeadForm: falta la etiqueta visible del servicio "' + s + '"');
+});
+if (servicio && SERVICIOS.indexOf(servicio) === -1) {
+  throw new Error('LeadForm: servicio "' + servicio + '" no existe en SERVICIOS del esquema');
+}
+---
+<form class="form-grid" id="lead-form" novalidate data-servicio={servicio || undefined}>
+  <p class="form-intro">Trabajamos con empresas y negocios que quieren crecer sus ventas.</p>
+  <div class="form-progress" id="f-progreso">
+    <span class="form-progress__text" id="f-paso-texto">Paso 1 de 2</span>
+    <span class="form-progress__bar" aria-hidden="true"><span id="f-paso-barra"></span></span>
+  </div>
+  <p class="sr-only" id="f-anuncio" aria-live="polite"></p>
+  <input type="hidden" id="utm_source" name="utm_source">
+  <input type="hidden" id="utm_medium" name="utm_medium">
+  <input type="hidden" id="utm_campaign" name="utm_campaign">
+  <!-- Honeypot anti-bots: fuera de pantalla (nunca display:none); una persona nunca lo llena -->
+  <div class="hp-field" aria-hidden="true">
+    <label for="f-hp">Sitio web alterno</label>
+    <input id="f-hp" name="website_url_2" type="text" tabindex="-1" autocomplete="off" aria-hidden="true">
+  </div>
+
+  <!-- Paso 1: el negocio. Nada se envía al servidor al terminarlo -->
+  <div class="form-step" id="f-paso-1" role="group" aria-labelledby="f-paso-1-titulo">
+    <h3 class="form-step__title" id="f-paso-1-titulo" tabindex="-1">Cuéntanos de tu negocio</h3>
+    <div class="field full"><label for="f-solicitante">¿Para quién es la solicitud? *</label>
+      <select id="f-solicitante" name="solicitante" required>
+        <option value="" selected>Selecciona una opción</option>
+        <option value="empresa">Mi empresa o negocio</option>
+        <option value="emprendimiento">Un emprendimiento que estoy arrancando</option>
+        <option value="personal">Un proyecto personal / escolar</option>
+        <option value="empleo">Busco empleo o prácticas</option>
+        <option value="proveedor">Soy proveedor o agencia y quiero ofrecer servicios</option>
+      </select>
+    </div>
+    <div class="field full" data-solo-comercial>
+      <span class="label" id="f-servicios-label">¿Qué servicio(s) te interesan? *</span>
+      <div class="checks" id="f-servicios" role="group" aria-labelledby="f-servicios-label" tabindex="-1">
+        {SERVICIOS.map((s) => (
+          <label class="chk"><input type="checkbox" data-zoho={s}><span class="box" aria-hidden="true"></span>{ETIQUETAS[s]}</label>
+        ))}
+      </div>
+    </div>
+    <div class="field half" data-solo-comercial><label for="f-tamano">Tamaño del equipo *</label>
+      <select id="f-tamano" name="tamano">
+        <option value="" selected>Selecciona una opción</option>
+        <option value="1_10">1–10 personas</option>
+        <option value="11_50">11–50 personas</option>
+        <option value="51_200">51–200 personas</option>
+        <option value="200_plus">Más de 200 personas</option>
+      </select>
+    </div>
+    <div class="field half" data-solo-comercial><label for="f-presupuesto">Presupuesto mensual (MXN) *</label>
+      <select id="f-presupuesto" name="presupuesto">
+        <option value="" selected>Selecciona una opción</option>
+        <option value="sin_definir">Aún no lo defino</option>
+        <option value="menos_10k">Menos de $10,000</option>
+        <option value="10k_25k">$10,000 – $25,000</option>
+        <option value="25k_50k">$25,000 – $50,000</option>
+        <option value="mas_50k">Más de $50,000</option>
+      </select>
+    </div>
+    <div class="field full" data-solo-comercial><label for="f-necesidad">¿Qué quieres resolver? (opcional)</label>
+      <textarea id="f-necesidad" name="necesidad" rows="3" maxlength="2000" aria-describedby="f-necesidad-ayuda" placeholder="Ej. Queremos más solicitudes de cotización de clientes en el Bajío y dar seguimiento por WhatsApp"></textarea>
+      <span class="field-hint" id="f-necesidad-ayuda">Nos ayuda a llegar con tu diagnóstico más avanzado.</span>
+      <span class="contador" id="f-necesidad-contador" aria-hidden="true"></span>
+    </div>
+    <div class="field full form-actions">
+      <button type="button" class="btn btn--primary form-actions__main" id="f-continuar">Continuar</button>
+    </div>
+  </div>
+
+  <!-- Paso 2: el contacto -->
+  <div class="form-step" id="f-paso-2" role="group" aria-labelledby="f-paso-2-titulo" hidden>
+    <h3 class="form-step__title" id="f-paso-2-titulo" tabindex="-1">¿A quién le enviamos el diagnóstico?</h3>
+    <div class="field full"><label for="f-nombre">Nombre completo *</label><input id="f-nombre" name="nombre" required autocomplete="name" placeholder="María González"></div>
+    <div class="field half"><label for="f-email">Correo de trabajo *</label><input id="f-email" type="email" name="Email" required autocomplete="email" placeholder="maria@tuempresa.mx"></div>
+    <div class="field half"><label for="f-tel">WhatsApp *</label>
+      <div class="tel-row">
+        <select id="f-tel-pais" name="telefono_pais" aria-label="País del teléfono (lada internacional)">
+          <option value="MX" selected>MX +52</option>
+          <option value="US">EE. UU. +1</option>
+          <option value="CO">CO +57</option>
+          <option value="GT">GT +502</option>
+          <option value="PE">PE +51</option>
+          <option value="CL">CL +56</option>
+          <option value="AR">AR +54</option>
+          <option value="ES">ES +34</option>
+          <option value="INTL">Otro país</option>
+        </select>
+        <input id="f-tel" type="tel" name="PhoneNumber_countrycode" required placeholder="55 5878 8983" autocomplete="tel-national" inputmode="tel">
+      </div>
+    </div>
+    <div class="field full"><label for="f-empresa">Empresa o negocio *</label><input id="f-empresa" name="SingleLine" autocomplete="organization" placeholder="Tu empresa S.A."></div>
+    <div class="field full" id="f-sitio-toggle-caja">
+      <button type="button" class="form-link" id="f-sitio-toggle" aria-expanded="false" aria-controls="f-sitio-campo">+ Agregar sitio web o Instagram (opcional)</button>
+    </div>
+    <div class="field full" id="f-sitio-campo" hidden><label for="f-sitio">Sitio web o Instagram de la empresa (opcional)</label><input id="f-sitio" name="sitio_web" autocomplete="url" inputmode="url" placeholder="tuempresa.mx o @tuempresa"></div>
+    <div class="field full">
+      <label class="consent"><input type="checkbox" id="f-consent" name="consentimiento" required><span>He leído y acepto el <a href="/aviso-de-privacidad" target="_blank" rel="noopener">aviso de privacidad</a>. *</span></label>
+    </div>
+    <!-- Cloudflare Turnstile: solo se muestra si /api/form-token entrega una site key -->
+    <div class="field full turnstile-slot" id="f-turnstile" hidden></div>
+    <div class="field full form-actions">
+      <button type="submit" class="btn btn--primary form-actions__main">Quiero mi diagnóstico</button>
+      <button type="button" class="form-link form-actions__back" id="f-atras">Atrás</button>
+      <span class="form-actions__note">Usamos tus datos solo para responderte.</span>
+    </div>
+  </div>
+</form>
+<script src="/lib/lead-quality/schema.js" defer is:inline></script>
+<script src="/js/rl-form.js" defer is:inline></script>
