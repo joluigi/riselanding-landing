@@ -143,8 +143,7 @@ const IDS_FORMULARIO = [
 
 // Servicio precargado (docs/sitemap.md §7.6); null = sin data-servicio
 const FORMULARIOS = [
-  // TEMPORAL (PR2): la home provisional precarga CRM para probar data-servicio; PR3 la regresa a null
-  { archivo: 'index.html', servicio: 'Implementación de CRM' },
+  { archivo: 'index.html', servicio: null },
   { archivo: 'servicios.html', servicio: null },
   { archivo: 'servicios/crm.html', servicio: 'Implementación de CRM' },
   { archivo: 'servicios/automatizacion.html', servicio: 'Automatización de procesos' },
