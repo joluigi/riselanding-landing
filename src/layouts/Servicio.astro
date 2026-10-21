@@ -1,0 +1,408 @@
+---
+// Plantilla única de página de servicio (docs/wireframes/plantilla-servicio.md, plan F4 §2 y §3).
+// Recibe el objeto de copy de src/data/servicios/{slug}.js; tracking, servicio precargado, keyword y
+// anclajes salen de src/data/servicios.js.
+//
+// Secciones: hero (breadcrumb, eyebrow del pilar, H1 con la keyword, maqueta), #problema, #enfoque
+// (rl_service_view lo observa 20 s; docs/contrato-integraciones.md), #landing (opcional), #prueba
+// (opcional; se omite si no hay prueba), #entregables, #proceso, #herramientas, #faq, #contacto y
+// #relacionados. Ningún id="servicios" aquí: rl-tracking.js lo busca antes que #enfoque.
+//
+// JSON-LD: Service, FAQPage (las mismas preguntas visibles) y BreadcrumbList.
+import Base from './Base.astro';
+import Boton from '../components/ui/Boton.astro';
+import Tarjeta from '../components/ui/Tarjeta.astro';
+import Eyebrow from '../components/ui/Eyebrow.astro';
+import Faq from '../components/ui/Faq.astro';
+import Icono from '../components/ui/Icono.astro';
+import EnlaceAccion from '../components/ui/EnlaceAccion.astro';
+import Contacto from '../components/forms/Contacto.astro';
+import { servicioPorSlug, publicado, PILARES } from '../data/servicios.js';
+import '../styles/servicio.css';
+
+interface Props {
+  /** Copy de la página: export default de src/data/servicios/{slug}.js */
+  pagina: any;
+}
+
+const { pagina } = Astro.props;
+const s = servicioPorSlug(pagina.slug);
+if (!publicado(s)) throw new Error('Servicio.astro: "' + s.slug + '" no está publicado en esta ola');
+
+const SITIO = 'https://riselanding.com';
+const url = SITIO + s.href;
+const pilar = PILARES.find((p) => p.id === s.pilar);
+
+// Partes de texto: string o { slug, texto }. El enlace solo se pinta si el destino está publicado.
+type Parte = string | { slug: string; texto: string };
+function partes(texto: string | Parte[]) {
+  return (Array.isArray(texto) ? texto : [texto]).map((p) => {
+    if (typeof p === 'string') return { texto: p };
+    const destino = servicioPorSlug(p.slug);
+    return { texto: p.texto, href: publicado(destino) ? destino.href : null };
+  });
+}
+const mayusculaInicial = (t: string) => t.charAt(0).toUpperCase() + t.slice(1);
+
+const relacionados = (pagina.relacionados || [])
+  .map((slug: string) => servicioPorSlug(slug))
+  .filter((r: any) => publicado(r) && r.slug !== s.slug);
+
+const landingDestino = pagina.landing && pagina.landing.enlace ? servicioPorSlug(pagina.landing.enlace.slug) : null;
+
+const preguntas = pagina.faq.preguntas;
+
+const jsonLd = [
+  {
+    '@context': 'https://schema.org',
+    '@type': 'Service',
+    name: mayusculaInicial(s.keyword),
+    serviceType: s.nombre,
+    description: pagina.description,
+    url,
+    provider: {
+      '@type': 'Organization',
+      '@id': SITIO + '/#organization',
+      name: 'Riselanding',
+      url: SITIO + '/'
+    },
+    areaServed: { '@type': 'Country', name: 'México', identifier: 'MX' },
+    availableLanguage: 'es-MX'
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: preguntas.map((p: any) => ({
+      '@type': 'Question',
+      name: p.pregunta,
+      acceptedAnswer: { '@type': 'Answer', text: p.respuesta }
+    }))
+  },
+  {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Inicio', item: SITIO + '/' },
+      { '@type': 'ListItem', position: 2, name: 'Servicios', item: SITIO + '/servicios' },
+      { '@type': 'ListItem', position: 3, name: s.nombreCorto, item: url }
+    ]
+  }
+];
+
+const m = pagina.hero.maqueta;
+const p = pagina.prueba;
+---
+<Base
+  title={pagina.title}
+  description={pagina.description}
+  path={s.href}
+  tracking={{ template: s.pageTemplate, type: 'servicio', serviceLine: s.serviceLine }}
+  jsonLd={jsonLd}
+  barraCta={true}
+  formulario={true}
+>
+  <main id="contenido" class="servicio">
+    <section class="servicio-hero aura" id="hero" aria-labelledby="hero-titulo">
+      <div class="container">
+        <div class="servicio-hero__copy">
+          <nav class="breadcrumb" aria-label="Ruta de navegación">
+            <ol role="list">
+              <li><a href="/">Inicio</a></li>
+              <li><a href="/servicios">Servicios</a></li>
+              <li><span aria-current="page">{s.nombreCorto}</span></li>
+            </ol>
+          </nav>
+          <Eyebrow>{pagina.hero.eyebrow || (pilar && pilar.nombre)}</Eyebrow>
+          <h1 id="hero-titulo">{pagina.hero.h1}</h1>
+          <p class="lead">{pagina.hero.bajada}</p>
+          <div class="servicio-hero__acciones">
+            <Boton href="#contacto">Agenda tu diagnóstico</Boton>
+            <Boton variante="secundario" whatsapp>WhatsApp</Boton>
+          </div>
+        </div>
+
+        {m && (
+          <figure class="servicio-hero__maqueta">
+            <div class="maqueta">
+              <div class="maqueta__barra">
+                <div class="maqueta__puntos" aria-hidden="true"><span></span><span></span><span></span></div>
+                <p class="maqueta__titulo">{m.titulo}</p>
+              </div>
+              <div class="maqueta__cuerpo">
+                {m.tipo === 'pipeline' && (
+                  <>
+                    <div class="mq-cabeza">
+                      <div><p class="eyebrow">{m.encabezado}</p><p class="mq-cabeza__titulo">{m.subtitulo}</p></div>
+                    </div>
+                    <div class="mq-pipeline">
+                      {m.etapas.map((etapa: any) => (
+                        <div class="mq-etapa">
+                          <p class="mq-etapa__nombre">{etapa.nombre}</p>
+                          {etapa.tarjetas.map((t: any) => (
+                            <div class="mq-trato">
+                              <p class="mq-trato__empresa">{t.empresa}</p>
+                              <p class="mq-trato__area">{t.area}</p>
+                              <div class="mq-trato__pie">
+                                <span class="mq-chip">{t.origen}</span>
+                                {t.ganado && <span class="mq-ganado"><Icono nombre="check" tamano="sm" />Ganado</span>}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ))}
+                    </div>
+                  </>
+                )}
+
+                {m.tipo === 'campanas' && (
+                  <>
+                    <div class="mq-cabeza">
+                      <div><p class="eyebrow">{m.encabezado}</p><p class="mq-cabeza__titulo">{m.subtitulo}</p></div>
+                    </div>
+                    <div class="mq-tabla" role="table" aria-label="Grupos de anuncios de ejemplo">
+                      <div class="mq-fila mq-fila--cabeza" role="row">
+                        <span role="columnheader">Grupo</span>
+                        {m.columnas.map((c: string) => <span role="columnheader">{c}</span>)}
+                      </div>
+                      {m.grupos.map((g: any) => (
+                        <div class="mq-fila" role="row">
+                          <span class="mq-fila__nombre" role="cell"><strong>{g.nombre}</strong><span class="mq-fila__tipo"><span class="mq-punto"></span>{g.tipo}</span></span>
+                          {g.valores.map((v: number) => <span class="mq-fila__num" role="cell">{v}</span>)}
+                        </div>
+                      ))}
+                    </div>
+                    <div class="mq-anuncio">
+                      <p class="mq-anuncio__meta"><span class="mq-anuncio__patrocinado">Patrocinado</span>{m.anuncio.url}</p>
+                      <p class="mq-anuncio__titulo">{m.anuncio.titulo}</p>
+                      <p class="mq-anuncio__texto">{m.anuncio.texto}</p>
+                    </div>
+                  </>
+                )}
+
+                {m.tipo === 'flujo' && (
+                  <>
+                    <div class="mq-lienzo">
+                      <ol class="mq-flujo" role="list">
+                        {m.nodos.map((n: any) => (
+                          <li class="mq-nodo">
+                            <span class="mq-nodo__icono"><Icono nombre={n.icono} /></span>
+                            <div>
+                              <p class="mq-nodo__tipo">{n.tipo}</p>
+                              <p class="mq-nodo__nombre">{n.nombre}</p>
+                              <p class="mq-nodo__detalle">{n.detalle}</p>
+                            </div>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                    {m.registro && (
+                      <p class="mq-registro">
+                        {m.registro.map((r: string, i: number) => <span>{i === m.registro.length - 1 && <span class="mq-punto mq-punto--ok"></span>}{r}</span>)}
+                      </p>
+                    )}
+                  </>
+                )}
+
+                {m.tipo === 'sitio' && (
+                  <div class="mq-sitio">
+                    <div class="mq-sitio__pagina">
+                      <div class="mq-sitio__nav"><strong>{m.marca}</strong><span class="mq-sitio__lineas" aria-hidden="true"><span></span><span></span><span></span></span></div>
+                      <div class="mq-sitio__hero">
+                        <div class="mq-sitio__texto">
+                          <p class="mq-sitio__titular">{m.titular}</p>
+                          <span class="mq-sitio__linea" aria-hidden="true"></span>
+                          <span class="mq-sitio__linea mq-sitio__linea--corta" aria-hidden="true"></span>
+                          <span class="mq-sitio__boton">{m.boton}</span>
+                        </div>
+                        <div class="mq-sitio__form">
+                          {m.campos.map((c: string) => <span class="mq-sitio__campo">{c}</span>)}
+                          <span class="mq-sitio__boton mq-sitio__boton--bloque">Enviar</span>
+                        </div>
+                      </div>
+                    </div>
+                    <div class="mq-sitio__telefono" aria-hidden="true">
+                      <div class="mq-sitio__pantalla">
+                        <strong>{m.marca}</strong>
+                        <p class="mq-sitio__titular">{m.titular}</p>
+                        {m.campos.map((c: string) => <span class="mq-sitio__campo">{c}</span>)}
+                        <span class="mq-sitio__boton mq-sitio__boton--bloque">Enviar</span>
+                      </div>
+                    </div>
+                    <div class="mq-sitio__lead">
+                      <span class="mq-punto mq-punto--ok"></span>
+                      <div>
+                        <p class="mq-sitio__lead-etiqueta">{m.lead.etiqueta}</p>
+                        <p class="mq-sitio__lead-empresa">{m.lead.empresa}</p>
+                        <p class="mq-sitio__lead-origen">{m.lead.origen}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+            <figcaption class="maqueta__leyenda">Ejemplo ilustrativo con datos ficticios</figcaption>
+          </figure>
+        )}
+      </div>
+    </section>
+
+    <section class="section" id="problema" aria-labelledby="problema-titulo">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="problema-titulo">{pagina.problema.h2}</h2>
+        </div>
+        <ul class="servicio-rejilla" role="list">
+          {pagina.problema.situaciones.map((t: string) => (
+            <Tarjeta as="li" class="situacion"><p>{t}</p></Tarjeta>
+          ))}
+        </ul>
+      </div>
+    </section>
+
+    <section class="section servicio-seccion--superficie" id="enfoque" aria-labelledby="enfoque-titulo">
+      <div class="container">
+        <div class="section-head">
+          <Eyebrow>Qué hacemos</Eyebrow>
+          <h2 id="enfoque-titulo">{pagina.enfoque.h2}</h2>
+          {pagina.enfoque.bajada && <p class="lead">{pagina.enfoque.bajada}</p>}
+        </div>
+        <ul class="servicio-rejilla" role="list">
+          {pagina.enfoque.bloques.map((b: any) => (
+            <Tarjeta as="li" class="bloque">
+              <div class="bloque__cabeza">
+                <span class="bloque__icono"><Icono nombre={b.icono} /></span>
+                <h3>{b.titulo}</h3>
+              </div>
+              <p>{partes(b.texto).map((t) => t.href ? <a href={t.href}>{t.texto}</a> : t.texto)}</p>
+            </Tarjeta>
+          ))}
+        </ul>
+        {pagina.enfoque.enlace && (
+          <p class="servicio-centro"><EnlaceAccion href={pagina.enfoque.enlace.href}>{pagina.enfoque.enlace.texto}</EnlaceAccion></p>
+        )}
+      </div>
+    </section>
+
+    {pagina.landing && (
+      <section class="section section--corta" id="landing" aria-labelledby="landing-titulo">
+        <div class="container">
+          <Tarjeta class="servicio-landing">
+            <h3 id="landing-titulo">{pagina.landing.h3}</h3>
+            <p>{pagina.landing.texto}</p>
+            {landingDestino && publicado(landingDestino) && (
+              <EnlaceAccion href={landingDestino.href}>{pagina.landing.enlace.texto}</EnlaceAccion>
+            )}
+          </Tarjeta>
+        </div>
+      </section>
+    )}
+
+    {p && (
+      <section class="section" id="prueba" aria-labelledby="prueba-titulo">
+        <div class="container">
+          <Tarjeta class="servicio-prueba">
+            <div class="servicio-prueba__copy">
+              <Eyebrow>{p.eyebrow}</Eyebrow>
+              <h2 id="prueba-titulo">{p.h2}</h2>
+              <p>{p.texto}</p>
+            </div>
+            {p.maqueta && (
+              <figure class="servicio-prueba__maqueta">
+                <div class="mq-lienzo">
+                  <ol class="mq-flujo mq-flujo--vertical" role="list">
+                    {p.maqueta.nodos.map((n: any) => (
+                      <li class="mq-nodo">
+                        <span class="mq-nodo__icono"><Icono nombre={n.icono} /></span>
+                        <div>
+                          <p class="mq-nodo__tipo">{n.tipo}</p>
+                          <p class="mq-nodo__nombre">{n.nombre}</p>
+                          <p class="mq-nodo__detalle">{n.detalle}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                <figcaption class="maqueta__leyenda">Ejemplo ilustrativo con datos ficticios</figcaption>
+              </figure>
+            )}
+          </Tarjeta>
+        </div>
+      </section>
+    )}
+
+    <section class="section" id="entregables" aria-labelledby="entregables-titulo">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="entregables-titulo">{pagina.entregables.h2}</h2>
+        </div>
+        <Tarjeta class="entregables">
+          <ul class="entregables__lista" role="list">
+            {pagina.entregables.items.map((item: string) => (
+              <li><span class="entregables__check"><Icono nombre="check" tamano="sm" /></span><span>{item}</span></li>
+            ))}
+          </ul>
+          {pagina.entregables.nota && <p class="entregables__nota">{pagina.entregables.nota}</p>}
+        </Tarjeta>
+      </div>
+    </section>
+
+    <section class="section servicio-seccion--superficie" id="proceso" aria-labelledby="proceso-titulo">
+      <div class="container">
+        <div class="section-head">
+          <Eyebrow>{pagina.proceso.eyebrow}</Eyebrow>
+          <h2 id="proceso-titulo">{pagina.proceso.h2}</h2>
+        </div>
+        <ol class="pasos" role="list">
+          {pagina.proceso.pasos.map((paso: any, i: number) => (
+            <Tarjeta as="li" class="paso">
+              <span class="paso__num" aria-hidden="true">{i + 1}</span>
+              <h3>{paso.titulo}</h3>
+              <p>{paso.texto}</p>
+            </Tarjeta>
+          ))}
+        </ol>
+      </div>
+    </section>
+
+    <section class="herramientas" id="herramientas" aria-labelledby="herramientas-titulo">
+      <div class="container">
+        <Eyebrow as="h2" id="herramientas-titulo" class="herramientas__titulo">{pagina.herramientas.eyebrow}</Eyebrow>
+        <ul class="herramientas__lista" role="list">
+          {pagina.herramientas.lista.map((h: string) => <li>{h}</li>)}
+        </ul>
+      </div>
+    </section>
+
+    <section class="section" id="faq" aria-labelledby="faq-titulo">
+      <div class="container">
+        <div class="section-head">
+          <h2 id="faq-titulo">{pagina.faq.h2}</h2>
+        </div>
+        <Faq id={'faq-' + s.slug} preguntas={preguntas} abierta={0} />
+      </div>
+    </section>
+
+    <Contacto titulo={pagina.contacto.titulo} bajada={pagina.contacto.bajada} servicio={s.servicioForm} />
+
+    {relacionados.length > 0 && (
+      <section class="section section--corta" id="relacionados" aria-labelledby="relacionados-titulo">
+        <div class="container">
+          <div class="relacionados">
+            <h2 id="relacionados-titulo" class="relacionados__titulo">También te puede interesar</h2>
+            <ul class="chips relacionados__lista" role="list">
+              {relacionados.map((r: any) => (
+                <li>
+                  <a class="chip" href={r.href} data-servicio={r.slug}>
+                    <span class="chip__icon"><Icono nombre={r.icono} /></span>
+                    <span class="chip__name">{mayusculaInicial(r.anclaje)}</span>
+                    <Icono nombre="arrow-right" tamano="sm" class="chip__arrow" />
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+    )}
+  </main>
+</Base>

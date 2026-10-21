@@ -12,6 +12,11 @@ const DIST = path.join(__dirname, '..', '..', 'dist');
 
 const PAGINAS = [
   { archivo: 'index.html', template: 'home_v2', type: 'home', serviceLine: 'paquete_integral', canonical: 'https://riselanding.com/' },
+  { archivo: 'servicios.html', template: 'servicios_indice_v1', type: 'indice', serviceLine: 'paquete_integral', canonical: 'https://riselanding.com/servicios' },
+  { archivo: 'servicios/crm.html', template: 'servicio_crm_v1', type: 'servicio', serviceLine: 'crm_automatizacion', canonical: 'https://riselanding.com/servicios/crm' },
+  { archivo: 'servicios/automatizacion.html', template: 'servicio_automatizacion_v1', type: 'servicio', serviceLine: 'crm_automatizacion', canonical: 'https://riselanding.com/servicios/automatizacion' },
+  { archivo: 'servicios/google-ads.html', template: 'servicio_google_ads_v1', type: 'servicio', serviceLine: 'publicidad_digital', canonical: 'https://riselanding.com/servicios/google-ads' },
+  { archivo: 'servicios/sitio-web.html', template: 'servicio_sitio_web_v1', type: 'servicio', serviceLine: 'web_seo', canonical: 'https://riselanding.com/servicios/sitio-web' },
   { archivo: 'aviso-de-privacidad.html', template: 'legal_v1', type: 'legal', serviceLine: 'paquete_integral', canonical: 'https://riselanding.com/aviso-de-privacidad' },
   { archivo: 'gracias.html', template: 'gracias_v1', type: 'gracias', serviceLine: 'paquete_integral', noindex: true },
   { archivo: '404.html', template: 'error_404_v1', type: 'error', serviceLine: 'paquete_integral' }
